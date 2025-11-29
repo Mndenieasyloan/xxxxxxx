@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ETF Investment Plans - V0 Trade</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .mobile-menu { display: none; }
+        .mobile-menu.active { display: block; }
+        .dropdown { position: relative; display: inline-block; }
+        .dropdown-content { display: none; position: absolute; background-color: rgb(15 23 42 / 0.95); min-width: 12rem; border: 1px solid rgb(168 85 247 / 0.2); border-radius: 0.5rem; padding: 0.5rem; z-index: 1000; }
+        .dropdown:hover .dropdown-content { display: block; }
+    </style>
+</head>
+<body class="bg-gradient-to-b from-slate-950 via-purple-950 to-slate-950 text-white">
+    <!-- Added full header with navigation and logo -->
+    <header class="sticky top-0 z-50 border-b border-purple-500/20 bg-slate-950/80 backdrop-blur-md">
+        <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between py-4">
+                <a href="index.html" class="flex items-center gap-2 hover:opacity-80 transition">
+                    <div class="h-10 w-10">
+                        <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" class="w-full h-full">
+                            <defs>
+                                <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" style="stop-color: #a78bfa; stop-opacity: 1" />
+                                    <stop offset="50%" style="stop-color: #ec4899; stop-opacity: 1" />
+                                    <stop offset="100%" style="stop-color: #06b6d4; stop-opacity: 1" />
+                                </linearGradient>
+                                <filter id="glow">
+                                    <feGaussianBlur stdDeviation="2" result="coloredBlur" />
+                                    <feMerge>
+                                        <feMergeNode in="coloredBlur" />
+                                        <feMergeNode in="SourceGraphic" />
+                                    </feMerge>
+                                </filter>
+                            </defs>
+                            <circle cx="100" cy="100" r="95" fill="url(#logoGradient)" opacity="0.2" />
+                            <circle cx="100" cy="100" r="90" fill="none" stroke="url(#logoGradient)" stroke-width="2" />
+                            <path d="M 50 60 L 80 140 M 150 60 L 120 140" stroke="url(#logoGradient)" stroke-width="8" stroke-linecap="round" fill="none" filter="url(#glow)" />
+                            <circle cx="100" cy="100" r="25" fill="none" stroke="url(#logoGradient)" stroke-width="6" filter="url(#glow)" />
+                            <line x1="75" y1="100" x2="125" y2="100" stroke="url(#logoGradient)" stroke-width="3" opacity="0.6" />
+                            <circle cx="100" cy="60" r="4" fill="url(#logoGradient)" filter="url(#glow)" />
+                        </svg>
+                    </div>
+                    <span class="text-xl font-bold bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent">V0 Trade</span>
+                </a>
+
+                <!-- Desktop Navigation -->
+                <nav class="hidden items-center gap-8 md:flex">
+                    <a href="index.html" class="text-sm text-gray-300 hover:text-white transition">Home</a>
+                    <div class="dropdown">
+                        <button class="text-sm text-white font-semibold transition flex items-center gap-1">Invest <span>▼</span></button>
+                        <div class="dropdown-content">
+                            <a href="cryptocurrencies.html" class="block px-3 py-2 text-sm text-gray-300 hover:text-white hover:bg-purple-500/10 rounded">Cryptocurrencies</a>
+                            <a href="precious-metals.html" class="block px-3 py-2 text-sm text-gray-300 hover:text-white hover:bg-purple-500/10 rounded">Precious Metals</a>
+                            <a href="stocks.html" class="block px-3 py-2 text-sm text-gray-300 hover:text-white hover:bg-purple-500/10 rounded">Stocks</a>
+                            <a href="etfs.html" class="block px-3 py-2 text-sm text-gray-300 hover:text-white hover:bg-purple-500/10 rounded">ETFs</a>
+                        </div>
+                    </div>
+                    <a href="btc-miner.html" class="text-sm text-gray-300 hover:text-white transition">BTC Miner</a>
+                    <a href="about.html" class="text-sm text-gray-300 hover:text-white transition">About</a>
+                    <a href="security.html" class="text-sm text-gray-300 hover:text-white transition">Security</a>
+                    <div class="dropdown">
+                        <button class="text-sm text-gray-300 hover:text-white transition flex items-center gap-1">Support <span>▼</span></button>
+                        <div class="dropdown-content">
+                            <a href="contact.html" class="block px-3 py-2 text-sm text-gray-300 hover:text-white hover:bg-purple-500/10 rounded">Contact Support</a>
+                            <a href="faq.html" class="block px-3 py-2 text-sm text-gray-300 hover:text-white hover:bg-purple-500/10 rounded">FAQ</a>
+                        </div>
+                    </div>
+                </nav>
+
+                <!-- Right Side - Auth -->
+                <div class="hidden items-center gap-4 md:flex">
+                    <a href="dashboard.html" class="text-sm text-gray-300 hover:text-white transition">My Account</a>
+                    <a href="login.html" class="text-sm text-gray-300 hover:text-white transition">Logout</a>
+                </div>
+
+                <!-- Mobile Menu Button -->
+                <button class="md:hidden" onclick="toggleMobileMenu()">
+                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Mobile Menu -->
+            <div id="mobileMenu" class="mobile-menu border-t border-purple-500/20 py-4 md:hidden">
+                <nav class="flex flex-col gap-3">
+                    <a href="index.html" class="text-sm text-gray-300 hover:text-white">Home</a>
+                    <a href="cryptocurrencies.html" class="text-sm text-gray-300 hover:text-white">Cryptocurrencies</a>
+                    <a href="precious-metals.html" class="text-sm text-gray-300 hover:text-white">Precious Metals</a>
+                    <a href="stocks.html" class="text-sm text-gray-300 hover:text-white">Stocks</a>
+                    <a href="etfs.html" class="text-sm text-gray-300 hover:text-white">ETFs</a>
+                    <a href="btc-miner.html" class="text-sm text-gray-300 hover:text-white">BTC Miner</a>
+                    <a href="about.html" class="text-sm text-gray-300 hover:text-white">About</a>
+                    <a href="security.html" class="text-sm text-gray-300 hover:text-white">Security</a>
+                    <a href="contact.html" class="text-sm text-gray-300 hover:text-white">Contact</a>
+                    <a href="faq.html" class="text-sm text-gray-300 hover:text-white">FAQ</a>
+                    <a href="dashboard.html" class="text-sm text-gray-300 hover:text-white">My Account</a>
+                    <a href="login.html" class="text-sm text-gray-300 hover:text-white">Logout</a>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <!-- Updated hero section with new content -->
+    <section class="px-4 py-24 sm:px-6 lg:px-8">
+        <div class="mx-auto max-w-4xl text-center">
+            <h1 class="text-5xl sm:text-6xl font-bold text-white mb-6">ETF Investment Plans</h1>
+            <p class="text-xl text-gray-300 mb-8">Invest in diversified ETF portfolios and enjoy stable high-yield returns.</p>
+            <a href="signup.html" class="inline-flex items-center justify-center bg-gradient-to-r from-purple-500 via-pink-500 to-purple-500 hover:from-purple-600 hover:via-pink-600 hover:to-purple-600 text-white text-lg font-bold h-14 px-12 rounded-lg shadow-2xl shadow-purple-500/50 transition-all">
+                Start Investing
+            </a>
+        </div>
+    </section>
+
+    <!-- Added About ETF Investment section -->
+    <section class="px-4 py-16 sm:px-6 lg:px-8">
+        <div class="mx-auto max-w-5xl">
+            <div class="bg-gradient-to-br from-purple-900/40 to-pink-900/40 border border-purple-500/20 rounded-2xl p-8 md:p-12 backdrop-blur">
+                <h2 class="text-3xl font-bold text-white mb-6">About ETF Investment</h2>
+                <p class="text-gray-300 text-lg leading-relaxed mb-8">
+                    ETF investment offers stable diversified returns with lower risk than single stocks. Our platform provides automatic rebalancing and exposure to global markets through index funds and sector ETFs.
+                </p>
+                <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+                    <div class="bg-slate-900/50 border border-purple-500/20 rounded-lg p-4 text-center">
+                        <div class="font-bold text-white text-lg mb-1">SPY</div>
+                        <div class="text-gray-400 text-sm">SPDR S&P 500</div>
+                    </div>
+                    <div class="bg-slate-900/50 border border-purple-500/20 rounded-lg p-4 text-center">
+                        <div class="font-bold text-white text-lg mb-1">VOO</div>
+                        <div class="text-gray-400 text-sm">Vanguard S&P 500</div>
+                    </div>
+                    <div class="bg-slate-900/50 border border-purple-500/20 rounded-lg p-4 text-center">
+                        <div class="font-bold text-white text-lg mb-1">IVV</div>
+                        <div class="text-gray-400 text-sm">iShares Core S&P 500</div>
+                    </div>
+                    <div class="bg-slate-900/50 border border-purple-500/20 rounded-lg p-4 text-center">
+                        <div class="font-bold text-white text-lg mb-1">VTI</div>
+                        <div class="text-gray-400 text-sm">Vanguard Total Market</div>
+                    </div>
+                    <div class="bg-slate-900/50 border border-purple-500/20 rounded-lg p-4 text-center">
+                        <div class="font-bold text-white text-lg mb-1">QQQ</div>
+                        <div class="text-gray-400 text-sm">Nasdaq-100</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Replaced with investment plans from text file -->
+    <section class="px-4 py-16 sm:px-6 lg:px-8">
+        <div class="mx-auto max-w-7xl">
+            <h2 class="text-4xl font-bold text-white text-center mb-16">Investment Plans</h2>
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <!-- 1 Hour Plan -->
+                <div class="bg-gradient-to-br from-purple-900/40 to-pink-900/40 border border-purple-500/20 rounded-2xl p-8 backdrop-blur hover:scale-105 transition-transform">
+                    <h3 class="text-2xl font-bold text-white mb-6">1 Hour Plan</h3>
+                    <div class="space-y-4 mb-8">
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">ROI</span>
+                            <span class="text-green-400 font-bold text-xl">+20%</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">Duration</span>
+                            <span class="text-white font-semibold">1 Hour</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">Withdrawal</span>
+                            <span class="text-cyan-400 font-semibold">Instant</span>
+                        </div>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-gray-400 text-sm mb-2">Select ETF</label>
+                        <select class="w-full bg-slate-900 border border-purple-500/20 rounded-lg px-4 py-3 text-white">
+                            <option>SPY - SPDR S&P 500</option>
+                            <option>VOO - Vanguard S&P 500</option>
+                            <option>IVV - iShares Core S&P 500</option>
+                            <option>VTI - Vanguard Total Market</option>
+                            <option>QQQ - Nasdaq-100</option>
+                        </select>
+                    </div>
+                    <div class="mb-6">
+                        <label class="block text-gray-400 text-sm mb-2">Investment Amount (Min $200)</label>
+                        <input type="number" placeholder="Enter amount" class="w-full bg-slate-900 border border-purple-500/20 rounded-lg px-4 py-3 text-white">
+                    </div>
+                    <button class="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold py-3 rounded-lg transition-all">
+                        Invest Now
+                    </button>
+                </div>
+
+                <!-- 5 Hours Plan -->
+                <div class="bg-gradient-to-br from-blue-900/40 to-cyan-900/40 border border-blue-500/20 rounded-2xl p-8 backdrop-blur hover:scale-105 transition-transform">
+                    <h3 class="text-2xl font-bold text-white mb-6">5 Hours Plan</h3>
+                    <div class="space-y-4 mb-8">
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">ROI</span>
+                            <span class="text-green-400 font-bold text-xl">+30%</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">Duration</span>
+                            <span class="text-white font-semibold">5 Hours</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">Withdrawal</span>
+                            <span class="text-cyan-400 font-semibold">Instant</span>
+                        </div>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-gray-400 text-sm mb-2">Select ETF</label>
+                        <select class="w-full bg-slate-900 border border-blue-500/20 rounded-lg px-4 py-3 text-white">
+                            <option>SPY - SPDR S&P 500</option>
+                            <option>VOO - Vanguard S&P 500</option>
+                            <option>IVV - iShares Core S&P 500</option>
+                            <option>VTI - Vanguard Total Market</option>
+                            <option>QQQ - Nasdaq-100</option>
+                        </select>
+                    </div>
+                    <div class="mb-6">
+                        <label class="block text-gray-400 text-sm mb-2">Investment Amount (Min $200)</label>
+                        <input type="number" placeholder="Enter amount" class="w-full bg-slate-900 border border-blue-500/20 rounded-lg px-4 py-3 text-white">
+                    </div>
+                    <button class="w-full bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white font-bold py-3 rounded-lg transition-all">
+                        Invest Now
+                    </button>
+                </div>
+
+                <!-- 24 Hours Plan -->
+                <div class="bg-gradient-to-br from-pink-900/40 to-purple-900/40 border border-pink-500/20 rounded-2xl p-8 backdrop-blur hover:scale-105 transition-transform">
+                    <h3 class="text-2xl font-bold text-white mb-6">24 Hours Plan</h3>
+                    <div class="space-y-4 mb-8">
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">ROI</span>
+                            <span class="text-green-400 font-bold text-xl">+68%</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">Duration</span>
+                            <span class="text-white font-semibold">24 Hours</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">Withdrawal</span>
+                            <span class="text-cyan-400 font-semibold">Instant</span>
+                        </div>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-gray-400 text-sm mb-2">Select ETF</label>
+                        <select class="w-full bg-slate-900 border border-pink-500/20 rounded-lg px-4 py-3 text-white">
+                            <option>SPY - SPDR S&P 500</option>
+                            <option>VOO - Vanguard S&P 500</option>
+                            <option>IVV - iShares Core S&P 500</option>
+                            <option>VTI - Vanguard Total Market</option>
+                            <option>QQQ - Nasdaq-100</option>
+                        </select>
+                    </div>
+                    <div class="mb-6">
+                        <label class="block text-gray-400 text-sm mb-2">Investment Amount (Min $200)</label>
+                        <input type="number" placeholder="Enter amount" class="w-full bg-slate-900 border border-pink-500/20 rounded-lg px-4 py-3 text-white">
+                    </div>
+                    <button class="w-full bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white font-bold py-3 rounded-lg transition-all">
+                        Invest Now
+                    </button>
+                </div>
+
+                <!-- 72 Hours Plan -->
+                <div class="bg-gradient-to-br from-cyan-900/40 to-blue-900/40 border border-cyan-500/20 rounded-2xl p-8 backdrop-blur hover:scale-105 transition-transform">
+                    <h3 class="text-2xl font-bold text-white mb-6">72 Hours Plan</h3>
+                    <div class="space-y-4 mb-8">
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">ROI</span>
+                            <span class="text-green-400 font-bold text-xl">+89%</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">Duration</span>
+                            <span class="text-white font-semibold">72 Hours</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">Withdrawal</span>
+                            <span class="text-cyan-400 font-semibold">Instant</span>
+                        </div>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-gray-400 text-sm mb-2">Select ETF</label>
+                        <select class="w-full bg-slate-900 border border-cyan-500/20 rounded-lg px-4 py-3 text-white">
+                            <option>SPY - SPDR S&P 500</option>
+                            <option>VOO - Vanguard S&P 500</option>
+                            <option>IVV - iShares Core S&P 500</option>
+                            <option>VTI - Vanguard Total Market</option>
+                            <option>QQQ - Nasdaq-100</option>
+                        </select>
+                    </div>
+                    <div class="mb-6">
+                        <label class="block text-gray-400 text-sm mb-2">Investment Amount (Min $200)</label>
+                        <input type="number" placeholder="Enter amount" class="w-full bg-slate-900 border border-cyan-500/20 rounded-lg px-4 py-3 text-white">
+                    </div>
+                    <button class="w-full bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white font-bold py-3 rounded-lg transition-all">
+                        Invest Now
+                    </button>
+                </div>
+
+                <!-- 1 Week Plan -->
+                <div class="bg-gradient-to-br from-purple-900/40 via-pink-900/40 to-cyan-900/40 border border-purple-500/20 rounded-2xl p-8 backdrop-blur hover:scale-105 transition-transform lg:col-span-2">
+                    <div class="flex flex-col md:flex-row md:items-center md:justify-between">
+                        <div class="mb-6 md:mb-0 md:w-1/3">
+                            <h3 class="text-2xl font-bold text-white mb-6">1 Week Plan</h3>
+                            <div class="space-y-4">
+                                <div class="flex justify-between md:block">
+                                    <span class="text-gray-400">ROI</span>
+                                    <span class="text-green-400 font-bold text-2xl md:block">+190%</span>
+                                </div>
+                                <div class="flex justify-between md:block">
+                                    <span class="text-gray-400">Duration</span>
+                                    <span class="text-white font-semibold md:block">1 Week</span>
+                                </div>
+                                <div class="flex justify-between md:block">
+                                    <span class="text-gray-400">Withdrawal</span>
+                                    <span class="text-cyan-400 font-semibold md:block">Instant</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="md:w-2/3 md:pl-8">
+                            <div class="mb-4">
+                                <label class="block text-gray-400 text-sm mb-2">Select ETF</label>
+                                <select class="w-full bg-slate-900 border border-purple-500/20 rounded-lg px-4 py-3 text-white">
+                                    <option>SPY - SPDR S&P 500</option>
+                                    <option>VOO - Vanguard S&P 500</option>
+                                    <option>IVV - iShares Core S&P 500</option>
+                                    <option>VTI - Vanguard Total Market</option>
+                                    <option>QQQ - Nasdaq-100</option>
+                                </select>
+                            </div>
+                            <div class="mb-6">
+                                <label class="block text-gray-400 text-sm mb-2">Investment Amount (Min $200)</label>
+                                <input type="number" placeholder="Enter amount" class="w-full bg-slate-900 border border-purple-500/20 rounded-lg px-4 py-3 text-white">
+                            </div>
+                            <button class="w-full bg-gradient-to-r from-purple-500 via-pink-500 to-cyan-500 hover:from-purple-600 hover:via-pink-600 hover:to-cyan-600 text-white font-bold py-3 rounded-lg transition-all shadow-xl">
+                                Invest Now
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Added ETF Profit Calculator section -->
+    <section class="px-4 py-16 sm:px-6 lg:px-8 bg-slate-900/50">
+        <div class="mx-auto max-w-2xl">
+            <h2 class="text-4xl font-bold text-white text-center mb-12">ETF Profit Calculator</h2>
+            <div class="bg-gradient-to-br from-purple-900/40 to-pink-900/40 border border-purple-500/20 rounded-2xl p-8 backdrop-blur">
+                <div class="space-y-6">
+                    <div>
+                        <label class="block text-gray-300 mb-2">Select Plan</label>
+                        <select class="w-full bg-slate-900 border border-purple-500/20 rounded-lg px-4 py-3 text-white" id="calcPlan">
+                            <option value="20">1 Hour (+20%)</option>
+                            <option value="30">5 Hours (+30%)</option>
+                            <option value="68">24 Hours (+68%)</option>
+                            <option value="89">72 Hours (+89%)</option>
+                            <option value="190">1 Week (+190%)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-gray-300 mb-2">Investment Amount</label>
+                        <input type="number" placeholder="Enter amount" class="w-full bg-slate-900 border border-purple-500/20 rounded-lg px-4 py-3 text-white" id="calcAmount">
+                    </div>
+                    <button onclick="calculateProfit()" class="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold py-3 rounded-lg transition-all">
+                        Calculate
+                    </button>
+                    <div id="calcResult" class="hidden mt-6 p-6 bg-slate-900/50 border border-green-500/20 rounded-lg">
+                        <div class="text-center">
+                            <div class="text-gray-400 mb-2">Estimated Profit</div>
+                            <div class="text-4xl font-bold text-green-400" id="profitAmount">$0.00</div>
+                            <div class="text-gray-400 mt-4 mb-2">Total Return</div>
+                            <div class="text-2xl font-bold text-white" id="totalAmount">$0.00</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Updated footer with new structure -->
+    <footer class="border-t border-purple-500/20 bg-slate-950 py-12">
+        <div class="mx-auto max-w-7xl">
+            <div class="grid md:grid-cols-5 gap-8 mb-12">
+                <div>
+                    <h4 class="font-bold text-white mb-4">V0 Trade</h4>
+                    <ul class="space-y-2">
+                        <li><a href="about.html" class="text-gray-400 hover:text-white transition text-sm">About</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition text-sm">Careers</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition text-sm">Legal</a></li>
+                        <li><a href="security.html" class="text-gray-400 hover:text-white transition text-sm">Security</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-bold text-white mb-4">Trading</h4>
+                    <ul class="space-y-2">
+                        <li><a href="cryptocurrencies.html" class="text-gray-400 hover:text-white transition text-sm">Instruments</a></li>
+                        <li><a href="cryptocurrencies.html" class="text-gray-400 hover:text-white transition text-sm">Cryptocurrencies</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition text-sm">Platforms</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition text-sm">TradingView</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-bold text-white mb-4">Tools & Resources</h4>
+                    <ul class="space-y-2">
+                        <li><a href="#" class="text-gray-400 hover:text-white transition text-sm">Blog</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition text-sm">Academy</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition text-sm">Webinars</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition text-sm">Market News</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-bold text-white mb-4">Account</h4>
+                    <ul class="space-y-2">
+                        <li><a href="signup.html" class="text-gray-400 hover:text-white transition text-sm">Open Account</a></li>
+                        <li><a href="dashboard.html" class="text-gray-400 hover:text-white transition text-sm">Funding</a></li>
+                        <li><a href="dashboard.html" class="text-gray-400 hover:text-white transition text-sm">Withdrawals</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-bold text-white mb-4">Support</h4>
+                    <ul class="space-y-2">
+                        <li><a href="contact.html" class="text-gray-400 hover:text-white transition text-sm">Contact</a></li>
+                        <li><a href="faq.html" class="text-gray-400 hover:text-white transition text-sm">FAQ</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="border-t border-purple-500/20 pt-8">
+                <p class="text-xs text-gray-500 mb-4">⚠️ Risk Warning: Crypto is highly volatile and not SIPC protected. Understand the risks before investing.</p>
+                <div class="flex flex-col sm:flex-row justify-between items-center gap-4">
+                    <p class="text-xs text-gray-500">© 2025 V0 Trade. All rights reserved.</p>
+                    <div class="flex gap-4">
+                        <a href="#" class="text-xs text-gray-500 hover:text-white transition">Terms</a>
+                        <a href="#" class="text-xs text-gray-500 hover:text-white transition">Privacy</a>
+                        <a href="contact.html" class="text-xs text-gray-500 hover:text-white transition">Contact</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Added investment confirmation modal -->
+    <div id="investmentModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div class="bg-slate-900 border border-purple-500/30 rounded-2xl p-8 max-w-md w-full">
+            <h3 class="text-2xl font-bold text-white mb-6" id="modalTitle">Confirm Investment</h3>
+            <div id="modalContent" class="space-y-4 mb-6"></div>
+            <div class="flex gap-4">
+                <button onclick="closeModal()" class="flex-1 bg-slate-800 text-white font-bold py-3 rounded-lg hover:bg-slate-700 transition">Cancel</button>
+                <button id="confirmButton" class="flex-1 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold py-3 rounded-lg hover:opacity-90 transition">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function toggleMobileMenu() {
+            document.getElementById('mobileMenu').classList.toggle('active');
+        }
+
+        function calculateProfit() {
+            const plan = parseInt(document.getElementById('calcPlan').value);
+            const amount = parseFloat(document.getElementById('calcAmount').value);
+            
+            if (amount && amount >= 200) {
+                const profit = (amount * plan) / 100;
+                const total = amount + profit;
+                
+                document.getElementById('profitAmount').textContent = '$' + profit.toFixed(2);
+                document.getElementById('totalAmount').textContent = '$' + total.toFixed(2);
+                document.getElementById('calcResult').classList.remove('hidden');
+            } else {
+                alert('Please enter a valid amount (minimum $200)');
+            }
+        }
+
+        const BASEROW_TOKEN = 'LG6hnTBxgBG78FueElsSwpHRd4Wep1oL';
+        const WALLET_TABLE_ID = '756077';
+        const INVESTMENT_TABLE_ID = '756316';
+        const BASEROW_API_URL = 'https://api.baserow.io/api/database/rows/table';
+
+        function checkLogin() {
+            return localStorage.getItem('userEmail') !== null && localStorage.getItem('userEmail') !== '';
+        }
+
+        function getUserEmail() {
+            return localStorage.getItem('userEmail') || '';
+        }
+
+        function showModal(title, content, confirmCallback) {
+            document.getElementById('modalTitle').textContent = title;
+            document.getElementById('modalContent').innerHTML = content;
+            document.getElementById('investmentModal').classList.remove('hidden');
+            document.getElementById('confirmButton').onclick = confirmCallback;
+        }
+
+        function closeModal() {
+            document.getElementById('investmentModal').classList.add('hidden');
+        }
+
+        function calculateReturns(amount, roiMultiplier, duration) {
+            const totalReturn = amount * roiMultiplier;
+            const profit = totalReturn - amount;
+            const dailyReturn = profit / getDaysFromDuration(duration);
+            return { totalReturn, profit, dailyReturn };
+        }
+
+        function getDaysFromDuration(duration) {
+            if (duration.includes('Hour')) return Math.ceil(parseInt(duration) / 24) || 1;
+            if (duration.includes('Week')) return 7;
+            return 1;
+        }
+
+        async function getWalletBalance(email) {
+            try {
+                const response = await fetch(`${BASEROW_API_URL}/${WALLET_TABLE_ID}/?user_field_names=true`, {
+                    headers: { 'Authorization': `Token ${BASEROW_TOKEN}` }
+                });
+                const data = await response.json();
+                const userWallet = data.results.find(row => row.Email === email);
+                if (userWallet) {
+                    return { balance: parseFloat(userWallet['Wallet Balance'].replace(/[$,]/g, '')), rowId: userWallet.id };
+                }
+                return null;
+            } catch (error) {
+                console.error('Error:', error);
+                return null;
+            }
+        }
+
+        async function updateWalletBalance(rowId, newBalance) {
+            try {
+                await fetch(`${BASEROW_API_URL}/${WALLET_TABLE_ID}/${rowId}/?user_field_names=true`, {
+                    method: 'PATCH',
+                    headers: { 'Authorization': `Token ${BASEROW_TOKEN}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 'Wallet Balance': `$${newBalance.toFixed(2)}` })
+                });
+                return true;
+            } catch (error) {
+                return false;
+            }
+        }
+
+        async function createInvestment(email, amount, planType, duration, dailyReturn, totalEarned) {
+            try {
+                const response = await fetch(`${BASEROW_API_URL}/${INVESTMENT_TABLE_ID}/?user_field_names=true`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Token ${BASEROW_TOKEN}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        'User Email': email,
+                        'Investment Amount': `$${amount.toFixed(2)}`,
+                        'Daily Return': `$${dailyReturn.toFixed(2)}`,
+                        'Total Earned': totalEarned,
+                        'Status': 'Active',
+                        'Days Remaining': getDaysFromDuration(duration).toString(),
+                        'Date of Investment': new Date().toISOString().split('T')[0]
+                    })
+                });
+                return response.ok;
+            } catch (error) {
+                return false;
+            }
+        }
+
+        function handleInvest(planName, roi, duration) {
+            const card = event.target.closest('.bg-gradient-to-br');
+            const etfSelect = card.querySelector('select');
+            const amountInput = card.querySelector('input[type="number"]');
+            const etf = etfSelect.value;
+            const amount = parseFloat(amountInput.value);
+
+            if (isNaN(amount) || amount < 200) {
+                showModal('Invalid Amount', '<p class="text-gray-300">Please enter an amount of at least $200.</p>', closeModal);
+                return;
+            }
+
+            if (!checkLogin()) {
+                showModal('Login Required', '<p class="text-gray-300">You must log in before investing in ETF plans.</p>', () => {
+                    window.location.href = 'login.html';
+                });
+                return;
+            }
+
+            const roiMultiplier = parseFloat(roi) / 100 + 1;
+            const { totalReturn, dailyReturn } = calculateReturns(amount, roiMultiplier, duration);
+
+            showModal('Confirm Investment', `
+                <div class="space-y-3">
+                    <div class="flex justify-between text-gray-300"><span>Plan:</span><span class="text-white font-semibold">${planName}</span></div>
+                    <div class="flex justify-between text-gray-300"><span>ETF:</span><span class="text-white font-semibold">${etf}</span></div>
+                    <div class="flex justify-between text-gray-300"><span>Investment:</span><span class="text-white font-semibold">$${amount.toFixed(2)}</span></div>
+                    <div class="flex justify-between text-gray-300"><span>ROI:</span><span class="text-green-400 font-semibold">+${roi}%</span></div>
+                    <div class="flex justify-between text-gray-300"><span>Daily Return:</span><span class="text-cyan-400 font-semibold">$${dailyReturn.toFixed(2)}</span></div>
+                    <div class="flex justify-between text-gray-300"><span>Total Expected:</span><span class="text-purple-400 font-bold text-xl">$${totalReturn.toFixed(2)}</span></div>
+                </div>
+            `, async () => await processInvestment(amount, planName, etf, duration, dailyReturn, totalReturn));
+        }
+
+        async function processInvestment(amount, planName, asset, duration, dailyReturn, totalReturn) {
+            const email = getUserEmail();
+            document.getElementById('modalContent').innerHTML = '<p class="text-center text-gray-300">Processing...</p>';
+            document.getElementById('confirmButton').disabled = true;
+
+            const walletData = await getWalletBalance(email);
+            if (!walletData) {
+                showModal('Wallet Not Found', '<p class="text-gray-300">Unable to find your wallet.</p>', closeModal);
+                return;
+            }
+
+            if (walletData.balance < amount) {
+                showModal('Insufficient Balance', `<p class="text-gray-300">Insufficient wallet balance.</p>
+                     <p class="text-sm mt-2">Balance: $${walletData.balance.toFixed(2)} | Required: $${amount.toFixed(2)}</p>`, closeModal);
+                return;
+            }
+
+            if (!await updateWalletBalance(walletData.rowId, walletData.balance - amount)) {
+                showModal('Error', '<p class="text-gray-300">Failed to process payment.</p>', closeModal);
+                return;
+            }
+
+            if (await createInvestment(email, amount, `ETF - ${planName} (${asset})`, duration, dailyReturn, '$0.00')) {
+                showModal('Success!', `<p class="text-green-400 font-semibold text-center">Investment successful!</p>
+                     <p class="text-gray-300 text-center mt-4">Your ${planName} is now active.</p>`, () => window.location.href = 'dashboard.html');
+            } else {
+                await updateWalletBalance(walletData.rowId, walletData.balance);
+                showModal('Error', '<p class="text-gray-300">Failed to create investment.</p>', closeModal);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const plans = [
+                { name: '1 Hour Plan', roi: '20', duration: '1 Hour' },
+                { name: '5 Hours Plan', roi: '30', duration: '5 Hours' },
+                { name: '24 Hours Plan', roi: '68', duration: '24 Hours' },
+                { name: '72 Hours Plan', roi: '89', duration: '72 Hours' },
+                { name: '1 Week Plan', roi: '190', duration: '1 Week' }
+            ];
+
+            document.querySelectorAll('button:not(#confirmButton)').forEach((button, index) => {
+                if (button.textContent.includes('Invest Now') && plans[index]) {
+                    button.onclick = () => handleInvest(plans[index].name, plans[index].roi, plans[index].duration);
+                }
+            });
+        });
+    </script>
+</body>
+</html>
