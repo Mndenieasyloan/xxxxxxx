@@ -676,8 +676,11 @@
         // Check if user is logged in
         function checkAuth() {
             const loggedInUser = localStorage.getItem('loggedInUser');
+            console.log('[v0] Checking auth - loggedInUser:', loggedInUser);
             if (!loggedInUser) {
-                window.location.href = 'login.html';
+                console.warn('[v0] No logged in user found, but allowing page to load for now');
+                // Don't redirect immediately - let the page load first
+                // The user might still have a valid session
                 return null;
             }
             return JSON.parse(loggedInUser);
@@ -850,9 +853,20 @@
         }
 
         window.addEventListener('DOMContentLoaded', async function() {
-            // Check authentication
             const user = checkAuth();
-            if (!user) return;
+            
+            // If no user data in localStorage, check if they should be redirected
+            if (!user) {
+                console.log('[v0] No user in localStorage - checking if user should be redirected');
+                // Only redirect if they're not already on the login/signup page
+                const currentPage = window.location.pathname;
+                if (!currentPage.includes('login') && !currentPage.includes('signup') && !currentPage.includes('index')) {
+                    console.log('[v0] Redirecting to login');
+                    window.location.href = 'login.html';
+                    return;
+                }
+                return;
+            }
             
             currentUserEmail = user.email;
 
