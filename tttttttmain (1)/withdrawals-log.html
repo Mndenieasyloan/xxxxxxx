@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Withdrawals Log - V0 Trade</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .sidebar-link { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1rem; color: rgb(107 114 128); border-radius: 0.5rem; transition: all 0.2s; }
+        .sidebar-link:hover { background-color: rgb(249 115 22 / 0.1); color: rgb(249 115 22); }
+        .sidebar-link.active { background: rgb(249 115 22 / 0.1); color: rgb(249 115 22); font-weight: 600; }
+        
+        /* Added mobile sidebar toggle styles */
+        @media (max-width: 768px) {
+            .sidebar { position: fixed; left: 0; top: 0; height: 100vh; transform: translateX(-100%); transition: transform 0.3s ease-in-out; z-index: 40; width: 240px; background-color: white; }
+            .sidebar.active { transform: translateX(0); }
+            .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.5); z-index: 30; }
+            .sidebar-overlay.active { display: block; }
+            .sidebar-toggle { display: flex; }
+        }
+        @media (min-width: 769px) {
+            .sidebar-toggle { display: none; }
+        }
+        
+        .mobile-menu { display: none; }
+        .mobile-menu.active { display: block; }
+        .dropdown { position: relative; display: inline-block; }
+        .dropdown-content { display: none; position: absolute; background-color: rgb(15 23 42 / 0.95); min-width: 12rem; border: 1px solid rgb(168 85 247 / 0.2); border-radius: 0.5rem; padding: 0.5rem; z-index: 1000; backdrop-filter: blur(10px); }
+        .dropdown:hover .dropdown-content { display: block; }
+    </style>
+</head>
+<body class="bg-gray-50">
+    
+    <!-- Added mobile sidebar toggle button -->
+    <button onclick="toggleSidebar()" class="sidebar-toggle fixed left-4 top-20 z-50 bg-orange-500 hover:bg-orange-600 text-white p-2 rounded-lg shadow-lg transition">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+        </svg>
+    </button>
+    
+    <div id="sidebarOverlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
+    
+    <!-- Replaced header with full navigation menu from index.html -->
+    <header class="sticky top-0 z-50 border-b border-purple-500/20 bg-slate-950/80 backdrop-blur-md">
+        <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between py-4">
+                <a href="index.html" class="flex items-center gap-2 hover:opacity-80 transition">
+                    <div class="h-10 w-10">
+                        <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" class="w-full h-full">
+                            <defs>
+                                <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" style="stop-color: #a78bfa; stop-opacity: 1" />
+                                    <stop offset="50%" style="stop-color: #ec4899; stop-opacity: 1" />
+                                    <stop offset="100%" style="stop-color: #06b6d4; stop-opacity: 1" />
+                                </linearGradient>
+                            </defs>
+                            <circle cx="100" cy="100" r="95" fill="url(#logoGradient)" opacity="0.2" />
+                            <circle cx="100" cy="100" r="90" fill="none" stroke="url(#logoGradient)" stroke-width="2" />
+                            <path d="M 50 60 L 80 140 M 150 60 L 120 140" stroke="url(#logoGradient)" stroke-width="8" stroke-linecap="round" fill="none" />
+                            <circle cx="100" cy="100" r="25" fill="none" stroke="url(#logoGradient)" stroke-width="6" />
+                        </svg>
+                    </div>
+                    <span class="text-xl font-bold bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent">V0 Trade</span>
+                </a>
+
+                <nav class="hidden items-center gap-8 md:flex">
+                    <a href="index.html" class="text-sm text-gray-300 hover:text-white transition">Home</a>
+                    <div class="dropdown">
+                        <button class="text-sm text-gray-300 hover:text-white transition flex items-center gap-1">Invest <span>▼</span></button>
+                        <div class="dropdown-content">
+                            <a href="cryptocurrencies.html" class="block px-3 py-2 text-sm text-gray-300 hover:text-white hover:bg-purple-500/10 rounded">Cryptocurrencies</a>
+                            <a href="precious-metals.html" class="block px-3 py-2 text-sm text-gray-300 hover:text-white hover:bg-purple-500/10 rounded">Precious Metals</a>
+                            <a href="stocks.html" class="block px-3 py-2 text-sm text-gray-300 hover:text-white hover:bg-purple-500/10 rounded">Stocks</a>
+                            <a href="etfs.html" class="block px-3 py-2 text-sm text-gray-300 hover:text-white hover:bg-purple-500/10 rounded">ETFs</a>
+                        </div>
+                    </div>
+                    <a href="btc-miner.html" class="text-sm text-gray-300 hover:text-white transition">BTC Miner</a>
+                    <a href="about.html" class="text-sm text-gray-300 hover:text-white transition">About</a>
+                    <a href="security.html" class="text-sm text-gray-300 hover:text-white transition">Security</a>
+                    <div class="dropdown">
+                        <button class="text-sm text-gray-300 hover:text-white transition flex items-center gap-1">Support <span>▼</span></button>
+                        <div class="dropdown-content">
+                            <a href="contact.html" class="block px-3 py-2 text-sm text-gray-300 hover:text-white hover:bg-purple-500/10 rounded">Contact Support</a>
+                            <a href="faq.html" class="block px-3 py-2 text-sm text-gray-300 hover:text-white hover:bg-purple-500/10 rounded">FAQ</a>
+                        </div>
+                    </div>
+                </nav>
+
+                <div class="hidden items-center gap-4 md:flex">
+                    <a href="dashboard.html" class="text-sm text-purple-400 hover:text-purple-300 transition">Dashboard</a>
+                    <span class="text-sm text-gray-400">user@email.com</span>
+                    <a href="index.html" class="text-sm text-gray-300 hover:text-white transition">Logout</a>
+                </div>
+
+                <button class="md:hidden" onclick="toggleMobileMenu()">
+                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                    </svg>
+                </button>
+            </div>
+
+            <div id="mobileMenu" class="mobile-menu border-t border-purple-500/20 py-4 md:hidden">
+                <nav class="flex flex-col gap-3">
+                    <a href="index.html" class="text-sm text-gray-300 hover:text-white">Home</a>
+                    <a href="cryptocurrencies.html" class="text-sm text-gray-300 hover:text-white">Cryptocurrencies</a>
+                    <a href="precious-metals.html" class="text-sm text-gray-300 hover:text-white">Precious Metals</a>
+                    <a href="stocks.html" class="text-sm text-gray-300 hover:text-white">Stocks</a>
+                    <a href="etfs.html" class="text-sm text-gray-300 hover:text-white">ETFs</a>
+                    <a href="btc-miner.html" class="text-sm text-gray-300 hover:text-white">BTC Miner</a>
+                    <a href="about.html" class="text-sm text-gray-300 hover:text-white">About</a>
+                    <a href="security.html" class="text-sm text-gray-300 hover:text-white">Security</a>
+                    <a href="contact.html" class="text-sm text-gray-300 hover:text-white">Contact</a>
+                    <a href="faq.html" class="text-sm text-gray-300 hover:text-white">FAQ</a>
+                    <a href="dashboard.html" class="text-sm text-purple-400 hover:text-purple-300">Dashboard</a>
+                    <a href="index.html" class="text-sm text-gray-300 hover:text-white">Logout</a>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <div class="flex min-h-screen">
+        <aside id="sidebar" class="sidebar w-64 bg-white border-r border-gray-200 p-4">
+            <div class="space-y-1 mb-6">
+                <a href="deposit.html" class="sidebar-link">💰 Deposit</a>
+                <a href="withdraw.html" class="sidebar-link">💸 Withdraw</a>
+            </div>
+            <div class="mb-2">
+                <p class="text-xs font-semibold text-gray-400 uppercase px-4 mb-2">Report</p>
+                <a href="referral-commissions.html" class="sidebar-link">🎁 Ref. Commissions</a>
+                <a href="deposit-history.html" class="sidebar-link">📥 Deposit History</a>
+                <a href="order-history.html" class="sidebar-link">📋 Order History</a>
+                <a href="withdrawals-log.html" class="sidebar-link active">📤 Withdrawals Log</a>
+            </div>
+        </aside>
+
+        <main class="flex-1 p-4 md:p-8">
+            <div class="max-w-6xl">
+                <h1 class="text-3xl font-bold text-gray-900 mb-8">Withdrawal History</h1>
+
+                <div class="bg-white rounded-xl border border-gray-200 p-6">
+                    <div class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Amount</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Method</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fee</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td colspan="5" class="px-6 py-12 text-center text-gray-500">No withdrawals yet</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Added mobile menu and sidebar toggle scripts -->
+    <script>
+        function toggleMobileMenu() {
+            const menu = document.getElementById('mobileMenu');
+            menu.classList.toggle('active');
+        }
+        
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            sidebar.classList.toggle('active');
+            overlay.classList.toggle('active');
+        }
+    </script>
+
+</body>
+</html>
