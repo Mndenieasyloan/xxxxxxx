@@ -407,7 +407,12 @@
         </div>
     </footer>
 
-   <script>
+  <script>
+    const BASEROW_TOKEN = 'LG6hnTBxgBG78FueElsSwpHRd4Wep1oL';
+    const WALLET_TABLE_ID = '756077';
+    const INVESTMENT_TABLE_ID = '756316';
+    const BASEROW_API_URL = 'https://api.baserow.io/api/database/rows/table';
+
     // Check if user is logged in
     function checkLogin() {
         const userEmail = localStorage.getItem('v0trade_user_email');
@@ -419,26 +424,17 @@
         return localStorage.getItem('v0trade_user_email') || '';
     }
 
-    // Update header based on login status
-    function updateHeaderForLogin() {
+    // Update header with user info
+    function updateHeader() {
         const userEmail = getUserEmail();
-        const accountLinks = document.querySelector('.hidden.md\\:flex.items-center.gap-4');
-        
-        if (checkLogin()) {
-            // User is logged in - show My Account and Logout
+        if (userEmail) {
+            const accountLinks = document.querySelector('.hidden.md\\:flex.items-center.gap-4');
             if (accountLinks) {
+                // Replace "My Account" and "Logout" with user info
                 accountLinks.innerHTML = `
-                    <a href="dashboard.html" class="text-sm text-purple-400 hover:text-purple-300 transition">My Account</a>
                     <span class="text-sm text-gray-400">${userEmail}</span>
-                    <a href="index.html" class="text-sm text-gray-300 hover:text-white transition" onclick="logout()">Logout</a>
-                `;
-            }
-        } else {
-            // User is not logged in - show Login/Signup
-            if (accountLinks) {
-                accountLinks.innerHTML = `
-                    <a href="login.html" class="text-sm text-gray-300 hover:text-white transition">Login</a>
-                    <a href="signup.html" class="text-sm bg-gradient-to-r from-purple-500 to-pink-500 text-white px-4 py-2 rounded-lg hover:opacity-90 transition">Sign Up</a>
+                    <a href="dashboard.html" class="text-sm text-purple-400 hover:text-purple-300 transition">Dashboard</a>
+                    <a href="#" onclick="logout()" class="text-sm text-gray-300 hover:text-white transition">Logout</a>
                 `;
             }
         }
@@ -449,47 +445,6 @@
         localStorage.removeItem('v0trade_user_email');
         window.location.href = 'index.html';
     }
-
-    // Check login status on page load
-    document.addEventListener('DOMContentLoaded', function() {
-        updateHeaderForLogin();
-        
-        // Rest of your existing DOMContentLoaded code...
-        const investButtons = document.querySelectorAll('button:not(#confirmButton)');
-        const plans = [
-            { name: '1 Hour Plan', roi: '20', duration: '1 Hour' },
-            { name: '5 Hours Plan', roi: '30', duration: '5 Hours' },
-            { name: '24 Hours Plan', roi: '68', duration: '24 Hours' },
-            { name: '72 Hours Plan', roi: '89', duration: '72 Hours' },
-            { name: '1 Week Plan', roi: '190', duration: '1 Week' }
-        ];
-
-        investButtons.forEach((button, index) => {
-            if (button.textContent.includes('Invest Now') && plans[index]) {
-                button.onclick = () => handleInvest(plans[index].name, plans[index].roi, plans[index].duration);
-            }
-        });
-    });
-
-    // Your existing functions remain the same...
-    function calculateCrypto() {
-        const multiplier = parseFloat(document.getElementById('cryptoPlan').value);
-        const amount = parseFloat(document.getElementById('cryptoAmount').value);
-        if (amount && amount >= 200) {
-            const total = amount * multiplier;
-            const profit = total - amount;
-            document.getElementById('cryptoProfit').textContent = '$' + profit.toFixed(2);
-            document.getElementById('cryptoTotal').textContent = '$' + total.toFixed(2);
-            document.getElementById('cryptoResult').classList.remove('hidden');
-        } else {
-            alert('Please enter a valid amount (minimum $200)');
-        }
-    }
-
-    const BASEROW_TOKEN = 'LG6hnTBxgBG78FueElsSwpHRd4Wep1oL';
-    const WALLET_TABLE_ID = '756077';
-    const INVESTMENT_TABLE_ID = '756316';
-    const BASEROW_API_URL = 'https://api.baserow.io/api/database/rows/table';
 
     // Show modal
     function showModal(title, content, confirmCallback) {
@@ -528,22 +483,43 @@
     // Get wallet balance from Baserow
     async function getWalletBalance(email) {
         try {
-            const response = await fetch(`${BASEROW_API_URL}/${WALLET_TABLE_ID}/?user_field_names=true`, {
+            const filters = encodeURIComponent(JSON.stringify({
+                filter_type: "AND",
+                filters: [
+                    {
+                        type: "equal",
+                        field: "email",
+                        value: email
+                    }
+                ]
+            }));
+
+            const url = `${BASEROW_API_URL}/${WALLET_TABLE_ID}/?user_field_names=true&filters=${filters}`;
+            
+            const response = await fetch(url, {
                 headers: {
                     'Authorization': `Token ${BASEROW_TOKEN}`
                 }
             });
-            const data = await response.json();
-            const userWallet = data.results.find(row => row.Email === email);
             
-            if (userWallet) {
-                const balance = parseFloat(userWallet['Wallet Balance'].replace(/[$,]/g, ''));
-                return { balance, rowId: userWallet.id };
+            const data = await response.json();
+            
+            if (data.results && data.results.length > 0) {
+                const userWallet = data.results[0];
+                // Extract numeric value from wallet balance (handles both "$100.00" and numeric values)
+                let balanceValue = userWallet['Total Wallet Balance'];
+                if (typeof balanceValue === 'string') {
+                    balanceValue = parseFloat(balanceValue.replace(/[$,]/g, ''));
+                }
+                return { 
+                    balance: parseFloat(balanceValue) || 0, 
+                    rowId: userWallet.id 
+                };
             }
-            return null;
+            return { balance: 0, rowId: null };
         } catch (error) {
             console.error('Error fetching wallet balance:', error);
-            return null;
+            return { balance: 0, rowId: null };
         }
     }
 
@@ -557,7 +533,7 @@
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    'Wallet Balance': `$${newBalance.toFixed(2)}`
+                    'Total Wallet Balance': `$${newBalance.toFixed(2)}`
                 })
             });
             return true;
@@ -583,7 +559,8 @@
                     'Total Earned': totalEarned,
                     'Status': 'Active',
                     'Days Remaining': getDaysFromDuration(duration).toString(),
-                    'Date of Investment': new Date().toISOString().split('T')[0]
+                    'Date of Investment': new Date().toISOString().split('T')[0],
+                    'Plan Type': planType
                 })
             });
             return response.ok;
@@ -674,13 +651,13 @@
         const email = getUserEmail();
         
         // Show loading
-        document.getElementById('modalContent').innerHTML = '<p class="text-center text-gray-300">Processing...</p>';
+        document.getElementById('modalContent').innerHTML = '<p class="text-center text-gray-300">Processing investment...</p>';
         document.getElementById('confirmButton').disabled = true;
 
         // Get wallet balance
         const walletData = await getWalletBalance(email);
         
-        if (!walletData) {
+        if (!walletData || walletData.rowId === null) {
             showModal(
                 'Wallet Not Found',
                 '<p class="text-gray-300">Unable to find your wallet. Please contact support.</p>',
@@ -693,9 +670,10 @@
         if (walletData.balance < amount) {
             showModal(
                 'Insufficient Balance',
-                `<p class="text-gray-300">Insufficient wallet balance to complete this purchase.</p>
+                `<p class="text-gray-300">Insufficient wallet balance to complete this investment.</p>
                  <p class="text-gray-400 text-sm mt-2">Your balance: $${walletData.balance.toFixed(2)}</p>
-                 <p class="text-gray-400 text-sm">Required: $${amount.toFixed(2)}</p>`,
+                 <p class="text-gray-400 text-sm">Required: $${amount.toFixed(2)}</p>
+                 <p class="text-yellow-400 text-sm mt-2">Please deposit funds to continue.</p>`,
                 closeModal
             );
             return;
@@ -729,13 +707,14 @@
                 'Success!',
                 `<p class="text-green-400 font-semibold text-center">Investment successful!</p>
                  <p class="text-gray-300 text-center mt-4">Your ${planName} investment is now active.</p>
-                 <p class="text-gray-400 text-sm text-center mt-2">Check your dashboard to track your returns.</p>`,
+                 <p class="text-gray-400 text-sm text-center mt-2">Check your dashboard to track your returns.</p>
+                 <p class="text-gray-400 text-sm text-center">Wallet balance updated: $${newBalance.toFixed(2)}</p>`,
                 () => {
                     window.location.href = 'dashboard.html';
                 }
             );
         } else {
-            // Rollback wallet balance
+            // Rollback wallet balance if investment creation fails
             await updateWalletBalance(walletData.rowId, walletData.balance);
             showModal(
                 'Error',
@@ -744,6 +723,43 @@
             );
         }
     }
+
+    // Profit calculator function
+    function calculateCrypto() {
+        const multiplier = parseFloat(document.getElementById('cryptoPlan').value);
+        const amount = parseFloat(document.getElementById('cryptoAmount').value);
+        if (amount && amount >= 200) {
+            const total = amount * multiplier;
+            const profit = total - amount;
+            document.getElementById('cryptoProfit').textContent = '$' + profit.toFixed(2);
+            document.getElementById('cryptoTotal').textContent = '$' + total.toFixed(2);
+            document.getElementById('cryptoResult').classList.remove('hidden');
+        } else {
+            alert('Please enter a valid amount (minimum $200)');
+        }
+    }
+
+    // Initialize page
+    document.addEventListener('DOMContentLoaded', function() {
+        // Update header with user info
+        updateHeader();
+
+        // Attach event listeners to all invest buttons
+        const investButtons = document.querySelectorAll('button:not(#confirmButton)');
+        const plans = [
+            { name: '1 Hour Plan', roi: '20', duration: '1 Hour' },
+            { name: '5 Hours Plan', roi: '30', duration: '5 Hours' },
+            { name: '24 Hours Plan', roi: '68', duration: '24 Hours' },
+            { name: '72 Hours Plan', roi: '89', duration: '72 Hours' },
+            { name: '1 Week Plan', roi: '190', duration: '1 Week' }
+        ];
+
+        investButtons.forEach((button, index) => {
+            if (button.textContent.includes('Invest Now') && plans[index]) {
+                button.onclick = () => handleInvest(plans[index].name, plans[index].roi, plans[index].duration);
+            }
+        });
+    });
 </script>
 </body>
 </html>
