@@ -407,7 +407,7 @@
         </div>
     </footer>
 
-  <script>
+<script>
     const BASEROW_TOKEN = 'LG6hnTBxgBG78FueElsSwpHRd4Wep1oL';
     const WALLET_TABLE_ID = '756077';
     const INVESTMENT_TABLE_ID = '756316';
@@ -428,22 +428,23 @@
     function updateHeader() {
         const userEmail = getUserEmail();
         if (userEmail) {
-            const accountLinks = document.querySelector('.hidden.md\\:flex.items-center.gap-4');
-            if (accountLinks) {
-                // Replace "My Account" and "Logout" with user info
-                accountLinks.innerHTML = `
-                    <span class="text-sm text-gray-400">${userEmail}</span>
-                    <a href="dashboard.html" class="text-sm text-purple-400 hover:text-purple-300 transition">Dashboard</a>
-                    <a href="#" onclick="logout()" class="text-sm text-gray-300 hover:text-white transition">Logout</a>
-                `;
+            // Update header email display
+            const headerAccount = document.querySelector('.md\\:flex a[href="dashboard.html"]');
+            if (headerAccount) {
+                headerAccount.textContent = userEmail;
+            }
+            
+            // Update logout link
+            const logoutLink = document.querySelector('.md\\:flex a[href="login.html"]');
+            if (logoutLink) {
+                logoutLink.textContent = 'Logout';
+                logoutLink.href = 'javascript:void(0)';
+                logoutLink.onclick = function() {
+                    localStorage.removeItem('v0trade_user_email');
+                    window.location.href = 'login.html';
+                };
             }
         }
-    }
-
-    // Logout function
-    function logout() {
-        localStorage.removeItem('v0trade_user_email');
-        window.location.href = 'index.html';
     }
 
     // Show modal
@@ -506,20 +507,13 @@
             
             if (data.results && data.results.length > 0) {
                 const userWallet = data.results[0];
-                // Extract numeric value from wallet balance (handles both "$100.00" and numeric values)
-                let balanceValue = userWallet['Total Wallet Balance'];
-                if (typeof balanceValue === 'string') {
-                    balanceValue = parseFloat(balanceValue.replace(/[$,]/g, ''));
-                }
-                return { 
-                    balance: parseFloat(balanceValue) || 0, 
-                    rowId: userWallet.id 
-                };
+                const balance = parseFloat(userWallet['Total Wallet Balance'] || 0);
+                return { balance, rowId: userWallet.id };
             }
-            return { balance: 0, rowId: null };
+            return null;
         } catch (error) {
             console.error('Error fetching wallet balance:', error);
-            return { balance: 0, rowId: null };
+            return null;
         }
     }
 
@@ -533,7 +527,7 @@
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    'Total Wallet Balance': `$${newBalance.toFixed(2)}`
+                    'Total Wallet Balance': newBalance
                 })
             });
             return true;
@@ -543,8 +537,8 @@
         }
     }
 
-    // Create investment record in Baserow
-    async function createInvestment(email, amount, planType, duration, dailyReturn, totalEarned) {
+    // Create investment record in Baserow using correct field names
+    async function createInvestment(email, amount, planType, duration, dailyReturn, totalEarned, investmentPlan) {
         try {
             const response = await fetch(`${BASEROW_API_URL}/${INVESTMENT_TABLE_ID}/?user_field_names=true`, {
                 method: 'POST',
@@ -553,14 +547,15 @@
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    'User Email': email,
                     'Investment Amount': `$${amount.toFixed(2)}`,
                     'Daily Return': `$${dailyReturn.toFixed(2)}`,
-                    'Total Earned': totalEarned,
+                    'Total Earned': `$${totalEarned.toFixed(2)}`,
                     'Status': 'Active',
                     'Days Remaining': getDaysFromDuration(duration).toString(),
-                    'Date of Investment': new Date().toISOString().split('T')[0],
-                    'Plan Type': planType
+                    'email': email,
+                    'date': new Date().toISOString().split('T')[0],
+                    'investment type': planType,
+                    'investment plan': investmentPlan
                 })
             });
             return response.ok;
@@ -657,7 +652,7 @@
         // Get wallet balance
         const walletData = await getWalletBalance(email);
         
-        if (!walletData || walletData.rowId === null) {
+        if (!walletData) {
             showModal(
                 'Wallet Not Found',
                 '<p class="text-gray-300">Unable to find your wallet. Please contact support.</p>',
@@ -670,10 +665,9 @@
         if (walletData.balance < amount) {
             showModal(
                 'Insufficient Balance',
-                `<p class="text-gray-300">Insufficient wallet balance to complete this investment.</p>
+                `<p class="text-gray-300">Insufficient wallet balance to complete this purchase.</p>
                  <p class="text-gray-400 text-sm mt-2">Your balance: $${walletData.balance.toFixed(2)}</p>
-                 <p class="text-gray-400 text-sm">Required: $${amount.toFixed(2)}</p>
-                 <p class="text-yellow-400 text-sm mt-2">Please deposit funds to continue.</p>`,
+                 <p class="text-gray-400 text-sm">Required: $${amount.toFixed(2)}</p>`,
                 closeModal
             );
             return;
@@ -696,10 +690,11 @@
         const investSuccess = await createInvestment(
             email,
             amount,
-            `Cryptocurrency - ${planName} (${asset})`,
+            `Cryptocurrency - ${asset}`,
             duration,
             dailyReturn,
-            '$0.00'
+            0, // Initial total earned is 0
+            planName
         );
 
         if (investSuccess) {
@@ -707,14 +702,13 @@
                 'Success!',
                 `<p class="text-green-400 font-semibold text-center">Investment successful!</p>
                  <p class="text-gray-300 text-center mt-4">Your ${planName} investment is now active.</p>
-                 <p class="text-gray-400 text-sm text-center mt-2">Check your dashboard to track your returns.</p>
-                 <p class="text-gray-400 text-sm text-center">Wallet balance updated: $${newBalance.toFixed(2)}</p>`,
+                 <p class="text-gray-400 text-sm text-center mt-2">Check your dashboard to track your returns.</p>`,
                 () => {
                     window.location.href = 'dashboard.html';
                 }
             );
         } else {
-            // Rollback wallet balance if investment creation fails
+            // Rollback wallet balance
             await updateWalletBalance(walletData.rowId, walletData.balance);
             showModal(
                 'Error',
@@ -759,6 +753,11 @@
                 button.onclick = () => handleInvest(plans[index].name, plans[index].roi, plans[index].duration);
             }
         });
+
+        // Check login status and redirect if not logged in for investment actions
+        if (!checkLogin()) {
+            console.log('User not logged in - investment features disabled');
+        }
     });
 </script>
 </body>
