@@ -345,98 +345,117 @@
         </main>
     </div>
 
-   <script>
-const API_TOKEN = "LG6hnTBxgBG78FueElsSwpHRd4Wep1oL";
-const USER_TABLE = 755975;
-const WALLET_TABLE = 756077;
+    <script>
+        const API_TOKEN = "LG6hnTBxgBG78FueElsSwpHRd4Wep1oL";
+        const USER_TABLE = 755975;
+        const WALLET_TABLE = 756077;
 
-/* -----------------------------------------
-   LOAD PAGE
------------------------------------------ */
-window.addEventListener("DOMContentLoaded", () => {
-    const userEmail = localStorage.getItem("v0trade_user_email");
-
-    if (!userEmail) {
-        window.location.href = "login.html";
-        return;
-    }
-
-    document.getElementById("headerEmailDisplay").textContent = userEmail;
-    document.getElementById("userEmailDisplay").textContent = userEmail;
-
-    loadUserName(userEmail);
-    loadWalletData(userEmail);
-});
-
-
-/* -----------------------------------------
-   FETCH USER NAME
------------------------------------------ */
-async function loadUserName(email) {
-    const url =
-        `https://api.baserow.io/api/database/rows/table/${USER_TABLE}/?user_field_names=true` +
-        `&filters={"filter_type":"AND","filters":[{"type":"equal","field":"field_6393283","value":"${email}"}]}`;
-
-    try {
-        const res = await fetch(url, {
-            headers: { Authorization: `Token ${API_TOKEN}` }
-        });
-
-        const data = await res.json();
-
-        if (data.results?.length > 0) {
-            document.getElementById("userName").textContent =
-                data.results[0].field_6393282 || "User";
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            sidebar.classList.toggle('active');
+            overlay.classList.toggle('active');
         }
-    } catch (err) {
-        console.error("Error loading name:", err);
-    }
-}
 
+        function toggleMobileMenu() {
+            const menu = document.getElementById('mobileMenu');
+            menu.classList.toggle('active');
+        }
 
-/* -----------------------------------------
-   FETCH WALLET DATA (REAL FIX)
------------------------------------------ */
-async function loadWalletData(email) {
-    const url =
-        `https://api.baserow.io/api/database/rows/table/${WALLET_TABLE}/?user_field_names=true` +
-        `&filters={"filter_type":"AND","filters":[{"type":"equal","field":"field_6394418","value":"${email}"}]}`;
+        window.addEventListener("DOMContentLoaded", () => {
+            const userEmail = localStorage.getItem("v0trade_user_email");
 
-    try {
-        const res = await fetch(url, {
-            headers: { Authorization: `Token ${API_TOKEN}` }
+            if (!userEmail) {
+                window.location.href = "login.html";
+                return;
+            }
+
+            document.getElementById("headerEmailDisplay").textContent = userEmail;
+            document.getElementById("userEmailDisplay").textContent = userEmail;
+
+            loadUserName(userEmail);
+            loadWalletData(userEmail);
         });
 
-        const data = await res.json();
-        if (!data.results || data.results.length === 0) return;
+        /* ---------------------------------------------------
+           FETCH USER NAME FROM USERS TABLE (755975)
+        -----------------------------------------------------*/
+        async function loadUserName(email) {
+            try {
+                const url =
+                    `https://api.baserow.io/api/database/rows/table/${USER_TABLE}/?user_field_names=true` +
+                    `&filters={"filter_type":"AND","filters":[{"type":"equal","field":"field_6393283","value":"${email}"}]}`;
 
-        const w = data.results[0];
-        const money = v => "$" + Number(v || 0).toFixed(4);
+                const res = await fetch(url, {
+                    headers: {
+                        Authorization: `Token ${API_TOKEN}`
+                    }
+                });
 
-        // Total Wallet Balance (field_6394419)
-        document.getElementById("depositBalance").textContent =
-            money(w.field_6394419);
+                const data = await res.json();
 
-        // All Earning Wallet (field_6394420)
-        document.getElementById("earningBalance").textContent =
-            money(w.field_6394420);
+                if (data.results && data.results.length > 0) {
+                    const user = data.results[0];
+                    document.getElementById("userName").textContent =
+                        user.field_6393282 || "User";
+                } else {
+                    document.getElementById("userName").textContent = "User";
+                }
+            } catch (e) {
+                console.error("Error fetching name:", e);
+                document.getElementById("userName").textContent = "User";
+            }
+        }
 
-        // Miner Earning (field_6394421)
-        document.getElementById("totalReturned").textContent =
-            money(w.field_6394421);
+        /* ---------------------------------------------------
+           FETCH WALLET BALANCES FROM WALLET TABLE (756077)
+        -----------------------------------------------------*/
+        async function loadWalletData(email) {
+            try {
+                const url =
+                    `https://api.baserow.io/api/database/rows/table/${WALLET_TABLE}/?user_field_names=true` +
+                    `&filters={"filter_type":"AND","filters":[{"type":"equal","field":"field_6394418","value":"${email}"}]}`;
 
-        // Total Ref Commissions (field_6394422)
-        document.getElementById("totalCommissions").textContent =
-            money(w.field_6394422);
+                const res = await fetch(url, {
+                    headers: {
+                        Authorization: `Token ${API_TOKEN}`
+                    }
+                });
 
-        // Investment Earning (field_6394423)
-        document.getElementById("totalEarnings").textContent =
-            money(w.field_6394423);
+                const data = await res.json();
 
-    } catch (err) {
-        console.error("Error loading wallet:", err);
-    }
-}
-</script>
+                if (!data.results || data.results.length === 0) {
+                    console.log("No wallet found for:", email);
+                    return;
+                }
+
+                const w = data.results[0];
+
+                // Map the wallet fields correctly
+                // Total Wallet Balance (field_6394419)
+                document.getElementById("depositBalance").textContent =
+                    "$" + (Number(w.field_6394419) || 0).toFixed(4);
+
+                // All Earning Wallet (field_6394420)
+                document.getElementById("earningBalance").textContent =
+                    "$" + (Number(w.field_6394420) || 0).toFixed(4);
+
+                // Miner Earning (field_6394421)
+                document.getElementById("totalReturned").textContent =
+                    "$" + (Number(w.field_6394421) || 0).toFixed(4);
+
+                // Total Ref Commissions (field_6394422)
+                document.getElementById("totalCommissions").textContent =
+                    "$" + (Number(w.field_6394422) || 0).toFixed(4);
+
+                // Investment Earning (field_6394423)
+                document.getElementById("totalEarnings").textContent =
+                    "$" + (Number(w.field_6394423) || 0).toFixed(4);
+
+            } catch (e) {
+                console.error("Error loading wallet:", e);
+            }
+        }
+    </script>
 </body>
 </html>
