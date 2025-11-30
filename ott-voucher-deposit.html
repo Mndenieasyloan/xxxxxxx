@@ -65,6 +65,10 @@
         .dropdown { position: relative; display: inline-block; }
         .dropdown-content { display: none; position: absolute; background-color: rgb(15 23 42 / 0.95); min-width: 12rem; border: 1px solid rgb(168 85 247 / 0.2); border-radius: 0.5rem; padding: 0.5rem; z-index: 1000; backdrop-filter: blur(10px); }
         .dropdown:hover .dropdown-content { display: block; }
+        
+        .hidden {
+            display: none;
+        }
     </style>
 </head>
 <body class="bg-slate-950">
@@ -123,9 +127,8 @@
                 </nav>
 
                 <div class="hidden items-center gap-4 md:flex">
-                    <a href="dashboard.html" class="text-sm text-purple-400 hover:text-purple-300 transition">Dashboard</a>
-                    <span id="headerEmailDisplay" class="text-sm text-gray-400"></span>
-                    <a href="index.html" class="text-sm text-gray-300 hover:text-white transition">Logout</a>
+                    <a href="dashboard.html" class="text-sm text-purple-400 hover:text-purple-300 transition user-email-display"></a>
+                    <a href="login.html" class="text-sm text-gray-300 hover:text-white transition">Login</a>
                 </div>
 
                 <button class="md:hidden" onclick="toggleMobileMenu()">
@@ -148,7 +151,7 @@
                     <a href="contact.html" class="text-sm text-gray-300 hover:text-white">Contact</a>
                     <a href="faq.html" class="text-sm text-gray-300 hover:text-white">FAQ</a>
                     <a href="dashboard.html" class="text-sm text-purple-400 hover:text-purple-300">Dashboard</a>
-                    <a href="index.html" class="text-sm text-gray-300 hover:text-white">Logout</a>
+                    <a href="login.html" class="text-sm text-gray-300 hover:text-white">Login</a>
                 </nav>
             </div>
         </div>
@@ -267,7 +270,7 @@
                             <li>Enter your 12-digit OTT Voucher PIN.</li>
                             <li>Enter your V0 Trade email.</li>
                             <li>Click Confirm Payment to complete your deposit.</li>
-                            <li>You will be redirected to payment pending page.</li>
+                            <li>You will be redirected to Wallet → My Account.</li>
                         </ol>
                     </div>
 
@@ -292,68 +295,153 @@
         </main>
     </div>
 
+    <!-- Modal -->
+    <div id="investmentModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-slate-800 rounded-xl p-6 m-4 max-w-md w-full border border-purple-500/30">
+            <h3 id="modalTitle" class="text-xl font-bold text-white mb-4"></h3>
+            <div id="modalContent" class="text-gray-300 mb-6"></div>
+            <div class="flex gap-3">
+                <button onclick="closeModal()" class="flex-1 bg-gray-600 hover:bg-gray-700 text-white py-2 px-4 rounded-lg transition">Cancel</button>
+                <button id="confirmButton" class="flex-1 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white py-2 px-4 rounded-lg transition">Confirm</button>
+            </div>
+        </div>
+    </div>
+
     <script>
-        const DEPOSIT_API = "https://api.baserow.io/api/database/rows/table/756078/";
-        const BASEROW_TOKEN = "LG6hnTBxgBG78FueElsSwpHRd4Wep1oL";
-        
-        let currentUserEmail = '';
+        const BASEROW_TOKEN = 'LG6hnTBxgBG78FueElsSwpHRd4Wep1oL';
+        const DEPOSIT_TABLE_ID = '756078';
+        const BASEROW_API_URL = 'https://api.baserow.io/api/database/rows/table';
 
         // Check if user is logged in
-        function checkAuth() {
-            const userEmail = localStorage.getItem("v0trade_user_email");
-            console.log('[OTT Voucher Deposit] Checking auth - user email:', userEmail);
-            
-            if (!userEmail) {
-                console.log('[OTT Voucher Deposit] No user logged in - allowing access');
-                // Don't redirect, just show the page without pre-filled email
-                return null;
-            }
-            
-            return userEmail;
+        function checkLogin() {
+            const userEmail = localStorage.getItem('v0trade_user_email');
+            return userEmail !== null && userEmail !== '';
         }
 
-        // Update header email display
-        function updateHeaderEmail(email) {
-            const headerEmailElements = document.querySelectorAll('#headerEmailDisplay, .user-email-display');
-            headerEmailElements.forEach(element => {
-                if (element) {
-                    element.textContent = email;
+        // Get logged-in user email
+        function getUserEmail() {
+            return localStorage.getItem('v0trade_user_email') || '';
+        }
+
+        // Update header with user info
+        function updateHeader() {
+            const userEmail = getUserEmail();
+            if (userEmail) {
+                // Update header account display
+                const headerAccount = document.querySelector('.md\\:flex a[href="dashboard.html"]');
+                if (headerAccount) {
+                    headerAccount.textContent = userEmail;
                 }
-            });
+                
+                // Update logout link
+                const logoutLink = document.querySelector('.md\\:flex a[href="login.html"]');
+                if (logoutLink) {
+                    logoutLink.textContent = 'Logout';
+                    logoutLink.href = 'javascript:void(0)';
+                    logoutLink.onclick = function() {
+                        localStorage.removeItem('v0trade_user_email');
+                        window.location.href = 'login.html';
+                    };
+                }
+            }
         }
 
         // Auto-fill email if user is logged in
         function autoFillUserEmail() {
-            if (currentUserEmail) {
+            const userEmail = getUserEmail();
+            if (userEmail) {
                 const emailInput = document.getElementById('userEmail');
                 if (emailInput) {
-                    emailInput.value = currentUserEmail;
+                    emailInput.value = userEmail;
                     emailInput.readOnly = true;
                     emailInput.classList.add('bg-gray-100', 'cursor-not-allowed');
                 }
             }
         }
 
-        window.addEventListener('DOMContentLoaded', () => {
-            // Check authentication
-            const userEmail = checkAuth();
-            currentUserEmail = userEmail || '';
-            
-            // Update header with user email if logged in
-            if (currentUserEmail) {
-                updateHeaderEmail(currentUserEmail);
+        function showModal(title, content, confirmCallback) {
+            document.getElementById('modalTitle').textContent = title;
+            document.getElementById('modalContent').innerHTML = content;
+            document.getElementById('investmentModal').classList.remove('hidden');
+            document.getElementById('confirmButton').onclick = confirmCallback;
+        }
+
+        function closeModal() {
+            document.getElementById('investmentModal').classList.add('hidden');
+        }
+
+        // Create deposit record in Baserow
+        async function createDeposit(email, amount, method, pin, status, transactionId) {
+            try {
+                const timestamp = new Date().toISOString();
+                
+                const response = await fetch(`${BASEROW_API_URL}/${DEPOSIT_TABLE_ID}/?user_field_names=true`, {
+                    method: "POST",
+                    headers: {
+                        "Authorization": "Token " + BASEROW_TOKEN,
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        "email": email,
+                        "method": method,
+                        "amount": amount,
+                        "pin": pin,
+                        "wallet_address": "N/A",
+                        "status": status,
+                        "transaction_id": transactionId,
+                        "timestamp": timestamp
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const result = await response.json();
+                console.log('[OTT Voucher Deposit] Baserow response:', result);
+                return { success: true, data: result };
+            } catch (error) {
+                console.error('[OTT Voucher Deposit] Error creating deposit:', error);
+                return { success: false, error: error.message };
             }
+        }
 
-            // Load amount from localStorage
-            const amount = localStorage.getItem('deposit_amount') || '0.00';
-            document.getElementById('requestedAmount').textContent = `$${amount} USD`;
-            document.getElementById('reminderAmount').textContent = `$${amount} USD`;
+        // Save transaction to localStorage
+        function saveTransactionToLocalStorage(transactionData) {
+            try {
+                // Get existing transactions or initialize empty array
+                const existingTransactions = JSON.parse(localStorage.getItem('latest_transactions') || '[]');
+                
+                // Add new transaction
+                existingTransactions.unshift(transactionData);
+                
+                // Keep only last 10 transactions
+                const limitedTransactions = existingTransactions.slice(0, 10);
+                
+                // Save back to localStorage
+                localStorage.setItem('latest_transactions', JSON.stringify(limitedTransactions));
+                
+                console.log('[OTT Voucher Deposit] Transaction saved locally:', transactionData);
+                return true;
+            } catch (error) {
+                console.error('[OTT Voucher Deposit] Error saving to localStorage:', error);
+                return false;
+            }
+        }
 
-            // Auto-fill email if user is logged in
-            autoFillUserEmail();
-        });
+        // Clean up expired transactions
+        function cleanupExpiredTransactions() {
+            try {
+                const transactions = JSON.parse(localStorage.getItem('latest_transactions') || '[]');
+                const now = Date.now();
+                const validTransactions = transactions.filter(tx => tx.expiry > now);
+                localStorage.setItem('latest_transactions', JSON.stringify(validTransactions));
+            } catch (error) {
+                console.error('[OTT Voucher Deposit] Error cleaning up transactions:', error);
+            }
+        }
 
-        async function confirmPayment() {
+        function confirmPayment() {
             const pin = document.getElementById('ottPin').value;
             const emailInput = document.getElementById('userEmail');
             const email = emailInput.value.trim();
@@ -367,14 +455,14 @@
             }
 
             if (!email) {
-                alert('Please enter your email address');
+                showModal('Email Required', '<p class="text-gray-300">Please enter your email address to continue.</p>', closeModal);
                 return;
             }
 
             // Validate email format
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             if (!emailRegex.test(email)) {
-                alert('Please enter a valid email address');
+                showModal('Invalid Email', '<p class="text-gray-300">Please enter a valid email address.</p>', closeModal);
                 return;
             }
 
@@ -382,66 +470,57 @@
 
             // Generate transaction ID
             const transactionId = 'TXN-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9).toUpperCase();
-            
-            // Get current timestamp
+
+            // Show confirmation modal
+            showModal('Confirm OTT Voucher Deposit', `
+                <div class="space-y-3">
+                    <div class="flex justify-between text-gray-300"><span>Deposit Method:</span><span class="text-white font-semibold">OTT Voucher</span></div>
+                    <div class="flex justify-between text-gray-300"><span>Amount:</span><span class="text-white font-semibold">$${amount}</span></div>
+                    <div class="flex justify-between text-gray-300"><span>Email:</span><span class="text-white font-semibold">${email}</span></div>
+                    <div class="flex justify-between text-gray-300"><span>Voucher PIN:</span><span class="text-white font-mono">${pin.substring(0, 4)}****${pin.substring(8)}</span></div>
+                    <div class="border-t border-gray-600 pt-3 mt-3">
+                        <p class="text-yellow-400 text-sm">Your deposit will be processed and marked as "incoming".</p>
+                    </div>
+                </div>
+            `, async () => await processDeposit(email, amount, pin, transactionId));
+        }
+
+        async function processDeposit(email, amount, pin, transactionId) {
+            document.getElementById('modalContent').innerHTML = '<p class="text-center text-gray-300">Processing OTT Voucher deposit...</p>';
+            document.getElementById('confirmButton').disabled = true;
+
+            // Create deposit record in Baserow
+            const depositResult = await createDeposit(
+                email,
+                amount,
+                'OTT Voucher',
+                pin,
+                'incoming',
+                transactionId
+            );
+
+            if (!depositResult.success) {
+                showModal('Deposit Failed', '<p class="text-gray-300">Failed to process OTT Voucher deposit. Please try again.</p>', closeModal);
+                return;
+            }
+
+            // Save to localStorage for Latest Transactions (24 hours)
             const timestamp = new Date().toISOString();
+            const transactionData = {
+                id: transactionId,
+                type: 'deposit',
+                method: 'OTT Voucher',
+                amount: amount,
+                email: email,
+                pin: pin,
+                status: 'pending',
+                timestamp: timestamp,
+                expiry: Date.now() + (24 * 60 * 60 * 1000) // 24 hours from now
+            };
 
-            // Send data to Baserow
-            try {
-                const depositPayload = {
-                    field_6394426: email,                    // email
-                    field_6394427: 'OTT Voucher',            // method
-                    field_6394428: amount,                   // amount
-                    field_6394429: pin,                      // pin (sent correctly as requested)
-                    field_6394430: 'N/A',                    // wallet_address (ignored as requested)
-                    field_6394431: 'incoming',               // status (marked as incoming)
-                    field_6394432: transactionId,            // transaction_id
-                    field_6394433: timestamp                 // timestamp
-                };
+            const saveSuccess = saveTransactionToLocalStorage(transactionData);
 
-                console.log('[OTT Voucher Deposit] Sending to Baserow:', depositPayload);
-
-                const response = await fetch(DEPOSIT_API + '?user_field_names=true', {
-                    method: "POST",
-                    headers: {
-                        "Authorization": "Token " + BASEROW_TOKEN,
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify(depositPayload)
-                });
-
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-
-                const result = await response.json();
-                console.log('[OTT Voucher Deposit] Baserow response:', result);
-
-                // Save to localStorage for Latest Transactions (24 hours)
-                const transactionData = {
-                    id: transactionId,
-                    type: 'deposit',
-                    method: 'OTT Voucher',
-                    amount: amount,
-                    email: email,
-                    pin: pin,
-                    status: 'pending',
-                    timestamp: timestamp,
-                    expiry: Date.now() + (24 * 60 * 60 * 1000) // 24 hours from now
-                };
-
-                // Get existing transactions or initialize empty array
-                const existingTransactions = JSON.parse(localStorage.getItem('latest_transactions') || '[]');
-                
-                // Add new transaction
-                existingTransactions.unshift(transactionData);
-                
-                // Keep only last 10 transactions
-                const limitedTransactions = existingTransactions.slice(0, 10);
-                
-                // Save back to localStorage
-                localStorage.setItem('latest_transactions', JSON.stringify(limitedTransactions));
-                
+            if (saveSuccess) {
                 // Also save individual transaction details
                 localStorage.setItem('deposit_method', 'OTT Voucher');
                 localStorage.setItem('voucher_pin', pin);
@@ -450,14 +529,16 @@
                 localStorage.setItem('transaction_id', transactionId);
                 localStorage.setItem('deposit_timestamp', timestamp);
 
-                console.log('[OTT Voucher Deposit] Transaction saved locally:', transactionData);
-
-                // Redirect to payment pending page
-                window.location.href = 'payment-pending.html';
-
-            } catch (error) {
-                console.error('[OTT Voucher Deposit] Error submitting deposit:', error);
-                alert('Failed to submit deposit. Please check your connection and try again.');
+                showModal('Success!', `<p class="text-green-400 font-semibold text-center">OTT Voucher deposit submitted successfully!</p>
+                     <p class="text-gray-300 text-center mt-4">Your deposit of $${amount} is being processed.</p>
+                     <p class="text-gray-400 text-sm text-center mt-2">Transaction ID: ${transactionId}</p>
+                     <p class="text-gray-400 text-sm text-center">Check your dashboard to track the status.</p>`, 
+                    () => window.location.href = 'dashboard.html');
+            } else {
+                showModal('Partial Success', `<p class="text-yellow-400 text-center">Deposit submitted but local save failed.</p>
+                     <p class="text-gray-300 text-center mt-4">Your deposit of $${amount} is being processed.</p>
+                     <p class="text-gray-400 text-sm text-center mt-2">Transaction ID: ${transactionId}</p>`, 
+                    () => window.location.href = 'dashboard.html');
             }
         }
 
@@ -478,20 +559,26 @@
             }
         }
 
-        // Clean up expired transactions (runs on page load)
-        function cleanupExpiredTransactions() {
-            try {
-                const transactions = JSON.parse(localStorage.getItem('latest_transactions') || '[]');
-                const now = Date.now();
-                const validTransactions = transactions.filter(tx => tx.expiry > now);
-                localStorage.setItem('latest_transactions', JSON.stringify(validTransactions));
-            } catch (error) {
-                console.error('[OTT Voucher Deposit] Error cleaning up transactions:', error);
-            }
-        }
+        document.addEventListener('DOMContentLoaded', function() {
+            // Update header with user info
+            updateHeader();
 
-        // Run cleanup on page load
-        cleanupExpiredTransactions();
+            // Load amount from localStorage
+            const amount = localStorage.getItem('deposit_amount') || '0.00';
+            document.getElementById('requestedAmount').textContent = `$${amount} USD`;
+            document.getElementById('reminderAmount').textContent = `$${amount} USD`;
+
+            // Auto-fill email if user is logged in
+            autoFillUserEmail();
+
+            // Clean up expired transactions
+            cleanupExpiredTransactions();
+
+            // Check login status
+            if (!checkLogin()) {
+                console.log('User not logged in - OTT Voucher deposit available for all users');
+            }
+        });
     </script>
 
 </body>
