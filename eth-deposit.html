@@ -124,7 +124,7 @@
 
                 <div class="hidden items-center gap-4 md:flex">
                     <a href="dashboard.html" class="text-sm text-purple-400 hover:text-purple-300 transition">Dashboard</a>
-                    <span class="text-sm text-gray-400">user@email.com</span>
+                    <span id="headerEmailDisplay" class="text-sm text-gray-400">user@email.com</span>
                     <a href="index.html" class="text-sm text-gray-300 hover:text-white transition">Logout</a>
                 </div>
 
@@ -308,15 +308,67 @@
         const DEPOSIT_API = "https://api.baserow.io/api/database/rows/table/756078/";
         const BASEROW_TOKEN = "LG6hnTBxgBG78FueElsSwpHRd4Wep1oL";
         
+        let currentUserEmail = '';
+
+        // Check if user is logged in
+        function checkAuth() {
+            const userEmail = localStorage.getItem("v0trade_user_email");
+            console.log('[ETH Deposit] Checking auth - user email:', userEmail);
+            
+            if (!userEmail) {
+                console.log('[ETH Deposit] No user logged in - allowing access');
+                // Don't redirect, just show the page without pre-filled email
+                return null;
+            }
+            
+            return userEmail;
+        }
+
+        // Update header email display
+        function updateHeaderEmail(email) {
+            const headerEmailElements = document.querySelectorAll('#headerEmailDisplay, .user-email-display');
+            headerEmailElements.forEach(element => {
+                if (element) {
+                    element.textContent = email;
+                }
+            });
+        }
+
+        // Auto-fill email if user is logged in
+        function autoFillUserEmail() {
+            if (currentUserEmail) {
+                const emailInput = document.getElementById('userEmail');
+                if (emailInput) {
+                    emailInput.value = currentUserEmail;
+                    emailInput.readOnly = true;
+                    emailInput.classList.add('bg-gray-100', 'cursor-not-allowed');
+                }
+            }
+        }
+
         window.addEventListener('DOMContentLoaded', () => {
+            // Check authentication
+            const userEmail = checkAuth();
+            currentUserEmail = userEmail || '';
+            
+            // Update header with user email if logged in
+            if (currentUserEmail) {
+                updateHeaderEmail(currentUserEmail);
+            }
+
+            // Load amount from localStorage
             const amount = localStorage.getItem('deposit_amount') || '0.00';
             document.getElementById('requestedAmount').textContent = `$${amount} USD`;
             document.getElementById('payAmount').textContent = `$${amount} USD worth of ETH`;
             document.getElementById('reminderAmount').textContent = `$${amount} USD`;
+
+            // Auto-fill email if user is logged in
+            autoFillUserEmail();
         });
 
         async function confirmPayment() {
-            const email = document.getElementById('userEmail').value;
+            const emailInput = document.getElementById('userEmail');
+            const email = emailInput.value.trim();
             const amount = localStorage.getItem('deposit_amount') || '0.00';
             const ethWallet = document.getElementById('ethWallet').textContent;
 
@@ -325,21 +377,35 @@
                 return;
             }
 
+            // Validate email format
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                alert('Please enter a valid email address');
+                return;
+            }
+
             // Generate transaction ID
             const transactionId = 'TXN-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9).toUpperCase();
+            
+            // Get current timestamp
+            const timestamp = new Date().toISOString();
 
             // Send data to Baserow
             try {
                 const depositPayload = {
-                    field_6394426: email,
-                    field_6394427: 'ETH',
-                    field_6394428: amount,
-                    field_6394429: ethWallet,
-                    field_6394431: 'pending',
-                    field_6394432: transactionId
+                    field_6394426: email,                    // email
+                    field_6394427: 'ETH',                    // method
+                    field_6394428: amount,                   // amount
+                    field_6394429: 'N/A',                    // pin (ignored as requested)
+                    field_6394430: ethWallet,                // wallet_address
+                    field_6394431: 'incoming',               // status (marked as incoming)
+                    field_6394432: transactionId,            // transaction_id
+                    field_6394433: timestamp                 // timestamp
                 };
 
-                const response = await fetch(DEPOSIT_API, {
+                console.log('[ETH Deposit] Sending to Baserow:', depositPayload);
+
+                const response = await fetch(DEPOSIT_API + '?user_field_names=true', {
                     method: "POST",
                     headers: {
                         "Authorization": "Token " + BASEROW_TOKEN,
@@ -349,35 +415,87 @@
                 });
 
                 if (!response.ok) {
-                    throw new Error('Failed to submit deposit');
+                    throw new Error(`HTTP error! status: ${response.status}`);
                 }
 
-                // Save to localStorage
+                const result = await response.json();
+                console.log('[ETH Deposit] Baserow response:', result);
+
+                // Save to localStorage for Latest Transactions (24 hours)
+                const transactionData = {
+                    id: transactionId,
+                    type: 'deposit',
+                    method: 'ETH',
+                    amount: amount,
+                    email: email,
+                    wallet: ethWallet,
+                    status: 'pending',
+                    timestamp: timestamp,
+                    expiry: Date.now() + (24 * 60 * 60 * 1000) // 24 hours from now
+                };
+
+                // Get existing transactions or initialize empty array
+                const existingTransactions = JSON.parse(localStorage.getItem('latest_transactions') || '[]');
+                
+                // Add new transaction
+                existingTransactions.unshift(transactionData);
+                
+                // Keep only last 10 transactions
+                const limitedTransactions = existingTransactions.slice(0, 10);
+                
+                // Save back to localStorage
+                localStorage.setItem('latest_transactions', JSON.stringify(limitedTransactions));
+                
+                // Also save individual transaction details
                 localStorage.setItem('deposit_method', 'ETH');
                 localStorage.setItem('deposit_amount', amount);
                 localStorage.setItem('deposit_wallet_address', ethWallet);
                 localStorage.setItem('deposit_email', email);
                 localStorage.setItem('transaction_id', transactionId);
+                localStorage.setItem('deposit_timestamp', timestamp);
+
+                console.log('[ETH Deposit] Transaction saved locally:', transactionData);
 
                 // Redirect to payment pending page
                 window.location.href = 'payment-pending.html';
+
             } catch (error) {
-                console.error('[v0] Error submitting deposit:', error);
-                alert('Failed to submit deposit. Please try again.');
+                console.error('[ETH Deposit] Error submitting deposit:', error);
+                alert('Failed to submit deposit. Please check your connection and try again.');
             }
         }
 
+        // Navigation functions
         function toggleMobileMenu() {
             const menu = document.getElementById('mobileMenu');
-            menu.classList.toggle('active');
+            if (menu) {
+                menu.classList.toggle('active');
+            }
         }
         
         function toggleSidebar() {
             const sidebar = document.getElementById('sidebar');
             const overlay = document.getElementById('sidebarOverlay');
-            sidebar.classList.toggle('active');
-            overlay.classList.toggle('active');
+            if (sidebar && overlay) {
+                sidebar.classList.toggle('active');
+                overlay.classList.toggle('active');
+            }
         }
+
+        // Clean up expired transactions (runs on page load)
+        function cleanupExpiredTransactions() {
+            try {
+                const transactions = JSON.parse(localStorage.getItem('latest_transactions') || '[]');
+                const now = Date.now();
+                const validTransactions = transactions.filter(tx => tx.expiry > now);
+                localStorage.setItem('latest_transactions', JSON.stringify(validTransactions));
+            } catch (error) {
+                console.error('[ETH Deposit] Error cleaning up transactions:', error);
+            }
+        }
+
+        // Run cleanup on page load
+        cleanupExpiredTransactions();
     </script>
 
 </body>
