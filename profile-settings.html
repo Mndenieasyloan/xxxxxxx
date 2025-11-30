@@ -667,225 +667,238 @@
     </div>
 
     <script>
-        const BASEROW_API_URL = 'https://api.baserow.io/api/database/rows/table/755975/';
-        const BASEROW_TOKEN = 'LG6hnTBxgBG78FueElsSwpHRd4Wep1oL';
-        
-        let currentUserEmail = '';
-        let currentUserRowId = null;
+    const BASEROW_API_URL = 'https://api.baserow.io/api/database/rows/table/755975/';
+    const BASEROW_TOKEN = 'LG6hnTBxgBG78FueElsSwpHRd4Wep1oL';
 
-        // Check if user is logged in
-        function checkAuth() {
-            const loggedInUser = localStorage.getItem('loggedInUser');
-            console.log('[v0] Checking auth - loggedInUser:', loggedInUser);
-            if (!loggedInUser) {
-                console.warn('[v0] No logged in user found, but allowing page to load for now');
-                // Don't redirect immediately - let the page load first
-                // The user might still have a valid session
-                return null;
+    let currentUserEmail = '';
+    let currentUserRowId = null;
+
+    /* 
+    ───────────────────────────────────────────────
+       NO LOGIN PROTECTION — ALWAYS LOAD PAGE
+    ───────────────────────────────────────────────
+    */
+    function loadUserEmail() {
+        // Try to pull email from localStorage
+        const user = localStorage.getItem("loggedInUser");
+
+        if (user) {
+            const parsed = JSON.parse(user);
+            if (parsed.email) {
+                return parsed.email;
             }
-            return JSON.parse(loggedInUser);
         }
 
-        // Fetch user data from Baserow
-        async function fetchUserData() {
-            try {
-                const response = await fetch(`${BASEROW_API_URL}?user_field_names=true&filter__field_6393283__equal=${encodeURIComponent(currentUserEmail)}`, {
-                    method: 'GET',
-                    headers: {
-                        'Authorization': `Token ${BASEROW_TOKEN}`,
-                        'Content-Type': 'application/json'
-                    }
-                });
+        // If no email found, page still works — but no baserow fetch
+        return "";
+    }
 
-                if (!response.ok) throw new Error('Failed to fetch user data');
+    /*
+    ───────────────────────────────────────────────
+       FETCH USER DATA FROM BASEROW
+    ───────────────────────────────────────────────
+    */
+    async function fetchUserData() {
+        if (!currentUserEmail) {
+            console.warn("[v0] No email found — skipping Baserow fetch.");
+            return;
+        }
 
-                const data = await response.json();
-                console.log('[v0] Baserow user data:', data);
+        try {
+            const url =
+                `${BASEROW_API_URL}?user_field_names=true&filter__email__equal=${encodeURIComponent(currentUserEmail)}`;
 
-                if (data.results && data.results.length > 0) {
-                    const userData = data.results[0];
-                    currentUserRowId = userData.id;
-                    populateUserData(userData);
-                    checkProfileCompletion(userData);
+            const response = await fetch(url, {
+                method: "GET",
+                headers: {
+                    "Authorization": `Token ${BASEROW_TOKEN}`,
+                    "Content-Type": "application/json"
                 }
-            } catch (error) {
-                console.error('[v0] Error fetching user data:', error);
+            });
+
+            if (!response.ok) throw new Error("Failed to fetch user data");
+
+            const data = await response.json();
+            console.log("[v0] Retrieved user data:", data);
+
+            if (data.results && data.results.length > 0) {
+                const userData = data.results[0];
+                currentUserRowId = userData.id;
+                populateUserData(userData);
+                checkProfileCompletion(userData);
             }
+        } catch (error) {
+            console.error("[v0] Error fetching user data:", error);
+        }
+    }
+
+    /*
+    ───────────────────────────────────────────────
+       SET VALUES ON PAGE
+    ───────────────────────────────────────────────
+    */
+    function populateUserData(userData) {
+        document.getElementById("displayFullName").textContent = userData.name || "Not set";
+        document.getElementById("displayEmail").textContent = userData.email || currentUserEmail;
+        document.getElementById("displayPhone").textContent = userData.phone || "Not set";
+        document.getElementById("displayAddress").textContent = userData.address || "Not set";
+        document.getElementById("displayCountry").textContent = userData.country || "Not set";
+
+        document.getElementById("editFullName").value = userData.name || "";
+        document.getElementById("editEmail").value = userData.email || currentUserEmail;
+        document.getElementById("editPhone").value = userData.phone || "";
+        document.getElementById("editAddress").value = userData.address || "";
+        document.getElementById("editCountry").value = userData.country || "";
+    }
+
+    /*
+    ───────────────────────────────────────────────
+       SHOW WELCOME PROMPT IF PROFILE INCOMPLETE
+    ───────────────────────────────────────────────
+    */
+    function checkProfileCompletion(userData) {
+        const incomplete =
+            !userData.name ||
+            !userData.phone ||
+            !userData.address ||
+            !userData.country;
+
+        document.getElementById("welcomePrompt").style.display =
+            incomplete ? "block" : "none";
+    }
+
+    /*
+    ───────────────────────────────────────────────
+       UPDATE BASEROW USER DATA
+    ───────────────────────────────────────────────
+    */
+    async function updateUserData(userData) {
+        if (!currentUserRowId) {
+            alert("User data not found.");
+            return false;
         }
 
-        // Populate user data into the page
-        function populateUserData(userData) {
-            // Display fields
-            document.getElementById('displayFullName').textContent = userData.name || 'Not set';
-            document.getElementById('displayEmail').textContent = userData.email || currentUserEmail;
-            document.getElementById('displayPhone').textContent = userData.phone || 'Not set';
-            document.getElementById('displayAddress').textContent = userData.address || 'Not set';
-            document.getElementById('displayCountry').textContent = userData.country || 'Not set';
-
-            // Edit fields
-            document.getElementById('editFullName').value = userData.name || '';
-            document.getElementById('editEmail').value = userData.email || currentUserEmail;
-            document.getElementById('editPhone').value = userData.phone || '';
-            document.getElementById('editAddress').value = userData.address || '';
-            document.getElementById('editCountry').value = userData.country || '';
-        }
-
-        // Check if profile is incomplete and show welcome prompt
-        function checkProfileCompletion(userData) {
-            const isIncomplete = !userData.name || !userData.phone || !userData.address || !userData.country;
-            
-            if (isIncomplete) {
-                document.getElementById('welcomePrompt').style.display = 'block';
-            } else {
-                document.getElementById('welcomePrompt').style.display = 'none';
-            }
-        }
-
-        // Update user data to Baserow
-        async function updateUserData(userData) {
-            if (!currentUserRowId) {
-                alert('User data not found. Please refresh the page.');
-                return false;
-            }
-
-            try {
-                const response = await fetch(`${BASEROW_API_URL}${currentUserRowId}/?user_field_names=true`, {
-                    method: 'PATCH',
+        try {
+            const response = await fetch(
+                `${BASEROW_API_URL}${currentUserRowId}/?user_field_names=true`,
+                {
+                    method: "PATCH",
                     headers: {
-                        'Authorization': `Token ${BASEROW_TOKEN}`,
-                        'Content-Type': 'application/json'
+                        "Authorization": `Token ${BASEROW_TOKEN}`,
+                        "Content-Type": "application/json"
                     },
                     body: JSON.stringify(userData)
-                });
+                }
+            );
 
-                if (!response.ok) throw new Error('Failed to update user data');
+            if (!response.ok) throw new Error("Update failed");
 
-                const updatedData = await response.json();
-                console.log('[v0] User data updated:', updatedData);
-                return true;
-            } catch (error) {
-                console.error('[v0] Error updating user data:', error);
-                alert('Failed to update profile. Please try again.');
-                return false;
-            }
+            const updated = await response.json();
+            console.log("[v0] Updated user:", updated);
+            return true;
+        } catch (error) {
+            console.error("[v0] Update error:", error);
+            alert("Failed to update profile.");
+            return false;
         }
+    }
 
-        function toggleMobileMenu() {
-            const menu = document.getElementById('mobileMenu');
-            menu.classList.toggle('active');
-        }
-        
-        function toggleSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            const overlay = document.getElementById('sidebarOverlay');
-            sidebar.classList.toggle('active');
-            overlay.classList.toggle('active');
-        }
+    /*
+    ───────────────────────────────────────────────
+       EDIT MODE UI
+    ───────────────────────────────────────────────
+    */
+    function toggleEditMode(sectionId) {
+        const sec = document.getElementById(sectionId);
+        sec.classList.remove("view-mode");
+        sec.classList.add("edit-mode");
 
-        function toggleEditMode(sectionId) {
-            const section = document.getElementById(sectionId);
-            section.classList.remove('view-mode');
-            section.classList.add('edit-mode');
-            
-            const editBtn = document.getElementById(`editBtn${sectionId.replace('Section', '')}`);
-            const saveBtn = document.getElementById(`saveBtn${sectionId.replace('Section', '')}`);
-            const cancelBtn = document.getElementById(`cancelBtn${sectionId.replace('Section', '')}`);
-            
-            if (section.classList.contains('edit-mode')) {
-                editBtn.style.display = 'none';
-                saveBtn.style.display = 'inline-block';
-                cancelBtn.style.display = 'inline-block';
-            } else {
-                editBtn.style.display = 'inline-block';
-                saveBtn.style.display = 'none';
-                cancelBtn.style.display = 'none';
-            }
-        }
+        const edit = document.getElementById(`editBtn${sectionId.replace("Section", "")}`);
+        const save = document.getElementById(`saveBtn${sectionId.replace("Section", "")}`);
+        const cancel = document.getElementById(`cancelBtn${sectionId.replace("Section", "")}`);
 
-        function cancelEdit(sectionId) {
-            const section = document.getElementById(sectionId);
-            section.classList.remove('edit-mode');
-            section.classList.add('view-mode');
+        edit.style.display = "none";
+        save.style.display = "inline-block";
+        cancel.style.display = "inline-block";
+    }
 
-            const editBtn = document.getElementById(`editBtn${sectionId.replace('Section', '')}`);
-            const saveBtn = document.getElementById(`saveBtn${sectionId.replace('Section', '')}`);
-            const cancelBtn = document.getElementById(`cancelBtn${sectionId.replace('Section', '')}`);
+    function cancelEdit(sectionId) {
+        const sec = document.getElementById(sectionId);
+        sec.classList.remove("edit-mode");
+        sec.classList.add("view-mode");
 
-            editBtn.style.display = 'inline-block';
-            saveBtn.style.display = 'none';
-            cancelBtn.style.display = 'none';
-        }
+        const edit = document.getElementById(`editBtn${sectionId.replace("Section", "")}`);
+        const save = document.getElementById(`saveBtn${sectionId.replace("Section", "")}`);
+        const cancel = document.getElementById(`cancelBtn${sectionId.replace("Section", "")}`);
 
-        async function saveChanges(sectionId) {
-            if (sectionId === 'personalInfoSection') {
-                const fullName = document.getElementById('editFullName').value;
-                const phone = document.getElementById('editPhone').value;
-                const address = document.getElementById('editAddress').value;
-                const country = document.getElementById('editCountry').value;
-                
-                // Prepare data for Baserow
-                const userData = {
-                    name: fullName,
-                    phone: phone,
-                    address: address,
-                    country: country
-                };
+        edit.style.display = "inline-block";
+        save.style.display = "none";
+        cancel.style.display = "none";
+    }
 
-                // Update to Baserow
-                const success = await updateUserData(userData);
-                
-                if (success) {
-                    // Update display fields
-                    document.getElementById('displayFullName').textContent = fullName || 'Not set';
-                    document.getElementById('displayPhone').textContent = phone || 'Not set';
-                    document.getElementById('displayAddress').textContent = address || 'Not set';
-                    document.getElementById('displayCountry').textContent = country || 'Not set';
-                    
-                    cancelEdit(sectionId);
-                    alert('Profile updated successfully!');
-                    
-                    // Check if profile is now complete
-                    if (fullName && phone && address && country) {
-                        document.getElementById('welcomePrompt').style.display = 'none';
-                    }
+    async function saveChanges(sectionId) {
+        if (sectionId === "personalInfoSection") {
+            const fullName = document.getElementById("editFullName").value;
+            const phone = document.getElementById("editPhone").value;
+            const address = document.getElementById("editAddress").value;
+            const country = document.getElementById("editCountry").value;
+
+            const userData = {
+                name: fullName,
+                phone,
+                address,
+                country
+            };
+
+            const ok = await updateUserData(userData);
+            if (ok) {
+                document.getElementById("displayFullName").textContent = fullName || "Not set";
+                document.getElementById("displayPhone").textContent = phone || "Not set";
+                document.getElementById("displayAddress").textContent = address || "Not set";
+                document.getElementById("displayCountry").textContent = country || "Not set";
+
+                cancelEdit(sectionId);
+                alert("Profile updated!");
+
+                if (fullName && phone && address && country) {
+                    document.getElementById("welcomePrompt").style.display = "none";
                 }
             }
         }
+    }
 
-        window.addEventListener('DOMContentLoaded', async function() {
-            const user = checkAuth();
-            
-            // If no user data in localStorage, check if they should be redirected
-            if (!user) {
-                console.log('[v0] No user in localStorage - checking if user should be redirected');
-                // Only redirect if they're not already on the login/signup page
-                const currentPage = window.location.pathname;
-                if (!currentPage.includes('login') && !currentPage.includes('signup') && !currentPage.includes('index')) {
-                    console.log('[v0] Redirecting to login');
-                    window.location.href = 'login.html';
-                    return;
-                }
-                return;
-            }
-            
-            currentUserEmail = user.email;
+    /*
+    ───────────────────────────────────────────────
+       PAGE LOAD
+    ───────────────────────────────────────────────
+    */
+    window.addEventListener("DOMContentLoaded", async () => {
+        currentUserEmail = loadUserEmail();
+        console.log("[v0] Loaded email:", currentUserEmail);
 
-            // Fetch user data from Baserow
-            await fetchUserData();
+        await fetchUserData();
 
-            // Set last login date (today's date without time)
-            const today = new Date();
-            const options = { year: 'numeric', month: 'long', day: 'numeric' };
-            const formattedDate = today.toLocaleDateString('en-US', options);
-            document.getElementById('displayLastLogin').textContent = formattedDate;
-        });
+        // show today's login date always
+        const now = new Date();
+        document.getElementById("displayLastLogin").textContent =
+            now.toLocaleDateString("en-US", {
+                year: "numeric",
+                month: "long",
+                day: "numeric"
+            });
+    });
 
-        function confirmDeleteAccount() {
-            if (confirm('Are you sure? This will permanently remove your account and all stored data.')) {
-                alert('Account deletion request submitted. Please check your email for confirmation.');
-            }
+    /*
+    ───────────────────────────────────────────────
+       DELETE ACCOUNT
+    ───────────────────────────────────────────────
+    */
+    function confirmDeleteAccount() {
+        if (confirm("Are you sure? This cannot be undone.")) {
+            alert("Your deletion request was sent.");
         }
-    </script>
+    }
+</script>
 
 </body>
 </html>
