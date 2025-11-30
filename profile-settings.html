@@ -686,14 +686,15 @@ let currentUserEmail = "";
 let currentUserRowId = null;
 
 /* ============================
-   CHECK LOGIN
+   CHECK LOGIN (NOT BLOCKING PAGE)
 ============================= */
 function checkAuth() {
     const loggedInUser = localStorage.getItem("loggedInUser");
 
     if (!loggedInUser) {
-        // Not logged in — redirect to login page
-        window.location.href = "login.html";
+        // User not logged in — show defaults
+        document.getElementById("displayFullName").textContent = "Login Required";
+        document.getElementById("displayEmail").textContent = "Login Required";
         return null;
     }
 
@@ -706,12 +707,11 @@ function checkAuth() {
 async function fetchUserData() {
     try {
         const response = await fetch(
-            `${BASEROW_TABLE_URL}?user_field_names=true&filter__field_6393283__equal=${encodeURIComponent(currentUserEmail)}`,
+            `${BASEROW_TABLE_URL}?user_field_names=true&filter__email__equal=${encodeURIComponent(currentUserEmail)}`,
             {
                 method: "GET",
                 headers: {
                     Authorization: `Token ${BASEROW_TOKEN}`,
-                    "Content-Type": "application/json",
                 },
             }
         );
@@ -724,6 +724,8 @@ async function fetchUserData() {
         currentUserRowId = user.id;
 
         populateUserData(user);
+        checkProfileCompletion(user);
+
     } catch (err) {
         console.error("Error fetching Baserow user:", err);
     }
@@ -733,26 +735,40 @@ async function fetchUserData() {
    POPULATE PROFILE UI
 ============================= */
 function populateUserData(user) {
-    // UNEDITABLE FIELDS
-    document.getElementById("displayFullName").textContent = user.name;
-    document.getElementById("displayEmail").textContent = user.email;
+    // UNEDITABLE
+    document.getElementById("displayFullName").textContent = user.name || "Not set";
+    document.getElementById("displayEmail").textContent = user.email || "Not set";
 
-    // Update menu email
-    const menuEmail = document.getElementById("menuUserEmail");
+    // TOP MENU EMAIL FIX
+    const menuEmail = document.querySelector(".md\\:flex span.text-sm.text-gray-400");
     if (menuEmail) menuEmail.textContent = user.email;
 
-    // EDITABLE FIELDS
+    // EDITABLE DISPLAY
     document.getElementById("displayPhone").textContent = user.phone || "Not set";
     document.getElementById("displayAddress").textContent = user.address || "Not set";
     document.getElementById("displayCountry").textContent = user.country || "Not set";
 
+    // EDIT INPUTS
     document.getElementById("editPhone").value = user.phone || "";
     document.getElementById("editAddress").value = user.address || "";
     document.getElementById("editCountry").value = user.country || "";
 }
 
 /* ============================
-   UPDATE BASEROW USER
+   CHECK IF PROFILE IS INCOMPLETE
+============================= */
+function checkProfileCompletion(user) {
+    const incomplete =
+        !user.phone ||
+        !user.address ||
+        !user.country;
+
+    document.getElementById("welcomePrompt").style.display =
+        incomplete ? "block" : "none";
+}
+
+/* ============================
+   UPDATE USER IN BASEROW
 ============================= */
 async function updateUserData(updateObj) {
     if (!currentUserRowId) return false;
@@ -771,6 +787,7 @@ async function updateUserData(updateObj) {
         );
 
         return response.ok;
+
     } catch (err) {
         console.error("Update failed:", err);
         return false;
@@ -778,7 +795,7 @@ async function updateUserData(updateObj) {
 }
 
 /* ============================
-   SAVE EDITED FIELDS
+   SAVE CHANGES
 ============================= */
 async function saveChanges() {
     const phone = document.getElementById("editPhone").value;
@@ -794,11 +811,11 @@ async function saveChanges() {
     const success = await updateUserData(updateObj);
 
     if (success) {
+        alert("Profile updated successfully!");
+
         document.getElementById("displayPhone").textContent = phone || "Not set";
         document.getElementById("displayAddress").textContent = address || "Not set";
         document.getElementById("displayCountry").textContent = country || "Not set";
-
-        alert("Profile updated successfully!");
 
         cancelEdit("personalInfoSection");
     } else {
@@ -807,7 +824,7 @@ async function saveChanges() {
 }
 
 /* ============================
-   VIEW ↔ EDIT MODE
+   VIEW & EDIT MODE
 ============================= */
 function toggleEditMode(sectionId) {
     const sec = document.getElementById(sectionId);
