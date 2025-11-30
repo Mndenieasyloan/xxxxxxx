@@ -668,80 +668,92 @@
 
    <script>
 /* ============================
-   BASEROW CONFIG
-============================= */
-const BASEROW_TABLE_URL = "https://api.baserow.io/api/database/rows/table/755975/";
+    BASEROW CONFIG
+============================ */
 const BASEROW_TOKEN = "LG6hnTBxgBG78FueElsSwpHRd4Wep1oL";
+const BASEROW_USERS_TABLE = 755975;
 
-/* USER FIELDS IN BASEROW
-    name        = field_6393282
-    email       = field_6393283
-    phone       = field_6393284
-    username    = field_6393286
-    country     = field_6393289
-    address     = field_6393292
+/* BASEROW FIELDS (user_field_names=true):
+    name       = name (field_6393282)
+    email      = email (field_6393283)
+    phone      = phone (field_6393284)
+    username   = username (field_6393286)
+    country    = country (field_6393289)
+    address    = address (field_6393292)
 */
 
-let currentUserEmail = "";
 let currentUserRowId = null;
+let currentUserEmail = "";
 
 /* ============================
-   CHECK LOGIN (NOT BLOCKING PAGE)
-============================= */
-function checkAuth() {
-    const loggedInUser = localStorage.getItem("loggedInUser");
+    CHECK LOGIN (same as DASHBOARD)
+============================ */
+window.addEventListener("DOMContentLoaded", () => {
 
-    if (!loggedInUser) {
-        // User not logged in — show defaults
-        document.getElementById("displayFullName").textContent = "Login Required";
-        document.getElementById("displayEmail").textContent = "Login Required";
-        return null;
+    currentUserEmail = localStorage.getItem("v0trade_user_email");
+
+    if (!currentUserEmail) {
+        window.location.href = "login.html";
+        return;
     }
 
-    return JSON.parse(loggedInUser);
-}
+    // Update header email display (same as dashboard)
+    const headerEmail = document.querySelector(".md\\:flex span.text-sm.text-gray-400");
+    if (headerEmail) headerEmail.textContent = currentUserEmail;
+
+    // Show in profile email label
+    document.getElementById("displayEmail").textContent = currentUserEmail;
+
+    loadProfile(currentUserEmail);
+});
+
 
 /* ============================
-   FETCH USER FROM BASEROW
-============================= */
-async function fetchUserData() {
+    FETCH USER FROM BASEROW
+============================ */
+async function loadProfile(email) {
     try {
-        const response = await fetch(
-            `${BASEROW_TABLE_URL}?user_field_names=true&filter__email__equal=${encodeURIComponent(currentUserEmail)}`,
-            {
-                method: "GET",
-                headers: {
-                    Authorization: `Token ${BASEROW_TOKEN}`,
-                },
-            }
-        );
+        const filters = encodeURIComponent(JSON.stringify({
+            filter_type: "AND",
+            filters: [
+                { type: "equal", field: "email", value: email }
+            ]
+        }));
 
-        const data = await response.json();
+        const url =
+            `https://api.baserow.io/api/database/rows/table/${BASEROW_USERS_TABLE}/` +
+            `?user_field_names=true&filters=${filters}`;
 
-        if (!data.results || data.results.length === 0) return;
+        const res = await fetch(url, {
+            headers: { Authorization: `Token ${BASEROW_TOKEN}` }
+        });
 
-        const user = data.results[0];
-        currentUserRowId = user.id;
+        const data = await res.json();
 
-        populateUserData(user);
-        checkProfileCompletion(user);
+        if (!data.results || data.results.length === 0) {
+            console.warn("No user found for:", email);
+            return;
+        }
+
+        const u = data.results[0];
+        currentUserRowId = u.id;
+
+        populateProfile(u);
 
     } catch (err) {
-        console.error("Error fetching Baserow user:", err);
+        console.error("PROFILE LOAD ERROR:", err);
     }
 }
 
+
 /* ============================
-   POPULATE PROFILE UI
-============================= */
-function populateUserData(user) {
-    // UNEDITABLE
+    POPULATE PROFILE UI
+============================ */
+function populateProfile(user) {
+
+    // NON-EDITABLE UI
     document.getElementById("displayFullName").textContent = user.name || "Not set";
     document.getElementById("displayEmail").textContent = user.email || "Not set";
-
-    // TOP MENU EMAIL FIX
-    const menuEmail = document.querySelector(".md\\:flex span.text-sm.text-gray-400");
-    if (menuEmail) menuEmail.textContent = user.email;
 
     // EDITABLE DISPLAY
     document.getElementById("displayPhone").textContent = user.phone || "Not set";
@@ -752,52 +764,50 @@ function populateUserData(user) {
     document.getElementById("editPhone").value = user.phone || "";
     document.getElementById("editAddress").value = user.address || "";
     document.getElementById("editCountry").value = user.country || "";
+
+    // Welcome prompt if incomplete
+    if (!user.phone || !user.address || !user.country) {
+        document.getElementById("welcomePrompt").style.display = "block";
+    } else {
+        document.getElementById("welcomePrompt").style.display = "none";
+    }
 }
 
-/* ============================
-   CHECK IF PROFILE IS INCOMPLETE
-============================= */
-function checkProfileCompletion(user) {
-    const incomplete =
-        !user.phone ||
-        !user.address ||
-        !user.country;
-
-    document.getElementById("welcomePrompt").style.display =
-        incomplete ? "block" : "none";
-}
 
 /* ============================
-   UPDATE USER IN BASEROW
-============================= */
+    UPDATE USER IN BASEROW
+============================ */
 async function updateUserData(updateObj) {
     if (!currentUserRowId) return false;
 
     try {
-        const response = await fetch(
-            `${BASEROW_TABLE_URL}${currentUserRowId}/?user_field_names=true`,
-            {
-                method: "PATCH",
-                headers: {
-                    Authorization: `Token ${BASEROW_TOKEN}`,
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify(updateObj),
-            }
-        );
+        const url =
+            `https://api.baserow.io/api/database/rows/table/${BASEROW_USERS_TABLE}/` +
+            `${currentUserRowId}/?user_field_names=true`;
+
+        const response = await fetch(url, {
+            method: "PATCH",
+            headers: {
+                Authorization: `Token ${BASEROW_TOKEN}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(updateObj),
+        });
 
         return response.ok;
 
     } catch (err) {
-        console.error("Update failed:", err);
+        console.error("UPDATE ERROR:", err);
         return false;
     }
 }
 
+
 /* ============================
-   SAVE CHANGES
-============================= */
+    SAVE CHANGES
+============================ */
 async function saveChanges() {
+
     const phone = document.getElementById("editPhone").value;
     const address = document.getElementById("editAddress").value;
     const country = document.getElementById("editCountry").value;
@@ -805,7 +815,7 @@ async function saveChanges() {
     const updateObj = {
         phone: phone,
         address: address,
-        country: country,
+        country: country
     };
 
     const success = await updateUserData(updateObj);
@@ -818,34 +828,25 @@ async function saveChanges() {
         document.getElementById("displayCountry").textContent = country || "Not set";
 
         cancelEdit("personalInfoSection");
+
     } else {
         alert("Failed to update. Try again.");
     }
 }
 
+
 /* ============================
-   VIEW & EDIT MODE
-============================= */
+    VIEW / EDIT MODE
+============================ */
 function toggleEditMode(sectionId) {
-    const sec = document.getElementById(sectionId);
-    sec.classList.add("edit-mode");
+    document.getElementById(sectionId).classList.add("edit-mode");
 }
 
 function cancelEdit(sectionId) {
-    const sec = document.getElementById(sectionId);
-    sec.classList.remove("edit-mode");
+    document.getElementById(sectionId).classList.remove("edit-mode");
 }
 
-/* ============================
-   INIT PAGE
-============================= */
-window.addEventListener("DOMContentLoaded", async () => {
-    const user = checkAuth();
-    if (!user) return;
-
-    currentUserEmail = user.email;
-    await fetchUserData();
-});
 </script>
+
 </body>
 </html>
