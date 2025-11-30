@@ -345,102 +345,100 @@
     
 
 <script>
-(function(){
 const BASEROW_TOKEN = "LG6hnTBxgBG78FueElsSwpHRd4Wep1oL";
-const WALLET_TABLE = 756077;
-const WALLET_API_URL = `https://api.baserow.io/api/database/rows/table/${WALLET_TABLE}/?user_field_names=true`;
+const WALLET_TABLE_ID = 756077;
 
-// IDs mapping per user confirmation
-const IDS = {
-  totalWalletBalance: "allEarningWallet",   // field_6394419
-  allEarningWallet: "earningBalance",       // field_6394423
-  minerEarnings: "totalReturned",           // field_6394422
-  totalRefCommissions: "totalCommissions",  // field_6394421
-  investmentEarnings: "totalEarnings",      // field_6394420
-  userName: "userName",
-  headerEmail: "headerEmailDisplay",
-  userEmail: "userEmailDisplay"
-};
+// ----------------------------
+// FORCE LOGIN CHECK
+// ----------------------------
+document.addEventListener("DOMContentLoaded", async () => {
+    const email = localStorage.getItem("v0trade_user_email");
 
-function setText(id, text){
-  const el = document.getElementById(id);
-  if(el) el.textContent = text;
-}
-
-function formatMoney4(v){
-  const n = Number(v);
-  if(!isFinite(n)) return "";
-  return "$" + n.toFixed(4);
-}
-
-async function loadFromWallet(email){
-  try{
-    const filterObj = {
-      filter_type: "AND",
-      filters: [
-        { type: "equal", field: "field_6394418", value: email }
-      ]
-    };
-    const url = WALLET_API_URL + "&filters=" + encodeURIComponent(JSON.stringify(filterObj));
-    const res = await fetch(url, {
-      headers: { "Authorization": `Token ${BASEROW_TOKEN}` }
-    });
-    if(!res.ok){
-      console.error("Baserow wallet fetch error:", res.status, res.statusText);
-      return;
+    // If no email → force login
+    if (!email) {
+        window.location.href = "login.html";
+        return;
     }
-    const data = await res.json();
-    if(!data.results || data.results.length === 0){
-      console.warn("No wallet row found for email:", email);
-      return;
-    }
-    const w = data.results[0];
 
-    // Username from wallet field_6394417, fallback to "User"
-    const name = (w["field_6394417"] && String(w["field_6394417"]).trim()) ? String(w["field_6394417"]).trim() : "User";
-    setText(IDS.userName, name);
+    document.getElementById("headerEmailDisplay").textContent = email;
+    document.getElementById("userEmailDisplay").textContent = email;
 
-    // 1. Total Wallet Balance — field_6394419
-    const v_totalWallet = w["field_6394419"];
-    setText(IDS.totalWalletBalance, v_totalWallet !== undefined && v_totalWallet !== null ? formatMoney4(v_totalWallet) : "");
-
-    // 2. All Earning Wallet — field_6394423
-    const v_allEarning = w["field_6394423"];
-    setText(IDS.allEarningWallet, v_allEarning !== undefined && v_allEarning !== null ? formatMoney4(v_allEarning) : "");
-
-    // 3. Miner Earnings — field_6394422
-    const v_miner = w["field_6394422"];
-    setText(IDS.minerEarnings, v_miner !== undefined && v_miner !== null ? formatMoney4(v_miner) : "");
-
-    // 4. Total Ref. Commissions — field_6394421
-    const v_comm = w["field_6394421"];
-    setText(IDS.totalRefCommissions, v_comm !== undefined && v_comm !== null ? formatMoney4(v_comm) : "");
-
-    // 5. Investment Earning — field_6394420
-    const v_invest = w["field_6394420"];
-    setText(IDS.investmentEarnings, v_invest !== undefined && v_invest !== null ? formatMoney4(v_invest) : "");
-
-  } catch(err){
-    console.error("Error loading wallet data:", err);
-  }
-}
-
-document.addEventListener("DOMContentLoaded", function(){
-  // read email from v0trade_user_email per your instruction
-  const email = localStorage.getItem("v0trade_user_email");
-  if(!email){
-    console.warn("v0trade_user_email not found in localStorage - redirecting to login");
-    return;
-  }
-  // set email displays if present
-  setText(IDS.headerEmail, email);
-  setText(IDS.userEmail, email);
-
-  // load values
-  loadFromWallet(email);
+    await loadWalletData(email);
 });
-})(); 
-</script>
 
+// ----------------------------
+// LOGOUT FUNCTION
+// ----------------------------
+function logoutUser() {
+    localStorage.removeItem("v0trade_user_email");
+    window.location.href = "index.html";
+}
+
+// Attach logout to link
+document.querySelectorAll("a[href='index.html']").forEach(a => {
+    a.addEventListener("click", e => {
+        e.preventDefault();
+        logoutUser();
+    });
+});
+
+// ----------------------------
+// LOAD WALLET DATA
+// ----------------------------
+async function loadWalletData(email) {
+    try {
+        const url =
+          `https://api.baserow.io/api/database/rows/table/${WALLET_TABLE_ID}/?user_field_names=true&filters=` +
+          encodeURIComponent(JSON.stringify({
+                filter_type: "AND",
+                filters: [
+                    { field: "field_6394418", type: "equal", value: email }
+                ]
+          }));
+
+        const response = await fetch(url, {
+            headers: {
+                "Authorization": `Token ${BASEROW_TOKEN}`,
+                "Content-Type": "application/json"
+            }
+        });
+
+        const data = await response.json();
+        const wallet = data.results?.[0];
+
+        if (!wallet) {
+            console.error("Wallet not found for:", email);
+            return;
+        }
+
+        // ----------------------------
+        // USER NAME (field_6394417)
+        // ----------------------------
+        const userName = wallet.field_6394417 || "User";
+        document.getElementById("userName").textContent = userName;
+
+        // ----------------------------
+        // BALANCES
+        // ----------------------------
+        document.getElementById("allEarningWallet").textContent =
+            "$" + Number(wallet.field_6394419 || 0).toFixed(4);
+
+        document.getElementById("earningBalance").textContent =
+            "$" + Number(wallet.field_6394423 || 0).toFixed(4);
+
+        document.getElementById("totalReturned").textContent =
+            "$" + Number(wallet.field_6394422 || 0).toFixed(4);
+
+        document.getElementById("totalCommissions").textContent =
+            "$" + Number(wallet.field_6394421 || 0).toFixed(4);
+
+        document.getElementById("totalEarnings").textContent =
+            "$" + Number(wallet.field_6394420 || 0).toFixed(4);
+
+    } catch (err) {
+        console.error("Error loading wallet:", err);
+    }
+}
+</script>
 </body>
 </html>
