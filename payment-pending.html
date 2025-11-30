@@ -293,29 +293,217 @@
         </main>
     </div>
 
-    <script>
-        window.addEventListener('DOMContentLoaded', () => {
-            const method = localStorage.getItem('deposit_method') || '-';
-            const amount = localStorage.getItem('deposit_amount') || '0.00';
-            const email = localStorage.getItem('deposit_email') || '-';
+<script>
+    // Load amount from localStorage
+    const DEPOSIT_API = "https://api.baserow.io/api/database/rows/table/756078/";
+    const BASEROW_TOKEN = "LG6hnTBxgBG78FueElsSwpHRd4Wep1oL";
+    
+    // Check if user is logged in
+    function checkLogin() {
+        const userEmail = localStorage.getItem('userEmail');
+        return userEmail !== null && userEmail !== '';
+    }
 
-            document.getElementById('paymentMethod').textContent = method;
-            document.getElementById('paymentAmount').textContent = `$${amount}`;
-            document.getElementById('paymentEmail').textContent = email;
-        });
+    function getUserEmail() {
+        return localStorage.getItem('userEmail') || '';
+    }
 
-        function toggleMobileMenu() {
-            const menu = document.getElementById('mobileMenu');
-            menu.classList.toggle('active');
-        }
+    function logout() {
+        localStorage.removeItem('userEmail');
+        window.location.href = 'login.html';
+    }
+
+    // Update navigation based on login status
+    function updateNavigation() {
+        const isLoggedIn = checkLogin();
+        const userEmail = getUserEmail();
         
-        function toggleSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            const overlay = document.getElementById('sidebarOverlay');
-            sidebar.classList.toggle('active');
-            overlay.classList.toggle('active');
+        // Update desktop navigation
+        const authSection = document.querySelector('.hidden.items-center.gap-4.md\\:flex');
+        if (authSection) {
+            if (isLoggedIn) {
+                authSection.innerHTML = `
+                    <a href="dashboard.html" class="text-sm text-purple-400 hover:text-purple-300 transition">Dashboard</a>
+                    <span class="text-sm text-gray-400">${userEmail}</span>
+                    <a href="index.html" class="text-sm text-gray-300 hover:text-white transition" onclick="logout()">Logout</a>
+                `;
+            } else {
+                authSection.innerHTML = `
+                    <a href="login.html" class="text-sm text-gray-300 hover:text-white transition">Login</a>
+                    <a href="signup.html" class="text-sm bg-gradient-to-r from-purple-500 to-pink-500 text-white px-4 py-2 rounded-lg hover:opacity-90 transition">Sign Up</a>
+                `;
+            }
         }
-    </script>
 
+        // Update mobile menu
+        const mobileMenu = document.getElementById('mobileMenu');
+        if (mobileMenu) {
+            const mobileAuthLinks = mobileMenu.querySelector('nav');
+            if (isLoggedIn) {
+                const dashboardLink = mobileAuthLinks.querySelector('a[href="dashboard.html"]');
+                const logoutLink = mobileAuthLinks.querySelector('a[href="index.html"]');
+                
+                if (dashboardLink) {
+                    dashboardLink.className = 'text-sm text-purple-400 hover:text-purple-300';
+                }
+                if (logoutLink) {
+                    logoutLink.textContent = 'Logout';
+                    logoutLink.onclick = logout;
+                }
+            } else {
+                const loginLink = mobileAuthLinks.querySelector('a[href="login.html"]');
+                if (loginLink) {
+                    loginLink.textContent = 'Login';
+                    loginLink.onclick = null;
+                }
+            }
+        }
+
+        // Auto-fill email if logged in
+        if (isLoggedIn) {
+            const emailInput = document.getElementById('userEmail');
+            if (emailInput) {
+                emailInput.value = userEmail;
+                emailInput.readOnly = true;
+            }
+        }
+    }
+
+    // Save transaction to localStorage for 24 hours
+    function saveTransactionToLocalStorage(transactionData) {
+        const transactions = JSON.parse(localStorage.getItem('latestTransactions') || '[]');
+        
+        // Add timestamp and expiry (24 hours from now)
+        transactionData.timestamp = new Date().toISOString();
+        transactionData.expiry = Date.now() + (24 * 60 * 60 * 1000);
+        
+        // Add to beginning of array
+        transactions.unshift(transactionData);
+        
+        // Keep only last 10 transactions
+        const limitedTransactions = transactions.slice(0, 10);
+        
+        localStorage.setItem('latestTransactions', JSON.stringify(limitedTransactions));
+    }
+
+    // Clean expired transactions
+    function cleanExpiredTransactions() {
+        const transactions = JSON.parse(localStorage.getItem('latestTransactions') || '[]');
+        const now = Date.now();
+        const validTransactions = transactions.filter(tx => tx.expiry > now);
+        localStorage.setItem('latestTransactions', JSON.stringify(validTransactions));
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+        updateNavigation();
+        cleanExpiredTransactions();
+        
+        const amount = localStorage.getItem('deposit_amount') || '0.00';
+        document.getElementById('requestedAmount').textContent = `$${amount} USD`;
+        document.getElementById('payAmount').textContent = `$${amount} USD worth of BTC`;
+        document.getElementById('reminderAmount').textContent = `$${amount} USD`;
+
+        // Check if user is logged in
+        if (!checkLogin()) {
+            alert('Please log in to make a deposit');
+            window.location.href = 'login.html';
+            return;
+        }
+    });
+
+    async function confirmPayment() {
+        const email = document.getElementById('userEmail').value;
+        const amount = localStorage.getItem('deposit_amount') || '0.00';
+        const btcWallet = document.getElementById('btcWallet').textContent;
+
+        if (!email) {
+            alert('Please enter your email address');
+            return;
+        }
+
+        // Check if user is logged in
+        if (!checkLogin()) {
+            alert('Please log in to make a deposit');
+            window.location.href = 'login.html';
+            return;
+        }
+
+        // Verify email matches logged in user
+        const loggedInEmail = getUserEmail();
+        if (email !== loggedInEmail) {
+            alert('Email does not match your logged in account');
+            return;
+        }
+
+        // Generate transaction ID
+        const transactionId = 'TXN-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9).toUpperCase();
+
+        // Send data to Baserow
+        try {
+            const depositPayload = {
+                "field_6394426": email,                    // email
+                "field_6394427": "BTC",                   // method
+                "field_6394428": amount,                  // amount
+                "field_6394429": "N/A",                   // pin (ignored)
+                "field_6394430": btcWallet,               // wallet_address
+                "field_6394431": "incoming",              // status (marked as incoming)
+                "field_6394432": transactionId,           // transaction_id
+                "field_6394433": new Date().toISOString() // timestamp
+            };
+
+            const response = await fetch(DEPOSIT_API, {
+                method: "POST",
+                headers: {
+                    "Authorization": "Token " + BASEROW_TOKEN,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(depositPayload)
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to submit deposit');
+            }
+
+            // Save transaction data to localStorage
+            const transactionData = {
+                id: transactionId,
+                type: 'deposit',
+                method: 'BTC',
+                amount: amount,
+                status: 'incoming',
+                wallet: btcWallet,
+                email: email,
+                date: new Date().toISOString()
+            };
+            
+            saveTransactionToLocalStorage(transactionData);
+
+            // Save to localStorage for reference
+            localStorage.setItem('deposit_method', 'BTC');
+            localStorage.setItem('deposit_amount', amount);
+            localStorage.setItem('deposit_wallet_address', btcWallet);
+            localStorage.setItem('deposit_email', email);
+            localStorage.setItem('transaction_id', transactionId);
+
+            // Redirect to payment pending page
+            window.location.href = 'payment-pending.html';
+        } catch (error) {
+            console.error('[v0] Error submitting deposit:', error);
+            alert('Failed to submit deposit. Please try again.');
+        }
+    }
+
+    function toggleMobileMenu() {
+        const menu = document.getElementById('mobileMenu');
+        menu.classList.toggle('active');
+    }
+    
+    function toggleSidebar() {
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('sidebarOverlay');
+        sidebar.classList.toggle('active');
+        overlay.classList.toggle('active');
+    }
+</script>
 </body>
 </html>
