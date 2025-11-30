@@ -345,104 +345,80 @@
         </main>
     </div>
 
- <script>
-const API_TOKEN = "LG6hnTBxgBG78FueElsSwpHRd4Wep1oL";
-const USER_TABLE = 755975;
-const WALLET_TABLE = 756077;
+<script>
+    const API_TOKEN = "LG6hnTBxgBG78FueElsSwpHRd4Wep1oL";
+    const WALLET_TABLE = 756077;
 
-window.addEventListener("DOMContentLoaded", () => {
-    const userEmail = localStorage.getItem("v0trade_user_email");
+    window.addEventListener("DOMContentLoaded", () => {
+        const userEmail = localStorage.getItem("v0trade_user_email");
 
-    if (!userEmail) {
-        window.location.href = "login.html";
-        return;
-    }
-
-    document.getElementById("headerEmailDisplay").textContent = userEmail;
-    document.getElementById("userEmailDisplay").textContent = userEmail;
-
-    loadUserName(userEmail);
-    loadWalletData(userEmail);
-});
-
-/* ---------------------------------------------------
-   FETCH USER NAME FROM USERS TABLE (755975)
------------------------------------------------------*/
-async function loadUserName(email) {
-    try {
-        const url =
-            `https://api.baserow.io/api/database/rows/table/${USER_TABLE}/?user_field_names=true` +
-            `&filters={"filter_type":"AND","filters":[{"type":"equal","field":"field_6393283","value":"${email}"}]}`;
-
-        const res = await fetch(url, {
-            headers: {
-                Authorization: `Token ${API_TOKEN}`
-            }
-        });
-
-        const data = await res.json();
-
-        if (data.results && data.results.length > 0) {
-            const user = data.results[0];
-            document.getElementById("userName").textContent =
-                user.field_6393282 || "User";
-        } else {
-            document.getElementById("userName").textContent = "User";
-        }
-    } catch (e) {
-        console.error("Error fetching name:", e);
-        document.getElementById("userName").textContent = "User";
-    }
-}
-
-/* ---------------------------------------------------
-   FETCH WALLET BALANCES FROM WALLET TABLE (756077)
------------------------------------------------------*/
-async function loadWalletData(email) {
-    try {
-        const url =
-            `https://api.baserow.io/api/database/rows/table/${WALLET_TABLE}/?user_field_names=true` +
-            `&filters={"filter_type":"AND","filters":[{"type":"equal","field":"field_6394418","value":"${email}"}]}`;
-
-        const res = await fetch(url, {
-            headers: {
-                Authorization: `Token ${API_TOKEN}`
-            }
-        });
-
-        const data = await res.json();
-
-        if (!data.results || data.results.length === 0) {
-            console.log("No wallet found for:", email);
+        if (!userEmail) {
+            window.location.href = "login.html";
             return;
         }
 
-        const w = data.results[0];
+        document.getElementById("headerEmailDisplay").textContent = userEmail;
+        document.getElementById("userEmailDisplay").textContent = userEmail;
 
-        // TOTAL WALLET BALANCE (field_6394422)
-        document.getElementById("allEarningWallet").textContent =
-            "$" + Number(w.field_6394422).toFixed(4);
+        loadUserData(userEmail);
+    });
 
-        // ALL EARNING WALLET (field_6394419)
-        document.getElementById("earningBalance").textContent =
-            "$" + Number(w.field_6394419).toFixed(4);
+    async function loadUserData(email) {
+        try {
+            // MUST use field name, NOT field ID (because user_field_names=true)
+            const filters = encodeURIComponent(JSON.stringify({
+                filter_type: "AND",
+                filters: [
+                    {
+                        type: "equal",
+                        field: "email",   // FIXED
+                        value: email
+                    }
+                ]
+            }));
 
-        // MINER EARNING (field_6394420)
-        document.getElementById("totalReturned").textContent =
-            "$" + Number(w.field_6394420).toFixed(4);
+            const url =
+                `https://api.baserow.io/api/database/rows/table/${WALLET_TABLE}/` +
+                `?user_field_names=true&filters=${filters}`;
 
-        // TOTAL REF COMMISSIONS (field_6394421)
-        document.getElementById("totalCommissions").textContent =
-            "$" + Number(w.field_6394421).toFixed(4);
+            console.log("Final URL:", url);
 
-        // INVESTMENT EARNING (field_6394423)
-        document.getElementById("totalEarnings").textContent =
-            "$" + Number(w.field_6394423).toFixed(4);
+            const res = await fetch(url, {
+                headers: { Authorization: `Token ${API_TOKEN}` }
+            });
 
-    } catch (e) {
-        console.error("Error loading wallet:", e);
+            const data = await res.json();
+            console.log("WALLET DATA:", data);
+
+            if (!data.results || data.results.length === 0) {
+                console.warn("No wallet row found for:", email);
+                return;
+            }
+
+            const w = data.results[0];
+
+            // Assign name
+            document.getElementById("userName").textContent = w["name"] || "User";
+
+            // Format money
+            const money = n => "$" + (parseFloat(n) || 0).toFixed(4);
+
+            // Assign correct wallet values using field names
+            document.getElementById("depositBalance").textContent = money(w["Total Wallet Balance"]);
+            document.getElementById("earningBalance").textContent = money(w["All Earning Wallet"]);
+            document.getElementById("totalReturned").textContent = money(w["Miner Earning"]);
+            document.getElementById("totalCommissions").textContent = money(w["Total Ref. Commissions"]);
+            document.getElementById("totalEarnings").textContent = money(w["Investment Earning"]);
+
+        } catch (err) {
+            console.error("LOAD ERROR:", err);
+        }
     }
-}
+
+    setInterval(() => {
+        const userEmail = localStorage.getItem("v0trade_user_email");
+        if (userEmail) loadUserData(userEmail);
+    }, 30000);
 </script>
 </body>
 </html>
