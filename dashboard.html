@@ -345,99 +345,104 @@
         </main>
     </div>
 
-    <script>
-        const WALLET_TABLE_ID = 756077;
-        const USER_TABLE_ID = 755975;
-        const WALLET_API_URL = `https://api.baserow.io/api/database/rows/table/${WALLET_TABLE_ID}/?user_field_names=true`;
-        const USER_API_URL = `https://api.baserow.io/api/database/rows/table/${USER_TABLE_ID}/?user_field_names=true`;
-        const BASEROW_TOKEN = "LG6hnTBxgBG78FueElsSwpHRd4Wep1oL";
+ <script>
+const API_TOKEN = "LG6hnTBxgBG78FueElsSwpHRd4Wep1oL";
+const USER_TABLE = 755975;
+const WALLET_TABLE = 756077;
 
-        // Check authentication on page load
-        window.addEventListener('DOMContentLoaded', async function() {
-            const userEmail = localStorage.getItem("v0trade_user_email");
-            
-            if (!userEmail) {
-                console.log("[v0] No user email found, redirecting to login");
-                window.location.href = "login.html";
-                return;
+window.addEventListener("DOMContentLoaded", () => {
+    const userEmail = localStorage.getItem("v0trade_user_email");
+
+    if (!userEmail) {
+        window.location.href = "login.html";
+        return;
+    }
+
+    document.getElementById("headerEmailDisplay").textContent = userEmail;
+    document.getElementById("userEmailDisplay").textContent = userEmail;
+
+    loadUserName(userEmail);
+    loadWalletData(userEmail);
+});
+
+/* ---------------------------------------------------
+   FETCH USER NAME FROM USERS TABLE (755975)
+-----------------------------------------------------*/
+async function loadUserName(email) {
+    try {
+        const url =
+            `https://api.baserow.io/api/database/rows/table/${USER_TABLE}/?user_field_names=true` +
+            `&filters={"filter_type":"AND","filters":[{"type":"equal","field":"field_6393283","value":"${email}"}]}`;
+
+        const res = await fetch(url, {
+            headers: {
+                Authorization: `Token ${API_TOKEN}`
             }
-            
-            console.log("[v0] User authenticated:", userEmail);
-            document.getElementById('headerEmailDisplay').textContent = userEmail;
-            document.getElementById('userEmailDisplay').textContent = userEmail;
-
-            await fetchUserName(userEmail);
-            await fetchWalletData(userEmail);
         });
 
-        async function fetchUserName(email) {
-            try {
-                const response = await fetch(`${USER_API_URL}&filters={"filter_type":"AND","filters":[{"type":"equal","field":"Email","value":"${email}"}]}`, {
-                    headers: {
-                        "Authorization": `Token ${BASEROW_TOKEN}`,
-                        "Content-Type": "application/json"
-                    }
-                });
+        const data = await res.json();
 
-                const data = await response.json();
+        if (data.results && data.results.length > 0) {
+            const user = data.results[0];
+            document.getElementById("userName").textContent =
+                user.field_6393282 || "User";
+        } else {
+            document.getElementById("userName").textContent = "User";
+        }
+    } catch (e) {
+        console.error("Error fetching name:", e);
+        document.getElementById("userName").textContent = "User";
+    }
+}
 
-                if (data.results && data.results.length > 0) {
-                    const user = data.results[0];
-                    // field_6393282 is the Name field
-                    const userName = user['field_6393282'] || 'User';
-                    document.getElementById('userName').textContent = userName;
-                } else {
-                    console.log("[v0] No user data found");
-                }
-            } catch (error) {
-                console.error("[v0] Error fetching user name:", error);
+/* ---------------------------------------------------
+   FETCH WALLET BALANCES FROM WALLET TABLE (756077)
+-----------------------------------------------------*/
+async function loadWalletData(email) {
+    try {
+        const url =
+            `https://api.baserow.io/api/database/rows/table/${WALLET_TABLE}/?user_field_names=true` +
+            `&filters={"filter_type":"AND","filters":[{"type":"equal","field":"field_6394418","value":"${email}"}]}`;
+
+        const res = await fetch(url, {
+            headers: {
+                Authorization: `Token ${API_TOKEN}`
             }
+        });
+
+        const data = await res.json();
+
+        if (!data.results || data.results.length === 0) {
+            console.log("No wallet found for:", email);
+            return;
         }
 
-        async function fetchWalletData(email) {
-            try {
-                const response = await fetch(`${WALLET_API_URL}&filters={"filter_type":"AND","filters":[{"type":"equal","field":"field_6394418","value":"${email}"}]}`, {
-                    headers: {
-                        "Authorization": `Token ${BASEROW_TOKEN}`,
-                        "Content-Type": "application/json"
-                    }
-                });
+        const w = data.results[0];
 
-                const data = await response.json();
+        // TOTAL WALLET BALANCE (field_6394422)
+        document.getElementById("allEarningWallet").textContent =
+            "$" + Number(w.field_6394422).toFixed(4);
 
-                if (data.results && data.results.length > 0) {
-                    const wallet = data.results[0];
+        // ALL EARNING WALLET (field_6394419)
+        document.getElementById("earningBalance").textContent =
+            "$" + Number(w.field_6394419).toFixed(4);
 
-                    // field_6394419: All Earning Wallet — Available Balance
-                    // field_6394420: Miner Earning
-                    // field_6394421: Total Ref. Commissions
-                    // field_6394422: Total Wallet Balance
-                    // field_6394423: Investment Earning
-                    
-                    document.getElementById('depositBalance').textContent = `$${parseFloat(wallet['field_6394422'] || 0).toFixed(4)}`;
-                    document.getElementById('earningBalance').textContent = `$${parseFloat(wallet['field_6394419'] || 0).toFixed(4)}`;
-                    document.getElementById('totalReturned').textContent = `$${parseFloat(wallet['field_6394420'] || 0).toFixed(4)}`;
-                    document.getElementById('totalCommissions').textContent = `$${parseFloat(wallet['field_6394421'] || 0).toFixed(4)}`;
-                    document.getElementById('totalEarnings').textContent = `$${parseFloat(wallet['field_6394423'] || 0).toFixed(4)}`;
-                } else {
-                    console.log("[v0] No wallet data found for user");
-                }
-            } catch (error) {
-                console.error("[v0] Error fetching wallet data:", error);
-            }
-        }
+        // MINER EARNING (field_6394420)
+        document.getElementById("totalReturned").textContent =
+            "$" + Number(w.field_6394420).toFixed(4);
 
-        function toggleSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            const overlay = document.getElementById('sidebarOverlay');
-            sidebar.classList.toggle('active');
-            overlay.classList.toggle('active');
-        }
+        // TOTAL REF COMMISSIONS (field_6394421)
+        document.getElementById("totalCommissions").textContent =
+            "$" + Number(w.field_6394421).toFixed(4);
 
-        function toggleMobileMenu() {
-            const menu = document.getElementById('mobileMenu');
-            menu.classList.toggle('active');
-        }
-    </script>
+        // INVESTMENT EARNING (field_6394423)
+        document.getElementById("totalEarnings").textContent =
+            "$" + Number(w.field_6394423).toFixed(4);
+
+    } catch (e) {
+        console.error("Error loading wallet:", e);
+    }
+}
+</script>
 </body>
 </html>
