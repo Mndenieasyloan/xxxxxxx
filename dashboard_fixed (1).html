@@ -382,9 +382,9 @@
         -----------------------------------------------------*/
         async function loadUserName(email) {
             try {
-                const url =
-                    `https://api.baserow.io/api/database/rows/table/${USER_TABLE}/?user_field_names=true` +
-                    `&filters={"filter_type":"AND","filters":[{"type":"equal","field":"field_6393283","value":"${email}"}]}`;
+                const url = `https://api.baserow.io/api/database/rows/table/${USER_TABLE}/?user_field_names=true&filter__field_6393283=${encodeURIComponent(email)}`;
+                
+                console.log("Fetching user data from:", url);
 
                 const res = await fetch(url, {
                     headers: {
@@ -392,14 +392,21 @@
                     }
                 });
 
+                if (!res.ok) {
+                    throw new Error(`HTTP error! status: ${res.status}`);
+                }
+
                 const data = await res.json();
+                console.log("User data response:", data);
 
                 if (data.results && data.results.length > 0) {
                     const user = data.results[0];
-                    document.getElementById("userName").textContent =
-                        user.field_6393282 || "User";
+                    const userName = user.field_6393282 || "User";
+                    document.getElementById("userName").textContent = userName;
+                    console.log("User name set to:", userName);
                 } else {
                     document.getElementById("userName").textContent = "User";
+                    console.log("No user found, using default name");
                 }
             } catch (e) {
                 console.error("Error fetching name:", e);
@@ -412,9 +419,9 @@
         -----------------------------------------------------*/
         async function loadWalletData(email) {
             try {
-                const url =
-                    `https://api.baserow.io/api/database/rows/table/${WALLET_TABLE}/?user_field_names=true` +
-                    `&filters={"filter_type":"AND","filters":[{"type":"equal","field":"field_6394418","value":"${email}"}]}`;
+                const url = `https://api.baserow.io/api/database/rows/table/${WALLET_TABLE}/?user_field_names=true&filter__field_6394418=${encodeURIComponent(email)}`;
+                
+                console.log("Fetching wallet data from:", url);
 
                 const res = await fetch(url, {
                     headers: {
@@ -422,7 +429,12 @@
                     }
                 });
 
+                if (!res.ok) {
+                    throw new Error(`HTTP error! status: ${res.status}`);
+                }
+
                 const data = await res.json();
+                console.log("Wallet data response:", data);
 
                 if (!data.results || data.results.length === 0) {
                     console.log("No wallet found for:", email);
@@ -430,32 +442,47 @@
                 }
 
                 const w = data.results[0];
+                console.log("Wallet record found:", w);
 
                 // Map the wallet fields correctly
                 // Total Wallet Balance (field_6394419)
-                document.getElementById("depositBalance").textContent =
-                    "$" + (Number(w.field_6394419) || 0).toFixed(4);
+                const totalWalletBalance = parseFloat(w.field_6394419) || 0;
+                document.getElementById("depositBalance").textContent = "$" + totalWalletBalance.toFixed(4);
+                console.log("Total Wallet Balance:", totalWalletBalance);
 
                 // All Earning Wallet (field_6394420)
-                document.getElementById("earningBalance").textContent =
-                    "$" + (Number(w.field_6394420) || 0).toFixed(4);
+                const allEarningWallet = parseFloat(w.field_6394420) || 0;
+                document.getElementById("earningBalance").textContent = "$" + allEarningWallet.toFixed(4);
+                console.log("All Earning Wallet:", allEarningWallet);
 
                 // Miner Earning (field_6394421)
-                document.getElementById("totalReturned").textContent =
-                    "$" + (Number(w.field_6394421) || 0).toFixed(4);
+                const minerEarning = parseFloat(w.field_6394421) || 0;
+                document.getElementById("totalReturned").textContent = "$" + minerEarning.toFixed(4);
+                console.log("Miner Earning:", minerEarning);
 
                 // Total Ref Commissions (field_6394422)
-                document.getElementById("totalCommissions").textContent =
-                    "$" + (Number(w.field_6394422) || 0).toFixed(4);
+                const totalCommissions = parseFloat(w.field_6394422) || 0;
+                document.getElementById("totalCommissions").textContent = "$" + totalCommissions.toFixed(4);
+                console.log("Total Ref Commissions:", totalCommissions);
 
                 // Investment Earning (field_6394423)
-                document.getElementById("totalEarnings").textContent =
-                    "$" + (Number(w.field_6394423) || 0).toFixed(4);
+                const investmentEarning = parseFloat(w.field_6394423) || 0;
+                document.getElementById("totalEarnings").textContent = "$" + investmentEarning.toFixed(4);
+                console.log("Investment Earning:", investmentEarning);
 
             } catch (e) {
                 console.error("Error loading wallet:", e);
             }
         }
+
+        // Auto-refresh wallet data every 30 seconds
+        setInterval(() => {
+            const userEmail = localStorage.getItem("v0trade_user_email");
+            if (userEmail) {
+                console.log("Auto-refreshing wallet data...");
+                loadWalletData(userEmail);
+            }
+        }, 30000);
     </script>
 </body>
 </html>
