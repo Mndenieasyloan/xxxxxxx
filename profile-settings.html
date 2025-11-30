@@ -666,12 +666,13 @@
         </main>
     </div>
 
-   <script>
+<script>
 /* ============================
     BASEROW CONFIG
 ============================ */
 const BASEROW_TOKEN = "LG6hnTBxgBG78FueElsSwpHRd4Wep1oL";
 const BASEROW_USERS_TABLE = 755975;
+const WALLET_TABLE = 756077;
 
 /* BASEROW FIELDS (user_field_names=true):
     name       = name (field_6393282)
@@ -686,10 +687,9 @@ let currentUserRowId = null;
 let currentUserEmail = "";
 
 /* ============================
-    CHECK LOGIN (same as DASHBOARD)
+    CHECK LOGIN & LOAD USER DATA
 ============================ */
 window.addEventListener("DOMContentLoaded", () => {
-
     currentUserEmail = localStorage.getItem("v0trade_user_email");
 
     if (!currentUserEmail) {
@@ -697,16 +697,59 @@ window.addEventListener("DOMContentLoaded", () => {
         return;
     }
 
-    // Update header email display (same as dashboard)
+    // Update header email display
     const headerEmail = document.querySelector(".md\\:flex span.text-sm.text-gray-400");
     if (headerEmail) headerEmail.textContent = currentUserEmail;
 
-    // Show in profile email label
-    document.getElementById("displayEmail").textContent = currentUserEmail;
-
+    // Load user profile data
     loadProfile(currentUserEmail);
+    
+    // Load additional user data for name display
+    loadUserData(currentUserEmail);
 });
 
+/* ============================
+    LOAD ADDITIONAL USER DATA (FROM DASHBOARD SCRIPT)
+============================ */
+async function loadUserData(email) {
+    try {
+        const filters = encodeURIComponent(JSON.stringify({
+            filter_type: "AND",
+            filters: [
+                {
+                    type: "equal",
+                    field: "email",
+                    value: email
+                }
+            ]
+        }));
+
+        const url =
+            `https://api.baserow.io/api/database/rows/table/${WALLET_TABLE}/` +
+            `?user_field_names=true&filters=${filters}`;
+
+        const res = await fetch(url, {
+            headers: { Authorization: `Token ${BASEROW_TOKEN}` }
+        });
+
+        const data = await res.json();
+
+        if (!data.results || data.results.length === 0) {
+            console.warn("No wallet row found for:", email);
+            return;
+        }
+
+        const w = data.results[0];
+
+        // Update name display in profile
+        const userName = w["name"] || "User";
+        document.getElementById("displayFullName").textContent = userName;
+        document.getElementById("editFullName").value = userName;
+
+    } catch (err) {
+        console.error("USER DATA LOAD ERROR:", err);
+    }
+}
 
 /* ============================
     FETCH USER FROM BASEROW
@@ -745,22 +788,20 @@ async function loadProfile(email) {
     }
 }
 
-
 /* ============================
     POPULATE PROFILE UI
 ============================ */
 function populateProfile(user) {
-
-    // NON-EDITABLE UI
-    document.getElementById("displayFullName").textContent = user.name || "Not set";
+    // Email display
     document.getElementById("displayEmail").textContent = user.email || "Not set";
+    document.getElementById("editEmail").value = user.email || "";
 
-    // EDITABLE DISPLAY
+    // Editable fields
     document.getElementById("displayPhone").textContent = user.phone || "Not set";
     document.getElementById("displayAddress").textContent = user.address || "Not set";
     document.getElementById("displayCountry").textContent = user.country || "Not set";
 
-    // EDIT INPUTS
+    // Edit inputs
     document.getElementById("editPhone").value = user.phone || "";
     document.getElementById("editAddress").value = user.address || "";
     document.getElementById("editCountry").value = user.country || "";
@@ -772,7 +813,6 @@ function populateProfile(user) {
         document.getElementById("welcomePrompt").style.display = "none";
     }
 }
-
 
 /* ============================
     UPDATE USER IN BASEROW
@@ -802,17 +842,17 @@ async function updateUserData(updateObj) {
     }
 }
 
-
 /* ============================
     SAVE CHANGES
 ============================ */
 async function saveChanges() {
-
+    const fullName = document.getElementById("editFullName").value;
     const phone = document.getElementById("editPhone").value;
     const address = document.getElementById("editAddress").value;
     const country = document.getElementById("editCountry").value;
 
     const updateObj = {
+        name: fullName,
         phone: phone,
         address: address,
         country: country
@@ -823,6 +863,8 @@ async function saveChanges() {
     if (success) {
         alert("Profile updated successfully!");
 
+        // Update display fields
+        document.getElementById("displayFullName").textContent = fullName || "Not set";
         document.getElementById("displayPhone").textContent = phone || "Not set";
         document.getElementById("displayAddress").textContent = address || "Not set";
         document.getElementById("displayCountry").textContent = country || "Not set";
@@ -834,18 +876,51 @@ async function saveChanges() {
     }
 }
 
-
 /* ============================
     VIEW / EDIT MODE
 ============================ */
 function toggleEditMode(sectionId) {
-    document.getElementById(sectionId).classList.add("edit-mode");
+    const section = document.getElementById(sectionId);
+    section.classList.remove("view-mode");
+    section.classList.add("edit-mode");
+    
+    // Show/hide buttons
+    document.getElementById("editBtnPersonalInfo").classList.add("hidden");
+    document.getElementById("saveBtnPersonalInfo").classList.remove("hidden");
+    document.getElementById("cancelBtnPersonalInfo").classList.remove("hidden");
 }
 
 function cancelEdit(sectionId) {
-    document.getElementById(sectionId).classList.remove("edit-mode");
+    const section = document.getElementById(sectionId);
+    section.classList.remove("edit-mode");
+    section.classList.add("view-mode");
+    
+    // Show/hide buttons
+    document.getElementById("editBtnPersonalInfo").classList.remove("hidden");
+    document.getElementById("saveBtnPersonalInfo").classList.add("hidden");
+    document.getElementById("cancelBtnPersonalInfo").classList.add("hidden");
 }
 
+/* ============================
+    SIDEBAR & MOBILE MENU FUNCTIONS
+============================ */
+function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+    sidebar.classList.toggle('active');
+    overlay.classList.toggle('active');
+}
+
+function toggleMobileMenu() {
+    const mobileMenu = document.getElementById('mobileMenu');
+    mobileMenu.classList.toggle('active');
+}
+
+function confirmDeleteAccount() {
+    if (confirm("Are you sure you want to delete your account? This action cannot be undone.")) {
+        alert("Account deletion requested. This feature would typically trigger an account deletion process.");
+    }
+}
 </script>
 
 </body>
