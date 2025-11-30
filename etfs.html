@@ -453,194 +453,279 @@
     </div>
 
     <script>
-        function toggleMobileMenu() {
-            document.getElementById('mobileMenu').classList.toggle('active');
-        }
+    function toggleMobileMenu() {
+        document.getElementById('mobileMenu').classList.toggle('active');
+    }
 
-        function calculateProfit() {
-            const plan = parseInt(document.getElementById('calcPlan').value);
-            const amount = parseFloat(document.getElementById('calcAmount').value);
+    function calculateProfit() {
+        const plan = parseInt(document.getElementById('calcPlan').value);
+        const amount = parseFloat(document.getElementById('calcAmount').value);
+        
+        if (amount && amount >= 200) {
+            const profit = (amount * plan) / 100;
+            const total = amount + profit;
             
-            if (amount && amount >= 200) {
-                const profit = (amount * plan) / 100;
-                const total = amount + profit;
-                
-                document.getElementById('profitAmount').textContent = '$' + profit.toFixed(2);
-                document.getElementById('totalAmount').textContent = '$' + total.toFixed(2);
-                document.getElementById('calcResult').classList.remove('hidden');
-            } else {
-                alert('Please enter a valid amount (minimum $200)');
+            document.getElementById('profitAmount').textContent = '$' + profit.toFixed(2);
+            document.getElementById('totalAmount').textContent = '$' + total.toFixed(2);
+            document.getElementById('calcResult').classList.remove('hidden');
+        } else {
+            alert('Please enter a valid amount (minimum $200)');
+        }
+    }
+
+    const BASEROW_TOKEN = 'LG6hnTBxgBG78FueElsSwpHRd4Wep1oL';
+    const WALLET_TABLE_ID = '756077';
+    const INVESTMENT_TABLE_ID = '756316';
+    const BASEROW_API_URL = 'https://api.baserow.io/api/database/rows/table';
+
+    // Check if user is logged in
+    function checkLogin() {
+        const userEmail = localStorage.getItem('v0trade_user_email');
+        return userEmail !== null && userEmail !== '';
+    }
+
+    // Get logged-in user email
+    function getUserEmail() {
+        return localStorage.getItem('v0trade_user_email') || '';
+    }
+
+    // Update header with user info
+    function updateHeader() {
+        const userEmail = getUserEmail();
+        if (userEmail) {
+            // Update header account display
+            const headerAccount = document.querySelector('.md\\:flex a[href="dashboard.html"]');
+            if (headerAccount) {
+                headerAccount.textContent = userEmail;
             }
-        }
-
-        const BASEROW_TOKEN = 'LG6hnTBxgBG78FueElsSwpHRd4Wep1oL';
-        const WALLET_TABLE_ID = '756077';
-        const INVESTMENT_TABLE_ID = '756316';
-        const BASEROW_API_URL = 'https://api.baserow.io/api/database/rows/table';
-
-        function checkLogin() {
-            return localStorage.getItem('userEmail') !== null && localStorage.getItem('userEmail') !== '';
-        }
-
-        function getUserEmail() {
-            return localStorage.getItem('userEmail') || '';
-        }
-
-        function showModal(title, content, confirmCallback) {
-            document.getElementById('modalTitle').textContent = title;
-            document.getElementById('modalContent').innerHTML = content;
-            document.getElementById('investmentModal').classList.remove('hidden');
-            document.getElementById('confirmButton').onclick = confirmCallback;
-        }
-
-        function closeModal() {
-            document.getElementById('investmentModal').classList.add('hidden');
-        }
-
-        function calculateReturns(amount, roiMultiplier, duration) {
-            const totalReturn = amount * roiMultiplier;
-            const profit = totalReturn - amount;
-            const dailyReturn = profit / getDaysFromDuration(duration);
-            return { totalReturn, profit, dailyReturn };
-        }
-
-        function getDaysFromDuration(duration) {
-            if (duration.includes('Hour')) return Math.ceil(parseInt(duration) / 24) || 1;
-            if (duration.includes('Week')) return 7;
-            return 1;
-        }
-
-        async function getWalletBalance(email) {
-            try {
-                const response = await fetch(`${BASEROW_API_URL}/${WALLET_TABLE_ID}/?user_field_names=true`, {
-                    headers: { 'Authorization': `Token ${BASEROW_TOKEN}` }
-                });
-                const data = await response.json();
-                const userWallet = data.results.find(row => row.Email === email);
-                if (userWallet) {
-                    return { balance: parseFloat(userWallet['Wallet Balance'].replace(/[$,]/g, '')), rowId: userWallet.id };
-                }
-                return null;
-            } catch (error) {
-                console.error('Error:', error);
-                return null;
-            }
-        }
-
-        async function updateWalletBalance(rowId, newBalance) {
-            try {
-                await fetch(`${BASEROW_API_URL}/${WALLET_TABLE_ID}/${rowId}/?user_field_names=true`, {
-                    method: 'PATCH',
-                    headers: { 'Authorization': `Token ${BASEROW_TOKEN}`, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 'Wallet Balance': `$${newBalance.toFixed(2)}` })
-                });
-                return true;
-            } catch (error) {
-                return false;
-            }
-        }
-
-        async function createInvestment(email, amount, planType, duration, dailyReturn, totalEarned) {
-            try {
-                const response = await fetch(`${BASEROW_API_URL}/${INVESTMENT_TABLE_ID}/?user_field_names=true`, {
-                    method: 'POST',
-                    headers: { 'Authorization': `Token ${BASEROW_TOKEN}`, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        'User Email': email,
-                        'Investment Amount': `$${amount.toFixed(2)}`,
-                        'Daily Return': `$${dailyReturn.toFixed(2)}`,
-                        'Total Earned': totalEarned,
-                        'Status': 'Active',
-                        'Days Remaining': getDaysFromDuration(duration).toString(),
-                        'Date of Investment': new Date().toISOString().split('T')[0]
-                    })
-                });
-                return response.ok;
-            } catch (error) {
-                return false;
-            }
-        }
-
-        function handleInvest(planName, roi, duration) {
-            const card = event.target.closest('.bg-gradient-to-br');
-            const etfSelect = card.querySelector('select');
-            const amountInput = card.querySelector('input[type="number"]');
-            const etf = etfSelect.value;
-            const amount = parseFloat(amountInput.value);
-
-            if (isNaN(amount) || amount < 200) {
-                showModal('Invalid Amount', '<p class="text-gray-300">Please enter an amount of at least $200.</p>', closeModal);
-                return;
-            }
-
-            if (!checkLogin()) {
-                showModal('Login Required', '<p class="text-gray-300">You must log in before investing in ETF plans.</p>', () => {
+            
+            // Update logout link
+            const logoutLink = document.querySelector('.md\\:flex a[href="login.html"]');
+            if (logoutLink) {
+                logoutLink.textContent = 'Logout';
+                logoutLink.href = 'javascript:void(0)';
+                logoutLink.onclick = function() {
+                    localStorage.removeItem('v0trade_user_email');
                     window.location.href = 'login.html';
-                });
-                return;
-            }
-
-            const roiMultiplier = parseFloat(roi) / 100 + 1;
-            const { totalReturn, dailyReturn } = calculateReturns(amount, roiMultiplier, duration);
-
-            showModal('Confirm Investment', `
-                <div class="space-y-3">
-                    <div class="flex justify-between text-gray-300"><span>Plan:</span><span class="text-white font-semibold">${planName}</span></div>
-                    <div class="flex justify-between text-gray-300"><span>ETF:</span><span class="text-white font-semibold">${etf}</span></div>
-                    <div class="flex justify-between text-gray-300"><span>Investment:</span><span class="text-white font-semibold">$${amount.toFixed(2)}</span></div>
-                    <div class="flex justify-between text-gray-300"><span>ROI:</span><span class="text-green-400 font-semibold">+${roi}%</span></div>
-                    <div class="flex justify-between text-gray-300"><span>Daily Return:</span><span class="text-cyan-400 font-semibold">$${dailyReturn.toFixed(2)}</span></div>
-                    <div class="flex justify-between text-gray-300"><span>Total Expected:</span><span class="text-purple-400 font-bold text-xl">$${totalReturn.toFixed(2)}</span></div>
-                </div>
-            `, async () => await processInvestment(amount, planName, etf, duration, dailyReturn, totalReturn));
-        }
-
-        async function processInvestment(amount, planName, asset, duration, dailyReturn, totalReturn) {
-            const email = getUserEmail();
-            document.getElementById('modalContent').innerHTML = '<p class="text-center text-gray-300">Processing...</p>';
-            document.getElementById('confirmButton').disabled = true;
-
-            const walletData = await getWalletBalance(email);
-            if (!walletData) {
-                showModal('Wallet Not Found', '<p class="text-gray-300">Unable to find your wallet.</p>', closeModal);
-                return;
-            }
-
-            if (walletData.balance < amount) {
-                showModal('Insufficient Balance', `<p class="text-gray-300">Insufficient wallet balance.</p>
-                     <p class="text-sm mt-2">Balance: $${walletData.balance.toFixed(2)} | Required: $${amount.toFixed(2)}</p>`, closeModal);
-                return;
-            }
-
-            if (!await updateWalletBalance(walletData.rowId, walletData.balance - amount)) {
-                showModal('Error', '<p class="text-gray-300">Failed to process payment.</p>', closeModal);
-                return;
-            }
-
-            if (await createInvestment(email, amount, `ETF - ${planName} (${asset})`, duration, dailyReturn, '$0.00')) {
-                showModal('Success!', `<p class="text-green-400 font-semibold text-center">Investment successful!</p>
-                     <p class="text-gray-300 text-center mt-4">Your ${planName} is now active.</p>`, () => window.location.href = 'dashboard.html');
-            } else {
-                await updateWalletBalance(walletData.rowId, walletData.balance);
-                showModal('Error', '<p class="text-gray-300">Failed to create investment.</p>', closeModal);
+                };
             }
         }
+    }
 
-        document.addEventListener('DOMContentLoaded', function() {
-            const plans = [
-                { name: '1 Hour Plan', roi: '20', duration: '1 Hour' },
-                { name: '5 Hours Plan', roi: '30', duration: '5 Hours' },
-                { name: '24 Hours Plan', roi: '68', duration: '24 Hours' },
-                { name: '72 Hours Plan', roi: '89', duration: '72 Hours' },
-                { name: '1 Week Plan', roi: '190', duration: '1 Week' }
-            ];
+    function showModal(title, content, confirmCallback) {
+        document.getElementById('modalTitle').textContent = title;
+        document.getElementById('modalContent').innerHTML = content;
+        document.getElementById('investmentModal').classList.remove('hidden');
+        document.getElementById('confirmButton').onclick = confirmCallback;
+    }
 
-            document.querySelectorAll('button:not(#confirmButton)').forEach((button, index) => {
-                if (button.textContent.includes('Invest Now') && plans[index]) {
-                    button.onclick = () => handleInvest(plans[index].name, plans[index].roi, plans[index].duration);
-                }
+    function closeModal() {
+        document.getElementById('investmentModal').classList.add('hidden');
+    }
+
+    function calculateReturns(amount, roiMultiplier, duration) {
+        const totalReturn = amount * roiMultiplier;
+        const profit = totalReturn - amount;
+        const dailyReturn = profit / getDaysFromDuration(duration);
+        return { totalReturn, profit, dailyReturn };
+    }
+
+    function getDaysFromDuration(duration) {
+        if (duration.includes('Hour')) return Math.ceil(parseInt(duration) / 24) || 1;
+        if (duration.includes('Week')) return 7;
+        return 1;
+    }
+
+    // Get wallet balance from Baserow
+    async function getWalletBalance(email) {
+        try {
+            const filters = encodeURIComponent(JSON.stringify({
+                filter_type: "AND",
+                filters: [
+                    {
+                        type: "equal",
+                        field: "email",
+                        value: email
+                    }
+                ]
+            }));
+
+            const url = `${BASEROW_API_URL}/${WALLET_TABLE_ID}/?user_field_names=true&filters=${filters}`;
+            
+            const response = await fetch(url, {
+                headers: { 'Authorization': `Token ${BASEROW_TOKEN}` }
             });
+            
+            const data = await response.json();
+            
+            if (data.results && data.results.length > 0) {
+                const userWallet = data.results[0];
+                const balance = parseFloat(userWallet['Total Wallet Balance'] || 0);
+                return { balance, rowId: userWallet.id };
+            }
+            return null;
+        } catch (error) {
+            console.error('Error fetching wallet balance:', error);
+            return null;
+        }
+    }
+
+    // Update wallet balance in Baserow
+    async function updateWalletBalance(rowId, newBalance) {
+        try {
+            await fetch(`${BASEROW_API_URL}/${WALLET_TABLE_ID}/${rowId}/?user_field_names=true`, {
+                method: 'PATCH',
+                headers: { 
+                    'Authorization': `Token ${BASEROW_TOKEN}`, 
+                    'Content-Type': 'application/json' 
+                },
+                body: JSON.stringify({ 
+                    'Total Wallet Balance': newBalance 
+                })
+            });
+            return true;
+        } catch (error) {
+            console.error('Error updating wallet balance:', error);
+            return false;
+        }
+    }
+
+    // Create investment record in Baserow using correct field names
+    async function createInvestment(email, amount, planType, duration, dailyReturn, totalEarned, investmentPlan) {
+        try {
+            const response = await fetch(`${BASEROW_API_URL}/${INVESTMENT_TABLE_ID}/?user_field_names=true`, {
+                method: 'POST',
+                headers: { 
+                    'Authorization': `Token ${BASEROW_TOKEN}`, 
+                    'Content-Type': 'application/json' 
+                },
+                body: JSON.stringify({
+                    'Investment Amount': `$${amount.toFixed(2)}`,
+                    'Daily Return': `$${dailyReturn.toFixed(2)}`,
+                    'Total Earned': `$${totalEarned.toFixed(2)}`,
+                    'Status': 'Active',
+                    'Days Remaining': getDaysFromDuration(duration).toString(),
+                    'email': email,
+                    'date': new Date().toISOString().split('T')[0],
+                    'investment type': planType,
+                    'investment plan': investmentPlan
+                })
+            });
+            return response.ok;
+        } catch (error) {
+            console.error('Error creating investment:', error);
+            return false;
+        }
+    }
+
+    function handleInvest(planName, roi, duration) {
+        const card = event.target.closest('.bg-gradient-to-br');
+        const etfSelect = card.querySelector('select');
+        const amountInput = card.querySelector('input[type="number"]');
+        const etf = etfSelect.value;
+        const amount = parseFloat(amountInput.value);
+
+        if (isNaN(amount) || amount < 200) {
+            showModal('Invalid Amount', '<p class="text-gray-300">Please enter an amount of at least $200.</p>', closeModal);
+            return;
+        }
+
+        if (!checkLogin()) {
+            showModal('Login Required', '<p class="text-gray-300">You must log in before investing in ETF plans.</p>', () => {
+                window.location.href = 'login.html';
+            });
+            return;
+        }
+
+        const roiMultiplier = parseFloat(roi) / 100 + 1;
+        const { totalReturn, dailyReturn } = calculateReturns(amount, roiMultiplier, duration);
+
+        showModal('Confirm Investment', `
+            <div class="space-y-3">
+                <div class="flex justify-between text-gray-300"><span>Plan:</span><span class="text-white font-semibold">${planName}</span></div>
+                <div class="flex justify-between text-gray-300"><span>ETF:</span><span class="text-white font-semibold">${etf}</span></div>
+                <div class="flex justify-between text-gray-300"><span>Investment:</span><span class="text-white font-semibold">$${amount.toFixed(2)}</span></div>
+                <div class="flex justify-between text-gray-300"><span>ROI:</span><span class="text-green-400 font-semibold">+${roi}%</span></div>
+                <div class="flex justify-between text-gray-300"><span>Duration:</span><span class="text-white font-semibold">${duration}</span></div>
+                <div class="flex justify-between text-gray-300"><span>Daily Return:</span><span class="text-cyan-400 font-semibold">$${dailyReturn.toFixed(2)}</span></div>
+                <div class="flex justify-between text-gray-300"><span>Total Expected:</span><span class="text-purple-400 font-bold text-xl">$${totalReturn.toFixed(2)}</span></div>
+            </div>
+        `, async () => await processInvestment(amount, planName, etf, duration, dailyReturn, totalReturn));
+    }
+
+    async function processInvestment(amount, planName, asset, duration, dailyReturn, totalReturn) {
+        const email = getUserEmail();
+        document.getElementById('modalContent').innerHTML = '<p class="text-center text-gray-300">Processing investment...</p>';
+        document.getElementById('confirmButton').disabled = true;
+
+        const walletData = await getWalletBalance(email);
+        if (!walletData) {
+            showModal('Wallet Not Found', '<p class="text-gray-300">Unable to find your wallet. Please contact support.</p>', closeModal);
+            return;
+        }
+
+        if (walletData.balance < amount) {
+            showModal('Insufficient Balance', `<p class="text-gray-300">Insufficient wallet balance to complete this purchase.</p>
+                 <p class="text-gray-400 text-sm mt-2">Your balance: $${walletData.balance.toFixed(2)}</p>
+                 <p class="text-gray-400 text-sm">Required: $${amount.toFixed(2)}</p>`, closeModal);
+            return;
+        }
+
+        // Deduct from wallet
+        const newBalance = walletData.balance - amount;
+        const updateSuccess = await updateWalletBalance(walletData.rowId, newBalance);
+        
+        if (!updateSuccess) {
+            showModal('Error', '<p class="text-gray-300">Failed to process payment. Please try again.</p>', closeModal);
+            return;
+        }
+
+        // Create investment record
+        const investSuccess = await createInvestment(
+            email,
+            amount,
+            `ETF - ${asset}`,
+            duration,
+            dailyReturn,
+            0, // Initial total earned is 0
+            planName
+        );
+
+        if (investSuccess) {
+            showModal('Success!', `<p class="text-green-400 font-semibold text-center">Investment successful!</p>
+                 <p class="text-gray-300 text-center mt-4">Your ${planName} investment is now active.</p>
+                 <p class="text-gray-400 text-sm text-center mt-2">Check your dashboard to track your returns.</p>`, 
+                () => window.location.href = 'dashboard.html');
+        } else {
+            // Rollback wallet balance
+            await updateWalletBalance(walletData.rowId, walletData.balance);
+            showModal('Error', '<p class="text-gray-300">Failed to create investment. Please try again.</p>', closeModal);
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // Update header with user info
+        updateHeader();
+
+        const plans = [
+            { name: '1 Hour Plan', roi: '20', duration: '1 Hour' },
+            { name: '5 Hours Plan', roi: '30', duration: '5 Hours' },
+            { name: '24 Hours Plan', roi: '68', duration: '24 Hours' },
+            { name: '72 Hours Plan', roi: '89', duration: '72 Hours' },
+            { name: '1 Week Plan', roi: '190', duration: '1 Week' }
+        ];
+
+        document.querySelectorAll('button:not(#confirmButton)').forEach((button, index) => {
+            if (button.textContent.includes('Invest Now') && plans[index]) {
+                button.onclick = () => handleInvest(plans[index].name, plans[index].roi, plans[index].duration);
+            }
         });
-    </script>
+
+        // Check login status and redirect if not logged in for investment actions
+        if (!checkLogin()) {
+            console.log('User not logged in - investment features disabled');
+        }
+    });
+</script>
 </body>
 </html>
