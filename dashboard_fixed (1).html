@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wallet Dashboard - V0 Trade</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gray-50">
+
+<!-- ================= HEADER ================= -->
+<header class="sticky top-0 z-50 border-b border-purple-500/20 bg-slate-950/80 backdrop-blur-md">
+    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+        <h1 class="text-xl font-bold text-white">V0 Trade Dashboard</h1>
+        <div class="text-gray-300 text-sm">
+            <span id="headerEmailDisplay">Loading...</span>
+        </div>
+    </div>
+</header>
+
+<!-- ================= MAIN ================= -->
+<main class="max-w-6xl mx-auto p-6">
+
+    <!-- WELCOME BOX -->
+    <div class="bg-gradient-to-r from-purple-500/10 via-pink-500/10 to-cyan-500/10 p-6 rounded-xl border border-purple-300 mb-8">
+        <h2 class="text-2xl font-bold text-gray-900">
+            Welcome back, <span id="userName">User</span>!
+        </h2>
+        <p class="text-gray-600 text-sm mt-1">
+            Email: <span id="userEmailDisplay">Loading...</span>
+        </p>
+    </div>
+
+    <!-- WALLET CARDS -->
+    <div class="grid md:grid-cols-2 gap-6">
+
+        <!-- Total Wallet Balance -->
+        <div class="bg-white rounded-xl border-2 border-orange-400 p-6">
+            <h3 class="text-lg font-semibold text-gray-900">Total Wallet Balance</h3>
+            <p class="text-sm text-gray-500 mb-4">Available Balance</p>
+            <p id="totalWalletBalance" class="text-3xl font-bold text-gray-900">$0.0000</p>
+        </div>
+
+        <!-- All Earning Wallet -->
+        <div class="bg-white rounded-xl border-2 border-green-400 p-6">
+            <h3 class="text-lg font-semibold text-gray-900">All Earning Wallet</h3>
+            <p class="text-sm text-gray-500 mb-4">Available Balance</p>
+            <p id="earningWallet" class="text-3xl font-bold text-gray-900">$0.0000</p>
+        </div>
+
+    </div>
+
+    <!-- EARNINGS SUMMARY -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
+
+        <div class="bg-white rounded-xl border-2 border-green-300 p-6">
+            <p class="text-sm font-medium text-gray-600">Miner Earning</p>
+            <p id="minerEarning" class="text-2xl font-bold text-gray-900">$0.0000</p>
+        </div>
+
+        <div class="bg-white rounded-xl border-2 border-green-300 p-6">
+            <p class="text-sm font-medium text-gray-600">Total Ref. Commissions</p>
+            <p id="refCommissions" class="text-2xl font-bold text-gray-900">$0.0000</p>
+        </div>
+
+        <div class="bg-white rounded-xl border-2 border-green-300 p-6">
+            <p class="text-sm font-medium text-gray-600">Investment Earning</p>
+            <p id="investmentEarning" class="text-2xl font-bold text-gray-900">$0.0000</p>
+        </div>
+
+    </div>
+
+</main>
+
+<!-- ================= SCRIPT ================= -->
+<script>
+const BASEROW_TOKEN = "LG6hnTBxgBG78FueElsSwpHRd4Wep1oL";
+const WALLET_API = "https://api.baserow.io/api/database/rows/table/756077/?user_field_names=true";
+const USER_API = "https://api.baserow.io/api/database/rows/table/755975/?user_field_names=true";
+
+// FIELD IDs from your request
+const FIELD_NAME = "field_6394417";
+const FIELD_EMAIL = "field_6394418";
+const FIELD_TOTAL_WALLET = "field_6394419";
+const FIELD_ALL_EARNING = "field_6394420";
+const FIELD_MINER = "field_6394421";
+const FIELD_REF = "field_6394422";
+const FIELD_INVEST = "field_6394423";
+
+// Format currency safely
+function formatMoney(v) {
+    const n = Number(v);
+    return isFinite(n) ? "$" + n.toFixed(4) : "$0.0000";
+}
+
+window.addEventListener("DOMContentLoaded", async () => {
+    const email = localStorage.getItem("v0trade_user_email");
+
+    if (!email) {
+        window.location.href = "login.html";
+        return;
+    }
+
+    document.getElementById("headerEmailDisplay").textContent = email;
+    document.getElementById("userEmailDisplay").textContent = email;
+
+    loadUserName(email);
+    loadWallet(email);
+});
+
+// Load Name from USERS TABLE (755975)
+async function loadUserName(email) {
+    const res = await fetch(USER_API + "&filters=" + encodeURIComponent(JSON.stringify({
+        filter_type: "AND",
+        filters: [{ type: "equal", field: "Email", value: email }]
+    })), {
+        headers: { "Authorization": "Token " + BASEROW_TOKEN }
+    });
+
+    const data = await res.json();
+
+    if (data.results && data.results.length > 0) {
+        const row = data.results[0];
+        document.getElementById("userName").textContent = row["field_6393282"] || "User";
+    }
+}
+
+// Load Wallet Data (Table 756077)
+async function loadWallet(email) {
+    const res = await fetch(WALLET_API + "&filters=" + encodeURIComponent(JSON.stringify({
+        filter_type: "AND",
+        filters: [{ type: "equal", field: FIELD_EMAIL, value: email }]
+    })), {
+        headers: { "Authorization": "Token " + BASEROW_TOKEN }
+    });
+
+    const data = await res.json();
+
+    if (!data.results || data.results.length === 0) return;
+
+    const w = data.results[0];
+
+    document.getElementById("totalWalletBalance").textContent = formatMoney(w[FIELD_TOTAL_WALLET]);
+    document.getElementById("earningWallet").textContent = formatMoney(w[FIELD_ALL_EARNING]);
+    document.getElementById("minerEarning").textContent = formatMoney(w[FIELD_MINER]);
+    document.getElementById("refCommissions").textContent = formatMoney(w[FIELD_REF]);
+    document.getElementById("investmentEarning").textContent = formatMoney(w[FIELD_INVEST]);
+}
+</script>
+
+</body>
+</html>
