@@ -667,138 +667,168 @@
     </div>
 
    <script>
-const BASEROW_TABLE = 755975;
+/* ============================
+   BASEROW CONFIG
+============================= */
+const BASEROW_TABLE_URL = "https://api.baserow.io/api/database/rows/table/755975/";
 const BASEROW_TOKEN = "LG6hnTBxgBG78FueElsSwpHRd4Wep1oL";
-const BASEROW_API = `https://api.baserow.io/api/database/rows/table/${BASEROW_TABLE}/`;
+
+/* USER FIELDS IN BASEROW
+    name        = field_6393282
+    email       = field_6393283
+    phone       = field_6393284
+    username    = field_6393286
+    country     = field_6393289
+    address     = field_6393292
+*/
 
 let currentUserEmail = "";
-let currentRowId = null;
+let currentUserRowId = null;
 
-/* -------------------------------------------
-   ON PAGE LOAD – DETECT LOGIN (NO REDIRECT)
---------------------------------------------*/
-document.addEventListener("DOMContentLoaded", () => {
-    const email = localStorage.getItem("v0trade_user_email");
+/* ============================
+   CHECK LOGIN
+============================= */
+function checkAuth() {
+    const loggedInUser = localStorage.getItem("loggedInUser");
 
-    if (!email) {
-        document.getElementById("displayFullName").textContent = "Login First";
-        document.getElementById("displayEmail").textContent = "-";
-        return;
+    if (!loggedInUser) {
+        // Not logged in — redirect to login page
+        window.location.href = "login.html";
+        return null;
     }
 
-    currentUserEmail = email;
-    document.getElementById("displayEmail").textContent = email;
+    return JSON.parse(loggedInUser);
+}
 
-    loadUserData(email);
-});
-
-/* -------------------------------------------
-   FETCH USER DATA FROM BASEROW (TABLE 755975)
---------------------------------------------*/
-async function loadUserData(email) {
+/* ============================
+   FETCH USER FROM BASEROW
+============================= */
+async function fetchUserData() {
     try {
-        const filters = encodeURIComponent(JSON.stringify({
-            filter_type: "AND",
-            filters: [
-                { type: "equal", field: "field_6393283", value: email }
-            ]
-        }));
+        const response = await fetch(
+            `${BASEROW_TABLE_URL}?user_field_names=true&filter__field_6393283__equal=${encodeURIComponent(currentUserEmail)}`,
+            {
+                method: "GET",
+                headers: {
+                    Authorization: `Token ${BASEROW_TOKEN}`,
+                    "Content-Type": "application/json",
+                },
+            }
+        );
 
-        const url = `${BASEROW_API}?user_field_names=true&filters=${filters}`;
+        const data = await response.json();
 
-        const res = await fetch(url, {
-            headers: { Authorization: `Token ${BASEROW_TOKEN}` }
-        });
-
-        const data = await res.json();
-
-        if (!data.results || data.results.length === 0) {
-            return;
-        }
+        if (!data.results || data.results.length === 0) return;
 
         const user = data.results[0];
-        currentRowId = user.id;
+        currentUserRowId = user.id;
 
-        // Display fields (name + email NOT editable)
-        document.getElementById("displayFullName").textContent = user.field_6393282 || "Not set";
-        document.getElementById("displayEmail").textContent = user.field_6393283;
-
-        // Editable fields
-        document.getElementById("displayPhone").textContent = user.field_6393284 || "Not set";
-        document.getElementById("displayAddress").textContent = user.field_6393292 || "Not set";
-        document.getElementById("displayCountry").textContent = user.field_6393289 || "Not set";
-
-        // Input fields
-        document.getElementById("editPhone").value = user.field_6393284 || "";
-        document.getElementById("editAddress").value = user.field_6393292 || "";
-        document.getElementById("editCountry").value = user.field_6393289 || "";
-
+        populateUserData(user);
     } catch (err) {
-        console.error("USER LOAD ERROR:", err);
+        console.error("Error fetching Baserow user:", err);
     }
 }
 
-/* -------------------------------------------
-   ENABLE EDIT MODE
---------------------------------------------*/
-function enableEdit(section) {
-    document.getElementById(section).classList.remove("view-mode");
-    document.getElementById(section).classList.add("edit-mode");
+/* ============================
+   POPULATE PROFILE UI
+============================= */
+function populateUserData(user) {
+    // UNEDITABLE FIELDS
+    document.getElementById("displayFullName").textContent = user.name;
+    document.getElementById("displayEmail").textContent = user.email;
+
+    // Update menu email
+    const menuEmail = document.getElementById("menuUserEmail");
+    if (menuEmail) menuEmail.textContent = user.email;
+
+    // EDITABLE FIELDS
+    document.getElementById("displayPhone").textContent = user.phone || "Not set";
+    document.getElementById("displayAddress").textContent = user.address || "Not set";
+    document.getElementById("displayCountry").textContent = user.country || "Not set";
+
+    document.getElementById("editPhone").value = user.phone || "";
+    document.getElementById("editAddress").value = user.address || "";
+    document.getElementById("editCountry").value = user.country || "";
 }
 
-/* -------------------------------------------
-   CANCEL EDIT MODE
---------------------------------------------*/
-function cancelEdit(section) {
-    document.getElementById(section).classList.remove("edit-mode");
-    document.getElementById(section).classList.add("view-mode");
-}
-
-/* -------------------------------------------
-   SAVE CHANGES → PATCH TO BASEROW
---------------------------------------------*/
-async function saveProfile() {
-    if (!currentRowId) {
-        alert("User data is missing.");
-        return;
-    }
-
-    const phone = document.getElementById("editPhone").value.trim();
-    const address = document.getElementById("editAddress").value.trim();
-    const country = document.getElementById("editCountry").value.trim();
-
-    const body = {
-        field_6393284: phone,
-        field_6393292: address,
-        field_6393289: country
-    };
+/* ============================
+   UPDATE BASEROW USER
+============================= */
+async function updateUserData(updateObj) {
+    if (!currentUserRowId) return false;
 
     try {
-        const res = await fetch(`${BASEROW_API}${currentRowId}/?user_field_names=true`, {
-            method: "PATCH",
-            headers: {
-                "Authorization": `Token ${BASEROW_TOKEN}`,
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify(body)
-        });
+        const response = await fetch(
+            `${BASEROW_TABLE_URL}${currentUserRowId}/?user_field_names=true`,
+            {
+                method: "PATCH",
+                headers: {
+                    Authorization: `Token ${BASEROW_TOKEN}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(updateObj),
+            }
+        );
 
-        const updated = await res.json();
-
-        // Update display
-        document.getElementById("displayPhone").textContent = updated.field_6393284 || "Not set";
-        document.getElementById("displayAddress").textContent = updated.field_6393292 || "Not set";
-        document.getElementById("displayCountry").textContent = updated.field_6393289 || "Not set";
-
-        cancelEdit("profileSection");
-        alert("Profile updated successfully!");
-
+        return response.ok;
     } catch (err) {
-        console.error("UPDATE ERROR:", err);
-        alert("Failed to update profile.");
+        console.error("Update failed:", err);
+        return false;
     }
 }
 
+/* ============================
+   SAVE EDITED FIELDS
+============================= */
+async function saveChanges() {
+    const phone = document.getElementById("editPhone").value;
+    const address = document.getElementById("editAddress").value;
+    const country = document.getElementById("editCountry").value;
+
+    const updateObj = {
+        phone: phone,
+        address: address,
+        country: country,
+    };
+
+    const success = await updateUserData(updateObj);
+
+    if (success) {
+        document.getElementById("displayPhone").textContent = phone || "Not set";
+        document.getElementById("displayAddress").textContent = address || "Not set";
+        document.getElementById("displayCountry").textContent = country || "Not set";
+
+        alert("Profile updated successfully!");
+
+        cancelEdit("personalInfoSection");
+    } else {
+        alert("Failed to update. Try again.");
+    }
+}
+
+/* ============================
+   VIEW ↔ EDIT MODE
+============================= */
+function toggleEditMode(sectionId) {
+    const sec = document.getElementById(sectionId);
+    sec.classList.add("edit-mode");
+}
+
+function cancelEdit(sectionId) {
+    const sec = document.getElementById(sectionId);
+    sec.classList.remove("edit-mode");
+}
+
+/* ============================
+   INIT PAGE
+============================= */
+window.addEventListener("DOMContentLoaded", async () => {
+    const user = checkAuth();
+    if (!user) return;
+
+    currentUserEmail = user.email;
+    await fetchUserData();
+});
 </script>
 </body>
 </html>
