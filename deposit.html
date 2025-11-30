@@ -402,22 +402,6 @@
     <script>
         let selectedMethod = '';
         
-        window.addEventListener('DOMContentLoaded', function() {
-            const userEmail = localStorage.getItem("v0trade_user_email");
-            
-            if (!userEmail) {
-                alert("Please login to access this page.");
-                window.location.href = "login.html";
-                return;
-            }
-
-            // Update header with user email
-            const emailDisplay = document.querySelector('header span.text-gray-400');
-            if (emailDisplay) {
-                emailDisplay.textContent = userEmail;
-            }
-        });
-        
         function toggleMobileMenu() {
             const menu = document.getElementById('mobileMenu');
             menu.classList.toggle('active');
@@ -487,40 +471,21 @@
                 return;
             }
             
-            // Create timestamp
-            const now = new Date();
-            const timestamp = now.toLocaleString('en-US', { 
-                year: 'numeric', 
-                month: '2-digit', 
-                day: '2-digit', 
-                hour: '2-digit', 
-                minute: '2-digit',
-                hour12: false 
-            });
-            
-            // Save to localStorage as per specification
-            const depositData = {
-                method: selectedMethod.toUpperCase(),
-                amount: amount,
-                total: amount, // Same as amount since processing charge is 0
-                time: timestamp
-            };
-            
-            localStorage.setItem('depositData', JSON.stringify(depositData));
+            localStorage.setItem('deposit_amount', amount.toFixed(2));
             
             // Redirect to specific payment instruction page based on method
             const redirectMap = {
-                'btc': 'deposit-btc.html',
-                'eth': 'deposit-eth.html',
-                'usdt': 'deposit-usdt.html',
-                'blue-voucher': 'deposit-blue-voucher.html',
-                '1voucher': 'deposit-1voucher.html',
-                'ott-voucher': 'deposit-ott-voucher.html'
+                'btc': 'btc-deposit.html',
+                'eth': 'eth-deposit.html',
+                'usdt': 'usdt-deposit.html',
+                'blue-voucher': 'blue-voucher-deposit.html',
+                '1voucher': '1voucher-deposit.html',
+                'ott-voucher': 'ott-voucher-deposit.html'
             };
             
             const redirectUrl = redirectMap[selectedMethod];
             if (redirectUrl) {
-                window.location.href = `${redirectUrl}?amount=${amount}`;
+                window.location.href = redirectUrl;
             } else {
                 alert('Invalid payment method selected');
             }
