@@ -347,7 +347,6 @@
 
     <script>
         const API_TOKEN = "LG6hnTBxgBG78FueElsSwpHRd4Wep1oL";
-        const USER_TABLE = 755975;
         const WALLET_TABLE = 756077;
 
         function toggleSidebar() {
@@ -373,55 +372,18 @@
             document.getElementById("headerEmailDisplay").textContent = userEmail;
             document.getElementById("userEmailDisplay").textContent = userEmail;
 
-            loadUserName(userEmail);
-            loadWalletData(userEmail);
+            loadUserData(userEmail);
         });
 
         /* ---------------------------------------------------
-           FETCH USER NAME FROM USERS TABLE (755975)
+           FETCH ALL USER DATA FROM WALLET TABLE (756077)
+           Including name and all wallet balances
         -----------------------------------------------------*/
-        async function loadUserName(email) {
-            try {
-                const url = `https://api.baserow.io/api/database/rows/table/${USER_TABLE}/?user_field_names=true&filter__field_6393283=${encodeURIComponent(email)}`;
-                
-                console.log("Fetching user data from:", url);
-
-                const res = await fetch(url, {
-                    headers: {
-                        Authorization: `Token ${API_TOKEN}`
-                    }
-                });
-
-                if (!res.ok) {
-                    throw new Error(`HTTP error! status: ${res.status}`);
-                }
-
-                const data = await res.json();
-                console.log("User data response:", data);
-
-                if (data.results && data.results.length > 0) {
-                    const user = data.results[0];
-                    const userName = user.field_6393282 || "User";
-                    document.getElementById("userName").textContent = userName;
-                    console.log("User name set to:", userName);
-                } else {
-                    document.getElementById("userName").textContent = "User";
-                    console.log("No user found, using default name");
-                }
-            } catch (e) {
-                console.error("Error fetching name:", e);
-                document.getElementById("userName").textContent = "User";
-            }
-        }
-
-        /* ---------------------------------------------------
-           FETCH WALLET BALANCES FROM WALLET TABLE (756077)
-        -----------------------------------------------------*/
-        async function loadWalletData(email) {
+        async function loadUserData(email) {
             try {
                 const url = `https://api.baserow.io/api/database/rows/table/${WALLET_TABLE}/?user_field_names=true&filter__field_6394418=${encodeURIComponent(email)}`;
                 
-                console.log("Fetching wallet data from:", url);
+                console.log("Fetching user data from wallet table:", url);
 
                 const res = await fetch(url, {
                     headers: {
@@ -434,44 +396,49 @@
                 }
 
                 const data = await res.json();
-                console.log("Wallet data response:", data);
+                console.log("Wallet table response:", data);
 
                 if (!data.results || data.results.length === 0) {
-                    console.log("No wallet found for:", email);
+                    console.log("No wallet record found for:", email);
                     return;
                 }
 
-                const w = data.results[0];
-                console.log("Wallet record found:", w);
+                const walletData = data.results[0];
+                console.log("Wallet record found:", walletData);
 
-                // Map the wallet fields correctly
+                // Set user name from field_6394417
+                const userName = walletData.field_6394417 || "User";
+                document.getElementById("userName").textContent = userName;
+                console.log("User name set to:", userName);
+
+                // Set all wallet balances
                 // Total Wallet Balance (field_6394419)
-                const totalWalletBalance = parseFloat(w.field_6394419) || 0;
+                const totalWalletBalance = parseFloat(walletData.field_6394419) || 0;
                 document.getElementById("depositBalance").textContent = "$" + totalWalletBalance.toFixed(4);
                 console.log("Total Wallet Balance:", totalWalletBalance);
 
                 // All Earning Wallet (field_6394420)
-                const allEarningWallet = parseFloat(w.field_6394420) || 0;
+                const allEarningWallet = parseFloat(walletData.field_6394420) || 0;
                 document.getElementById("earningBalance").textContent = "$" + allEarningWallet.toFixed(4);
                 console.log("All Earning Wallet:", allEarningWallet);
 
                 // Miner Earning (field_6394421)
-                const minerEarning = parseFloat(w.field_6394421) || 0;
+                const minerEarning = parseFloat(walletData.field_6394421) || 0;
                 document.getElementById("totalReturned").textContent = "$" + minerEarning.toFixed(4);
                 console.log("Miner Earning:", minerEarning);
 
                 // Total Ref Commissions (field_6394422)
-                const totalCommissions = parseFloat(w.field_6394422) || 0;
+                const totalCommissions = parseFloat(walletData.field_6394422) || 0;
                 document.getElementById("totalCommissions").textContent = "$" + totalCommissions.toFixed(4);
                 console.log("Total Ref Commissions:", totalCommissions);
 
                 // Investment Earning (field_6394423)
-                const investmentEarning = parseFloat(w.field_6394423) || 0;
+                const investmentEarning = parseFloat(walletData.field_6394423) || 0;
                 document.getElementById("totalEarnings").textContent = "$" + investmentEarning.toFixed(4);
                 console.log("Investment Earning:", investmentEarning);
 
             } catch (e) {
-                console.error("Error loading wallet:", e);
+                console.error("Error loading user data:", e);
             }
         }
 
@@ -480,7 +447,7 @@
             const userEmail = localStorage.getItem("v0trade_user_email");
             if (userEmail) {
                 console.log("Auto-refreshing wallet data...");
-                loadWalletData(userEmail);
+                loadUserData(userEmail);
             }
         }, 30000);
     </script>
