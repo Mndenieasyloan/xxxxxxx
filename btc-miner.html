@@ -433,162 +433,247 @@
         </div>
     </footer>
 
-    <script>
-        function calculate() {
-            const hashpower = parseFloat(document.getElementById('hashpower').value);
-            const duration = parseFloat(document.getElementById('duration').value);
-            const btcPerDay = hashpower * 0.00001; // Simplified calculation
-            const totalBTC = (btcPerDay * duration).toFixed(6);
-            document.getElementById('earnings').textContent = totalBTC + ' BTC';
-            document.getElementById('result').classList.remove('hidden');
-        }
+   <script>
+    function calculate() {
+        const hashpower = parseFloat(document.getElementById('hashpower').value);
+        const duration = parseFloat(document.getElementById('duration').value);
+        const btcPerDay = hashpower * 0.00001; // Simplified calculation
+        const totalBTC = (btcPerDay * duration).toFixed(6);
+        document.getElementById('earnings').textContent = totalBTC + ' BTC';
+        document.getElementById('result').classList.remove('hidden');
+    }
 
-        const BASEROW_TOKEN = 'LG6hnTBxgBG78FueElsSwpHRd4Wep1oL';
-        const WALLET_TABLE_ID = '756077';
-        const INVESTMENT_TABLE_ID = '756316';
-        const BASEROW_API_URL = 'https://api.baserow.io/api/database/rows/table';
+    const BASEROW_TOKEN = 'LG6hnTBxgBG78FueElsSwpHRd4Wep1oL';
+    const WALLET_TABLE_ID = '756077';
+    const INVESTMENT_TABLE_ID = '756316';
+    const BASEROW_API_URL = 'https://api.baserow.io/api/database/rows/table';
 
-        function checkLogin() {
-            return localStorage.getItem('userEmail') !== null;
-        }
+    // Check if user is logged in
+    function checkLogin() {
+        const userEmail = localStorage.getItem('v0trade_user_email');
+        return userEmail !== null && userEmail !== '';
+    }
 
-        function getUserEmail() {
-            return localStorage.getItem('userEmail') || '';
-        }
+    // Get logged-in user email
+    function getUserEmail() {
+        return localStorage.getItem('v0trade_user_email') || '';
+    }
 
-        function showModal(title, content, confirmCallback) {
-            document.getElementById('modalTitle').textContent = title;
-            document.getElementById('modalContent').innerHTML = content;
-            document.getElementById('investmentModal').classList.remove('hidden');
-            document.getElementById('confirmButton').onclick = confirmCallback;
-        }
-
-        function closeModal() {
-            document.getElementById('investmentModal').classList.add('hidden');
-        }
-
-        async function getWalletBalance(email) {
-            try {
-                const response = await fetch(`${BASEROW_API_URL}/${WALLET_TABLE_ID}/?user_field_names=true`, {
-                    headers: { 'Authorization': `Token ${BASEROW_TOKEN}` }
-                });
-                const data = await response.json();
-                const userWallet = data.results.find(row => row.Email === email);
-                if (userWallet) {
-                    return { balance: parseFloat(userWallet['Wallet Balance'].replace(/[$,]/g, '')), rowId: userWallet.id };
-                }
-                return null;
-            } catch (error) {
-                return null;
+    // Update header with user info
+    function updateHeader() {
+        const userEmail = getUserEmail();
+        if (userEmail) {
+            // Update header account display
+            const headerAccount = document.querySelector('.md\\:flex a[href="dashboard.html"]');
+            if (headerAccount) {
+                headerAccount.textContent = userEmail;
             }
-        }
-
-        async function updateWalletBalance(rowId, newBalance) {
-            try {
-                await fetch(`${BASEROW_API_URL}/${WALLET_TABLE_ID}/${rowId}/?user_field_names=true`, {
-                    method: 'PATCH',
-                    headers: { 'Authorization': `Token ${BASEROW_TOKEN}`, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 'Wallet Balance': `$${newBalance.toFixed(2)}` })
-                });
-                return true;
-            } catch (error) {
-                return false;
-            }
-        }
-
-        async function createInvestment(email, amount, planType, duration, dailyReturn) {
-            try {
-                const response = await fetch(`${BASEROW_API_URL}/${INVESTMENT_TABLE_ID}/?user_field_names=true`, {
-                    method: 'POST',
-                    headers: { 'Authorization': `Token ${BASEROW_TOKEN}`, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        'User Email': email,
-                        'Investment Amount': `$${amount.toFixed(2)}`,
-                        'Daily Return': `$${dailyReturn.toFixed(2)}`,
-                        'Total Earned': '$0.00',
-                        'Status': 'Active',
-                        'Days Remaining': duration,
-                        'Date of Investment': new Date().toISOString().split('T')[0]
-                    })
-                });
-                return response.ok;
-            } catch (error) {
-                return false;
-            }
-        }
-
-        function handleBuyMiner(planName, investment, duration, hashrate, dailyReturnPercent) {
-            if (!checkLogin()) {
-                showModal('Login Required', '<p class="text-gray-300">You must log in before you can invest in Bitcoin Miner.</p>', () => {
+            
+            // Update logout link
+            const logoutLink = document.querySelector('.md\\:flex a[href="login.html"]');
+            if (logoutLink) {
+                logoutLink.textContent = 'Logout';
+                logoutLink.href = 'javascript:void(0)';
+                logoutLink.onclick = function() {
+                    localStorage.removeItem('v0trade_user_email');
                     window.location.href = 'login.html';
-                });
-                return;
-            }
-
-            const amount = parseFloat(investment.replace(/[$,]/g, ''));
-            const days = parseInt(duration.replace(' Days', ''));
-            const dailyReturnAmount = (amount * parseFloat(dailyReturnPercent) / 100);
-            const totalReturn = amount + (dailyReturnAmount * days);
-
-            showModal('Confirm Purchase', `
-                <div class="space-y-3">
-                    <div class="flex justify-between text-gray-300"><span>Plan:</span><span class="text-white font-semibold">${planName}</span></div>
-                    <div class="flex justify-between text-gray-300"><span>Investment:</span><span class="text-white font-semibold">${investment}</span></div>
-                    <div class="flex justify-between text-gray-300"><span>Duration:</span><span class="text-white font-semibold">${duration}</span></div>
-                    <div class="flex justify-between text-gray-300"><span>Hashrate:</span><span class="text-cyan-400 font-semibold">${hashrate}</span></div>
-                    <div class="flex justify-between text-gray-300"><span>Daily Return:</span><span class="text-green-400 font-semibold">${dailyReturnPercent}% ($${dailyReturnAmount.toFixed(2)})</span></div>
-                    <div class="flex justify-between text-gray-300"><span>Total Expected:</span><span class="text-purple-400 font-bold text-xl">$${totalReturn.toFixed(2)}</span></div>
-                </div>
-            `, async () => await processMinerPurchase(amount, planName, days.toString(), hashrate, dailyReturnAmount, totalReturn));
-        }
-
-        async function processMinerPurchase(amount, planName, duration, hashrate, dailyReturn, totalReturn) {
-            const email = getUserEmail();
-            document.getElementById('modalContent').innerHTML = '<p class="text-center text-gray-300">Processing...</p>';
-            document.getElementById('confirmButton').disabled = true;
-
-            const walletData = await getWalletBalance(email);
-            if (!walletData) {
-                showModal('Wallet Not Found', '<p class="text-gray-300">Unable to find your wallet.</p>', closeModal);
-                return;
-            }
-
-            if (walletData.balance < amount) {
-                showModal('Insufficient Balance', `<p class="text-gray-300">Insufficient wallet balance to complete this purchase.</p>
-                     <p class="text-sm mt-2">Balance: $${walletData.balance.toFixed(2)} | Required: $${amount.toFixed(2)}</p>`, closeModal);
-                return;
-            }
-
-            if (!await updateWalletBalance(walletData.rowId, walletData.balance - amount)) {
-                showModal('Error', '<p class="text-gray-300">Failed to process payment.</p>', closeModal);
-                return;
-            }
-
-            if (await createInvestment(email, amount, `BTC Miner - ${planName}`, duration, dailyReturn)) {
-                showModal('Success!', `<p class="text-green-400 font-semibold text-center">Miner activated!</p>
-                     <p class="text-gray-300 text-center mt-4">Your ${planName} is now mining BTC.</p>`, () => window.location.href = 'dashboard.html');
-            } else {
-                await updateWalletBalance(walletData.rowId, walletData.balance);
-                showModal('Error', '<p class="text-gray-300">Failed to activate miner.</p>', closeModal);
+                };
             }
         }
+    }
 
-        document.addEventListener('DOMContentLoaded', function() {
-            const minerPlans = [
-                { name: 'Micro Plan', investment: '$600', duration: '3 Days', hashrate: '130 TH/s', dailyReturn: '36' },
-                { name: 'Gold Plan', investment: '$1,850', duration: '6 Days', hashrate: '720 TH/s', dailyReturn: '48' },
-                { name: 'Silver Plan', investment: '$2,450', duration: '13 Days', hashrate: '2,114 TH/s', dailyReturn: '40' },
-                { name: 'Diamond Plan', investment: '$2,200', duration: '7 Days', hashrate: '3,288 TH/s', dailyReturn: '80' },
-                { name: 'Top Partner', investment: '$15,000', duration: '20 Days', hashrate: '899,685 TH/s', dailyReturn: '50' }
-            ];
+    function showModal(title, content, confirmCallback) {
+        document.getElementById('modalTitle').textContent = title;
+        document.getElementById('modalContent').innerHTML = content;
+        document.getElementById('investmentModal').classList.remove('hidden');
+        document.getElementById('confirmButton').onclick = confirmCallback;
+    }
 
-            document.querySelectorAll('button:not(#confirmButton)').forEach((button, index) => {
-                if (button.textContent.includes('Buy Now') && minerPlans[index]) {
-                    const plan = minerPlans[index];
-                    button.onclick = () => handleBuyMiner(plan.name, plan.investment, plan.duration, plan.hashrate, plan.dailyReturn);
-                }
+    function closeModal() {
+        document.getElementById('investmentModal').classList.add('hidden');
+    }
+
+    // Get wallet balance from Baserow
+    async function getWalletBalance(email) {
+        try {
+            const filters = encodeURIComponent(JSON.stringify({
+                filter_type: "AND",
+                filters: [
+                    {
+                        type: "equal",
+                        field: "email",
+                        value: email
+                    }
+                ]
+            }));
+
+            const url = `${BASEROW_API_URL}/${WALLET_TABLE_ID}/?user_field_names=true&filters=${filters}`;
+            
+            const response = await fetch(url, {
+                headers: { 'Authorization': `Token ${BASEROW_TOKEN}` }
             });
+            
+            const data = await response.json();
+            
+            if (data.results && data.results.length > 0) {
+                const userWallet = data.results[0];
+                const balance = parseFloat(userWallet['Total Wallet Balance'] || 0);
+                return { balance, rowId: userWallet.id };
+            }
+            return null;
+        } catch (error) {
+            console.error('Error fetching wallet balance:', error);
+            return null;
+        }
+    }
+
+    // Update wallet balance in Baserow
+    async function updateWalletBalance(rowId, newBalance) {
+        try {
+            await fetch(`${BASEROW_API_URL}/${WALLET_TABLE_ID}/${rowId}/?user_field_names=true`, {
+                method: 'PATCH',
+                headers: { 
+                    'Authorization': `Token ${BASEROW_TOKEN}`, 
+                    'Content-Type': 'application/json' 
+                },
+                body: JSON.stringify({ 
+                    'Total Wallet Balance': newBalance 
+                })
+            });
+            return true;
+        } catch (error) {
+            console.error('Error updating wallet balance:', error);
+            return false;
+        }
+    }
+
+    // Create investment record in Baserow using correct field names
+    async function createInvestment(email, amount, planType, duration, dailyReturn, totalEarned, investmentPlan) {
+        try {
+            const response = await fetch(`${BASEROW_API_URL}/${INVESTMENT_TABLE_ID}/?user_field_names=true`, {
+                method: 'POST',
+                headers: { 
+                    'Authorization': `Token ${BASEROW_TOKEN}`, 
+                    'Content-Type': 'application/json' 
+                },
+                body: JSON.stringify({
+                    'Investment Amount': `$${amount.toFixed(2)}`,
+                    'Daily Return': `$${dailyReturn.toFixed(2)}`,
+                    'Total Earned': `$${totalEarned.toFixed(2)}`,
+                    'Status': 'Active',
+                    'Days Remaining': duration,
+                    'email': email,
+                    'date': new Date().toISOString().split('T')[0],
+                    'investment type': planType,
+                    'investment plan': investmentPlan
+                })
+            });
+            return response.ok;
+        } catch (error) {
+            console.error('Error creating investment:', error);
+            return false;
+        }
+    }
+
+    function handleBuyMiner(planName, investment, duration, hashrate, dailyReturnPercent) {
+        if (!checkLogin()) {
+            showModal('Login Required', '<p class="text-gray-300">You must log in before you can invest in Bitcoin Miner.</p>', () => {
+                window.location.href = 'login.html';
+            });
+            return;
+        }
+
+        const amount = parseFloat(investment.replace(/[$,]/g, ''));
+        const days = parseInt(duration.replace(' Days', ''));
+        const dailyReturnAmount = (amount * parseFloat(dailyReturnPercent) / 100);
+        const totalReturn = amount + (dailyReturnAmount * days);
+
+        showModal('Confirm Purchase', `
+            <div class="space-y-3">
+                <div class="flex justify-between text-gray-300"><span>Plan:</span><span class="text-white font-semibold">${planName}</span></div>
+                <div class="flex justify-between text-gray-300"><span>Investment:</span><span class="text-white font-semibold">$${amount.toFixed(2)}</span></div>
+                <div class="flex justify-between text-gray-300"><span>Duration:</span><span class="text-white font-semibold">${duration}</span></div>
+                <div class="flex justify-between text-gray-300"><span>Hashrate:</span><span class="text-cyan-400 font-semibold">${hashrate}</span></div>
+                <div class="flex justify-between text-gray-300"><span>Daily Return:</span><span class="text-green-400 font-semibold">${dailyReturnPercent}% ($${dailyReturnAmount.toFixed(2)})</span></div>
+                <div class="flex justify-between text-gray-300"><span>Total Expected:</span><span class="text-purple-400 font-bold text-xl">$${totalReturn.toFixed(2)}</span></div>
+            </div>
+        `, async () => await processMinerPurchase(amount, planName, days.toString(), hashrate, dailyReturnAmount, totalReturn));
+    }
+
+    async function processMinerPurchase(amount, planName, duration, hashrate, dailyReturn, totalReturn) {
+        const email = getUserEmail();
+        document.getElementById('modalContent').innerHTML = '<p class="text-center text-gray-300">Processing miner purchase...</p>';
+        document.getElementById('confirmButton').disabled = true;
+
+        const walletData = await getWalletBalance(email);
+        if (!walletData) {
+            showModal('Wallet Not Found', '<p class="text-gray-300">Unable to find your wallet. Please contact support.</p>', closeModal);
+            return;
+        }
+
+        if (walletData.balance < amount) {
+            showModal('Insufficient Balance', `<p class="text-gray-300">Insufficient wallet balance to complete this purchase.</p>
+                 <p class="text-gray-400 text-sm mt-2">Your balance: $${walletData.balance.toFixed(2)}</p>
+                 <p class="text-gray-400 text-sm">Required: $${amount.toFixed(2)}</p>`, closeModal);
+            return;
+        }
+
+        // Deduct from wallet
+        const newBalance = walletData.balance - amount;
+        const updateSuccess = await updateWalletBalance(walletData.rowId, newBalance);
+        
+        if (!updateSuccess) {
+            showModal('Error', '<p class="text-gray-300">Failed to process payment. Please try again.</p>', closeModal);
+            return;
+        }
+
+        // Create investment record
+        const investSuccess = await createInvestment(
+            email,
+            amount,
+            `BTC Miner - ${hashrate}`,
+            duration,
+            dailyReturn,
+            0, // Initial total earned is 0
+            planName
+        );
+
+        if (investSuccess) {
+            showModal('Success!', `<p class="text-green-400 font-semibold text-center">Miner activated successfully!</p>
+                 <p class="text-gray-300 text-center mt-4">Your ${planName} is now mining BTC.</p>
+                 <p class="text-gray-400 text-sm text-center mt-2">Check your dashboard to track your mining progress.</p>`, 
+                () => window.location.href = 'dashboard.html');
+        } else {
+            // Rollback wallet balance
+            await updateWalletBalance(walletData.rowId, walletData.balance);
+            showModal('Error', '<p class="text-gray-300">Failed to activate miner. Please try again.</p>', closeModal);
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // Update header with user info
+        updateHeader();
+
+        const minerPlans = [
+            { name: 'Micro Plan', investment: '$600', duration: '3 Days', hashrate: '130 TH/s', dailyReturn: '36' },
+            { name: 'Gold Plan', investment: '$1,850', duration: '6 Days', hashrate: '720 TH/s', dailyReturn: '48' },
+            { name: 'Silver Plan', investment: '$2,450', duration: '13 Days', hashrate: '2,114 TH/s', dailyReturn: '40' },
+            { name: 'Diamond Plan', investment: '$2,200', duration: '7 Days', hashrate: '3,288 TH/s', dailyReturn: '80' },
+            { name: 'Top Partner', investment: '$15,000', duration: '20 Days', hashrate: '899,685 TH/s', dailyReturn: '50' }
+        ];
+
+        document.querySelectorAll('button:not(#confirmButton)').forEach((button, index) => {
+            if (button.textContent.includes('Buy Now') && minerPlans[index]) {
+                const plan = minerPlans[index];
+                button.onclick = () => handleBuyMiner(plan.name, plan.investment, plan.duration, plan.hashrate, plan.dailyReturn);
+            }
         });
-    </script>
+
+        // Check login status and redirect if not logged in for investment actions
+        if (!checkLogin()) {
+            console.log('User not logged in - BTC miner purchase features disabled');
+        }
+    });
+</script>
 </body>
 </html>
