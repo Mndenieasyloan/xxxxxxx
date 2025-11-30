@@ -349,18 +349,6 @@
     const API_TOKEN = "LG6hnTBxgBG78FueElsSwpHRd4Wep1oL";
     const WALLET_TABLE = 756077;
 
-    function toggleSidebar() {
-        const sidebar = document.getElementById('sidebar');
-        const overlay = document.getElementById('sidebarOverlay');
-        sidebar.classList.toggle('active');
-        overlay.classList.toggle('active');
-    }
-
-    function toggleMobileMenu() {
-        const menu = document.getElementById('mobileMenu');
-        menu.classList.toggle('active');
-    }
-
     window.addEventListener("DOMContentLoaded", () => {
         const userEmail = localStorage.getItem("v0trade_user_email");
 
@@ -375,68 +363,58 @@
         loadUserData(userEmail);
     });
 
-    /* ---------------------------------------------------
-       FETCH ALL USER DATA FROM WALLET TABLE (756077)
-       Including name + all wallet balances
-    -----------------------------------------------------*/
     async function loadUserData(email) {
         try {
-            // FIXED FILTER (correct Baserow format)
+            // MUST use field name, NOT field ID (because user_field_names=true)
             const filters = encodeURIComponent(JSON.stringify({
                 filter_type: "AND",
                 filters: [
                     {
                         type: "equal",
-                        field: "field_6394418", // email field
+                        field: "email",   // FIXED
                         value: email
                     }
                 ]
             }));
 
-            const url = `https://api.baserow.io/api/database/rows/table/${WALLET_TABLE}/?user_field_names=true&filters=${filters}`;
+            const url =
+                `https://api.baserow.io/api/database/rows/table/${WALLET_TABLE}/` +
+                `?user_field_names=true&filters=${filters}`;
 
-            console.log("Fetching wallet data:", url);
+            console.log("Final URL:", url);
 
             const res = await fetch(url, {
                 headers: { Authorization: `Token ${API_TOKEN}` }
             });
 
-            if (!res.ok) {
-                throw new Error(`HTTP error! Status: ${res.status}`);
-            }
-
             const data = await res.json();
-            console.log("Wallet table response:", data);
+            console.log("WALLET DATA:", data);
 
-            // If no record found
             if (!data.results || data.results.length === 0) {
-                console.warn("No wallet record found for:", email);
+                console.warn("No wallet row found for:", email);
                 return;
             }
 
-            const wallet = data.results[0];
-            console.log("Wallet record:", wallet);
+            const w = data.results[0];
 
-            // Set user name
-            const userName = wallet.field_6394417 || "User";
-            document.getElementById("userName").textContent = userName;
+            // Assign name
+            document.getElementById("userName").textContent = w["name"] || "User";
 
-            // Safe money formatter
+            // Format money
             const money = n => "$" + (parseFloat(n) || 0).toFixed(4);
 
-            // Assign values from wallet table
-            document.getElementById("depositBalance").textContent = money(wallet.field_6394419);
-            document.getElementById("earningBalance").textContent = money(wallet.field_6394420);
-            document.getElementById("totalReturned").textContent = money(wallet.field_6394421);
-            document.getElementById("totalCommissions").textContent = money(wallet.field_6394422);
-            document.getElementById("totalEarnings").textContent = money(wallet.field_6394423);
+            // Assign correct wallet values using field names
+            document.getElementById("depositBalance").textContent = money(w["Total Wallet Balance"]);
+            document.getElementById("earningBalance").textContent = money(w["All Earning Wallet"]);
+            document.getElementById("totalReturned").textContent = money(w["Miner Earning"]);
+            document.getElementById("totalCommissions").textContent = money(w["Total Ref. Commissions"]);
+            document.getElementById("totalEarnings").textContent = money(w["Investment Earning"]);
 
-        } catch (error) {
-            console.error("Error loading user data:", error);
+        } catch (err) {
+            console.error("LOAD ERROR:", err);
         }
     }
 
-    // Auto-refresh every 30 seconds
     setInterval(() => {
         const userEmail = localStorage.getItem("v0trade_user_email");
         if (userEmail) loadUserData(userEmail);
