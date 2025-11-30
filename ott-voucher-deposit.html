@@ -267,7 +267,7 @@
                             <li>Enter your 12-digit OTT Voucher PIN.</li>
                             <li>Enter your V0 Trade email.</li>
                             <li>Click Confirm Payment to complete your deposit.</li>
-                            <li>You will be redirected to Wallet → My Account.</li>
+                            <li>You will be redirected to payment pending page.</li>
                         </ol>
                     </div>
 
@@ -452,8 +452,8 @@
 
                 console.log('[OTT Voucher Deposit] Transaction saved locally:', transactionData);
 
-                // Redirect to dashboard
-                window.location.href = 'dashboard.html';
+                // Redirect to payment pending page
+                window.location.href = 'payment-pending.html';
 
             } catch (error) {
                 console.error('[OTT Voucher Deposit] Error submitting deposit:', error);
