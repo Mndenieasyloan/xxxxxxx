@@ -14,18 +14,6 @@
             0%, 100% { opacity: 0.5; }
             50% { opacity: 1; }
         }
-        @keyframes slide-in-right {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
-        @keyframes slide-in-left {
-            from { transform: translateX(-100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
-        @keyframes fade-in-up {
-            from { transform: translateY(20px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
-        }
         .mobile-menu { display: none; }
         .mobile-menu.active { display: block; }
         .dropdown { position: relative; display: inline-block; }
@@ -38,6 +26,18 @@
         .animate-fade-in {
             animation: fade-in 0.5s ease-out;
         }
+        @keyframes slide-in-right {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes slide-in-left {
+            from { transform: translateX(-100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes fade-in-up {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
         .animate-slide-in-right {
             animation: slide-in-right 0.5s ease-out;
         }
@@ -46,6 +46,15 @@
         }
         .animate-fade-in-up {
             animation: fade-in-up 0.5s ease-out;
+        }
+        /* Ensure live sections are visible on all screens */
+        .live-section {
+            min-height: 400px;
+        }
+        @media (max-width: 640px) {
+            .live-section {
+                min-height: 300px;
+            }
         }
     </style>
 </head>
@@ -106,9 +115,9 @@
                     </div>
                 </nav>
 
-                <!-- Right Side - Auth -->
-                <div id="authButtons" class="hidden items-center gap-4 md:flex">
-                    <!-- Will be dynamically updated based on login status -->
+                <!-- Right Side - Auth (Dynamic based on login) -->
+                <div id="authSection" class="hidden items-center gap-4 md:flex">
+                    <!-- Will be populated by JavaScript -->
                 </div>
 
                 <!-- Mobile Menu Button -->
@@ -121,8 +130,19 @@
 
             <!-- Mobile Menu -->
             <div id="mobileMenu" class="mobile-menu border-t border-purple-500/20 py-4 md:hidden">
-                <nav class="flex flex-col gap-3" id="mobileAuthButtons">
-                    <!-- Mobile auth buttons will be dynamically updated -->
+                <nav class="flex flex-col gap-3">
+                    <a href="index.html" class="text-sm text-gray-300 hover:text-white">Home</a>
+                    <a href="cryptocurrencies.html" class="text-sm text-gray-300 hover:text-white">Cryptocurrencies</a>
+                    <a href="precious-metals.html" class="text-sm text-gray-300 hover:text-white">Precious Metals</a>
+                    <a href="stocks.html" class="text-sm text-gray-300 hover:text-white">Stocks</a>
+                    <a href="etfs.html" class="text-sm text-gray-300 hover:text-white">ETFs</a>
+                    <a href="btc-miner.html" class="text-sm text-gray-300 hover:text-white">BTC Miner</a>
+                    <a href="about.html" class="text-sm text-gray-300 hover:text-white">About</a>
+                    <a href="security.html" class="text-sm text-gray-300 hover:text-white">Security</a>
+                    <a href="contact.html" class="text-sm text-gray-300 hover:text-white">Contact</a>
+                    <a href="faq.html" class="text-sm text-gray-300 hover:text-white">FAQ</a>
+                    <!-- Mobile auth links will be populated by JavaScript -->
+                    <div id="mobileAuthSection"></div>
                 </nav>
             </div>
         </div>
@@ -169,7 +189,7 @@
             </div>
         </div>
         <div class="absolute top-20 right-0 w-96 h-96 bg-purple-500/20 rounded-full blur-3xl -z-10 opacity-60"></div>
-        <div class="absolute bottom-0 left-0 w-96 h-96 bg-blue-500/20 rounded-full blur-3xl -z-10 opacity-60"></div>
+        <div class="absolute bottom-0 left-0 w-96 h-96 bg-blue-500/20 rounded-full blur-3xl -z-10 opacity=60"></div>
     </section>
 
     <!-- Start Mining Section -->
@@ -765,20 +785,20 @@
     </section>
 
     <!-- First Live Transaction Tracker -->
-    <section class="px-4 py-16 sm:px-6 lg:px-8 bg-slate-900/50 border-y border-purple-500/20">
+    <section class="px-4 py-16 sm:px-6 lg:px-8 bg-slate-900/50 border-y border-purple-500/20 live-section">
         <div class="mx-auto max-w-7xl">
             <h3 class="text-2xl font-bold text-white text-center mb-8">Live Transaction Activity</h3>
-            <div id="liveTransactions" class="space-y-3 max-h-96 overflow-hidden">
+            <div id="liveTransactions" class="space-y-3 max-h-96 overflow-y-auto">
                 <!-- Transactions will be dynamically generated -->
             </div>
         </div>
     </section>
 
     <!-- Live Mining Activity -->
-    <section class="px-4 py-16 sm:px-6 lg:px-8 bg-slate-900/30">
+    <section class="px-4 py-16 sm:px-6 lg:px-8 bg-slate-900/30 live-section">
         <div class="mx-auto max-w-7xl">
             <h3 class="text-2xl font-bold text-white text-center mb-8">Live Mining Activity</h3>
-            <div id="liveMining" class="space-y-3 max-h-96 overflow-hidden">
+            <div id="liveMining" class="space-y-3 max-h-96 overflow-y-auto">
                 <!-- Mining activity will be dynamically generated -->
             </div>
         </div>
@@ -885,6 +905,8 @@
             </div>
         </div>
     </section>
+
+    <!-- Live Transactions (Second one removed, keeping just one from uploaded file) -->
 
     <!-- FAQ Section -->
     <section class="px-4 py-20 sm:px-6 lg:px-8">
@@ -1020,8 +1042,8 @@
     </footer>
 
     <script>
-        // Login detection and auth button management
-        function isLoggedIn() {
+        // Login detection and header update
+        function checkLogin() {
             return localStorage.getItem('userEmail') !== null && localStorage.getItem('userEmail') !== '';
         }
 
@@ -1029,58 +1051,65 @@
             return localStorage.getItem('userEmail') || '';
         }
 
-        function updateAuthButtons() {
-            const authContainer = document.getElementById('authButtons');
-            const mobileAuthContainer = document.getElementById('mobileAuthButtons');
+        function updateAuthSection() {
+            const authSection = document.getElementById('authSection');
+            const mobileAuthSection = document.getElementById('mobileAuthSection');
             
-            if (isLoggedIn()) {
-                // User is logged in - show My Account button
-                authContainer.innerHTML = `
-                    <a href="dashboard.html" class="text-sm text-gray-300 hover:text-white transition">My Account</a>
-                    <button onclick="logout()" class="inline-flex items-center justify-center rounded-md text-sm font-medium bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white px-4 py-2 transition">Logout</button>
+            if (checkLogin()) {
+                // User is logged in
+                const userEmail = getUserEmail();
+                const shortEmail = userEmail.length > 20 ? userEmail.substring(0, 17) + '...' : userEmail;
+                
+                // Desktop auth section
+                authSection.innerHTML = `
+                    <div class="dropdown">
+                        <button class="text-sm text-gray-300 hover:text-white transition flex items-center gap-1">
+                            <div class="w-6 h-6 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center text-xs">${userEmail.charAt(0).toUpperCase()}</div>
+                            ${shortEmail} <span>▼</span>
+                        </button>
+                        <div class="dropdown-content">
+                            <a href="dashboard.html" class="block px-3 py-2 text-sm text-gray-300 hover:text-white hover:bg-purple-500/10 rounded">Dashboard</a>
+                            <a href="profile.html" class="block px-3 py-2 text-sm text-gray-300 hover:text-white hover:bg-purple-500/10 rounded">My Account</a>
+                            <a href="#" onclick="logout()" class="block px-3 py-2 text-sm text-gray-300 hover:text-white hover:bg-purple-500/10 rounded">Logout</a>
+                        </div>
+                    </div>
                 `;
                 
-                mobileAuthContainer.innerHTML = `
-                    <a href="dashboard.html" class="text-sm text-gray-300 hover:text-white">My Account</a>
-                    <button onclick="logout()" class="text-sm bg-gradient-to-r from-blue-500 to-purple-500 text-white px-4 py-2 rounded inline-block">Logout</button>
+                // Mobile auth section
+                mobileAuthSection.innerHTML = `
+                    <a href="dashboard.html" class="text-sm text-gray-300 hover:text-white">Dashboard</a>
+                    <a href="profile.html" class="text-sm text-gray-300 hover:text-white">My Account</a>
+                    <a href="#" onclick="logout()" class="text-sm text-gray-300 hover:text-white">Logout</a>
                 `;
             } else {
-                // User is not logged in - show Login/Sign Up buttons
-                authContainer.innerHTML = `
+                // User is not logged in
+                authSection.innerHTML = `
                     <a href="login.html" class="text-sm text-gray-300 hover:text-white transition">Login</a>
                     <a href="signup.html" class="inline-flex items-center justify-center rounded-md text-sm font-medium bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white px-4 py-2 transition">Sign Up</a>
                 `;
                 
-                mobileAuthContainer.innerHTML = `
+                mobileAuthSection.innerHTML = `
                     <a href="login.html" class="text-sm text-gray-300 hover:text-white">Login</a>
                     <a href="signup.html" class="text-sm bg-gradient-to-r from-blue-500 to-purple-500 text-white px-4 py-2 rounded inline-block">Sign Up</a>
                 `;
             }
             
-            // Always include the other mobile menu items
-            const existingMobileMenu = document.querySelector('#mobileMenu nav');
-            if (existingMobileMenu) {
-                const baseItems = `
-                    <a href="index.html" class="text-sm text-gray-300 hover:text-white">Home</a>
-                    <a href="cryptocurrencies.html" class="text-sm text-gray-300 hover:text-white">Cryptocurrencies</a>
-                    <a href="precious-metals.html" class="text-sm text-gray-300 hover:text-white">Precious Metals</a>
-                    <a href="stocks.html" class="text-sm text-gray-300 hover:text-white">Stocks</a>
-                    <a href="etfs.html" class="text-sm text-gray-300 hover:text-white">ETFs</a>
-                    <a href="btc-miner.html" class="text-sm text-gray-300 hover:text-white">BTC Miner</a>
-                    <a href="about.html" class="text-sm text-gray-300 hover:text-white">About</a>
-                    <a href="security.html" class="text-sm text-gray-300 hover:text-white">Security</a>
-                    <a href="contact.html" class="text-sm text-gray-300 hover:text-white">Contact</a>
-                    <a href="faq.html" class="text-sm text-gray-300 hover:text-white">FAQ</a>
-                `;
-                mobileAuthContainer.innerHTML = baseItems + mobileAuthContainer.innerHTML;
-            }
+            // Make sure auth section is visible
+            authSection.classList.remove('hidden');
+            authSection.classList.add('flex');
         }
 
         function logout() {
             localStorage.removeItem('userEmail');
-            updateAuthButtons();
+            localStorage.removeItem('loginTime');
+            updateAuthSection();
             window.location.href = 'index.html';
         }
+
+        // Initialize auth section on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            updateAuthSection();
+        });
 
         function toggleMobileMenu() {
             const menu = document.getElementById('mobileMenu');
@@ -1120,204 +1149,158 @@
             }
         }
 
-        // Enhanced Live Transaction Generator
-        const cryptoCurrencies = [
-            { symbol: '₿', code: 'BTC', name: 'Bitcoin' },
-            { symbol: 'Ξ', code: 'ETH', name: 'Ethereum' },
-            { symbol: '₮', code: 'USDT', name: 'Tether' },
-            { symbol: '⊙', code: 'USDC', name: 'USD Coin' },
-            { symbol: '◆', code: 'BNB', name: 'Binance Coin' },
-            { symbol: '✕', code: 'XRP', name: 'Ripple' },
-            { symbol: '₳', code: 'ADA', name: 'Cardano' },
-            { symbol: '฿', code: 'BUSD', name: 'Binance USD' }
+        // Enhanced live transaction generator with specific data
+        const cryptoData = {
+            symbols: ['₿ BTC', 'Ξ ETH', '₮ USDT', '⊙ USDC', '◆ BNB', '✕ XRP', '₳ ADA', '฿ BUSD'],
+            names: ['Bitcoin', 'Ethereum', 'Tether', 'USD Coin', 'Binance Coin', 'Ripple', 'Cardano', 'Binance USD'],
+            plans: [
+                { name: '1 Hour Plan', roi: '+20%', duration: '1 Hour', withdrawal: 'Instant' },
+                { name: '5 Hours Plan', roi: '+30%', duration: '5 Hours', withdrawal: 'Instant' },
+                { name: '24 Hours Plan', roi: '+68%', duration: '24 Hours', withdrawal: 'Instant' },
+                { name: '72 Hours Plan', roi: '+89%', duration: '72 Hours', withdrawal: 'Instant' },
+                { name: '1 Week Plan', roi: '+190%', duration: '1 Week', withdrawal: 'Instant' }
+            ]
+        };
+
+        const stockData = {
+            symbols: ['NVDA', 'AAPL', 'MSFT', 'GOOGL', 'AMZN'],
+            names: ['NVIDIA', 'Apple', 'Microsoft', 'Alphabet (Google)', 'Amazon']
+        };
+
+        const etfData = {
+            symbols: ['SPY', 'VOO', 'IVV', 'VTI', 'QQQ'],
+            names: ['SPDR S&P 500', 'Vanguard S&P 500', 'iShares Core S&P 500', 'Vanguard Total Market', 'Nasdaq-100']
+        };
+
+        const metalsData = {
+            symbols: ['AU', 'PT', 'RH', 'PD', 'AG'],
+            names: ['Gold', 'Platinum', 'Rhodium', 'Palladium', 'Silver']
+        };
+
+        // Countries with 40% South Africa
+        const countries = [
+            '🇿🇦 South Africa', '🇿🇦 South Africa', '🇿🇦 South Africa', '🇿🇦 South Africa', // 40%
+            '🇺🇸 USA', '🇬🇧 UK', '🇨🇦 Canada', '🇩🇪 Germany', '🇦🇺 Australia', '🇯🇵 Japan', '🇸🇬 Singapore'
         ];
 
-        const stockSymbols = [
-            { symbol: 'NVDA', name: 'NVIDIA' },
-            { symbol: 'AAPL', name: 'Apple' },
-            { symbol: 'MSFT', name: 'Microsoft' },
-            { symbol: 'GOOGL', name: 'Alphabet (Google)' },
-            { symbol: 'AMZN', name: 'Amazon' }
-        ];
-
-        const etfSymbols = [
-            { symbol: 'SPY', name: 'SPDR S&P 500' },
-            { symbol: 'VOO', name: 'Vanguard S&P 500' },
-            { symbol: 'IVV', name: 'iShares Core S&P 500' },
-            { symbol: 'VTI', name: 'Vanguard Total Market' },
-            { symbol: 'QQQ', name: 'Nasdaq-100' }
-        ];
-
-        const preciousMetals = [
-            { symbol: 'AU', name: 'Gold' },
-            { symbol: 'PT', name: 'Platinum' },
-            { symbol: 'RH', name: 'Rhodium' },
-            { symbol: 'PD', name: 'Palladium' },
-            { symbol: 'AG', name: 'Silver' }
-        ];
-
-        const investmentPlans = [
-            { name: '1 Hour Plan', roi: '+20%', duration: '1 Hour', withdrawal: 'Instant' },
-            { name: '5 Hours Plan', roi: '+30%', duration: '5 Hours', withdrawal: 'Instant' },
-            { name: '24 Hours Plan', roi: '+68%', duration: '24 Hours', withdrawal: 'Instant' },
-            { name: '72 Hours Plan', roi: '+89%', duration: '72 Hours', withdrawal: 'Instant' },
-            { name: '1 Week Plan', roi: '+190%', duration: '1 Week', withdrawal: 'Instant' }
-        ];
-
-        const miningPlans = [
-            { name: 'Micro Plan', investment: '$600', duration: '3 Days', hashrate: '130 TH/s', dailyReturn: '36%', maintenance: '0%', aiMiner: true },
-            { name: 'Gold Plan', investment: '$1,850', duration: '6 Days', hashrate: '720 TH/s', dailyReturn: '48%', maintenance: '0%', aiMiner: true },
-            { name: 'Silver Plan', investment: '$2,450', duration: '13 Days', hashrate: '2,114 TH/s', dailyReturn: '40%', maintenance: '0%', aiMiner: true },
-            { name: 'Diamond Plan', investment: '$2,200', duration: '7 Days', hashrate: '3,288 TH/s', dailyReturn: '80%', maintenance: '0%', aiMiner: true }
-        ];
-
-        const countries = ['🇺🇸 USA', '🇬🇧 UK', '🇨🇦 Canada', '🇩🇪 Germany', '🇿🇦 South Africa', '🇦🇺 Australia', '🇯🇵 Japan', '🇸🇬 Singapore'];
+        const transactionTypes = ['Investment', 'Withdrawal', 'Deposit'];
+        const investmentTypes = ['Crypto', 'Stocks', 'ETFs', 'Precious Metals'];
+        
         const animationClasses = ['animate-slide-in-right', 'animate-slide-in-left', 'animate-fade-in-up'];
         
-        let transactionHistory = new Set();
-        let miningHistory = new Set();
-
-        function generateUniqueId() {
-            return Date.now().toString(36) + Math.random().toString(36).substr(2);
+        function getRandomCountry() {
+            return countries[Math.floor(Math.random() * countries.length)];
         }
 
         function generateRandomTransaction() {
-            const transactionTypes = ['Investment', 'Withdrawal', 'Deposit'];
-            // 60% investments, 20% withdrawals, 20% deposits
-            const typeIndex = Math.random() < 0.6 ? 0 : (Math.random() < 0.5 ? 1 : 2);
-            const type = transactionTypes[typeIndex];
-            
-            let assetType, asset, amount;
-            const assetTypeChoice = Math.floor(Math.random() * 4);
-            
-            switch(assetTypeChoice) {
-                case 0: // Crypto
-                    const crypto = cryptoCurrencies[Math.floor(Math.random() * cryptoCurrencies.length)];
-                    assetType = 'Crypto';
-                    asset = `${crypto.symbol} ${crypto.code} (${crypto.name})`;
-                    amount = (Math.random() * 5000 + 200).toFixed(2);
-                    break;
-                case 1: // Stocks
-                    const stock = stockSymbols[Math.floor(Math.random() * stockSymbols.length)];
-                    assetType = 'Stock';
-                    asset = `${stock.symbol} (${stock.name})`;
-                    amount = (Math.random() * 10000 + 500).toFixed(2);
-                    break;
-                case 2: // ETFs
-                    const etf = etfSymbols[Math.floor(Math.random() * etfSymbols.length)];
-                    assetType = 'ETF';
-                    asset = `${etf.symbol} (${etf.name})`;
-                    amount = (Math.random() * 8000 + 300).toFixed(2);
-                    break;
-                case 3: // Precious Metals
-                    const metal = preciousMetals[Math.floor(Math.random() * preciousMetals.length)];
-                    assetType = 'Precious Metal';
-                    asset = `${metal.symbol} (${metal.name})`;
-                    amount = (Math.random() * 15000 + 1000).toFixed(2);
-                    break;
-            }
-            
-            const plan = investmentPlans[Math.floor(Math.random() * investmentPlans.length)];
-            const country = countries[Math.floor(Math.random() * countries.length)];
-            const username = `User_${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+            const type = transactionTypes[Math.floor(Math.random() * transactionTypes.length)];
+            const investmentType = investmentTypes[Math.floor(Math.random() * investmentTypes.length)];
+            const amount = (Math.random() * 5000 + 200).toFixed(2);
+            const username = `User_${Math.random().toString(36).substring(2, 8)}`;
+            const country = getRandomCountry();
             const timeAgo = Math.floor(Math.random() * 30) + 1;
             const animClass = animationClasses[Math.floor(Math.random() * animationClasses.length)];
-            const transactionId = generateUniqueId();
             
-            // Check if this transaction already exists
-            if (transactionHistory.has(transactionId)) {
-                return generateRandomTransaction(); // Try again
+            let assetInfo = '';
+            let planInfo = '';
+            
+            if (type === 'Investment') {
+                if (investmentType === 'Crypto') {
+                    const cryptoIndex = Math.floor(Math.random() * cryptoData.symbols.length);
+                    const plan = cryptoData.plans[Math.floor(Math.random() * cryptoData.plans.length)];
+                    assetInfo = `${cryptoData.symbols[cryptoIndex]} ${cryptoData.names[cryptoIndex]}`;
+                    planInfo = `${plan.name} (${plan.roi})`;
+                } else if (investmentType === 'Stocks') {
+                    const stockIndex = Math.floor(Math.random() * stockData.symbols.length);
+                    const plan = cryptoData.plans[Math.floor(Math.random() * cryptoData.plans.length)];
+                    assetInfo = `${stockData.symbols[stockIndex]} ${stockData.names[stockIndex]}`;
+                    planInfo = `${plan.name} (${plan.roi})`;
+                } else if (investmentType === 'ETFs') {
+                    const etfIndex = Math.floor(Math.random() * etfData.symbols.length);
+                    const plan = cryptoData.plans[Math.floor(Math.random() * cryptoData.plans.length)];
+                    assetInfo = `${etfData.symbols[etfIndex]} ${etfData.names[etfIndex]}`;
+                    planInfo = `${plan.name} (${plan.roi})`;
+                } else if (investmentType === 'Precious Metals') {
+                    const metalIndex = Math.floor(Math.random() * metalsData.symbols.length);
+                    const plan = cryptoData.plans[Math.floor(Math.random() * cryptoData.plans.length)];
+                    assetInfo = `${metalsData.symbols[metalIndex]} ${metalsData.names[metalIndex]}`;
+                    planInfo = `${plan.name} (${plan.roi})`;
+                }
             }
-            transactionHistory.add(transactionId);
             
             const colors = {
                 'Investment': 'from-purple-500/20 to-pink-500/10 border-purple-500/30',
-                'Withdrawal': 'from-blue-500/20 to-cyan-500/10 border-blue-500/30',
-                'Deposit': 'from-green-500/20 to-emerald-500/10 border-green-500/30'
+                'Withdrawal': 'from-green-500/20 to-emerald-500/10 border-green-500/30',
+                'Deposit': 'from-blue-500/20 to-cyan-500/10 border-blue-500/30'
             };
             
             return `
                 <div class="p-4 rounded-lg border bg-gradient-to-br ${colors[type]} backdrop-blur-sm ${animClass}">
                     <div class="flex items-center justify-between">
                         <div class="flex-1">
-                            <div class="flex items-center justify-between mb-1">
+                            <div class="flex items-center justify-between mb-2">
                                 <p class="font-semibold text-white">${username} <span class="text-xs text-gray-400">${country}</span></p>
-                                <span class="text-xs font-semibold ${type === 'Withdrawal' ? 'text-blue-400' : type === 'Deposit' ? 'text-green-400' : 'text-purple-400'}">${type}</span>
+                                <p class="text-xs text-gray-500">${timeAgo} min ago</p>
                             </div>
-                            <p class="text-sm text-gray-300 mb-1">${assetType}: ${asset}</p>
-                            <div class="flex items-center justify-between text-xs">
-                                <span class="text-gray-400">Amount: $${amount}</span>
-                                <span class="text-cyan-400">${plan.name} (${plan.roi})</span>
-                            </div>
+                            <p class="text-sm text-gray-300">${type}: $${amount} ${investmentType}</p>
+                            ${assetInfo ? `<p class="text-sm text-cyan-300 mt-1">${assetInfo}</p>` : ''}
+                            ${planInfo ? `<p class="text-xs text-purple-300 mt-1">${planInfo}</p>` : ''}
                         </div>
-                        <p class="text-xs text-gray-500 ml-4 whitespace-nowrap">${timeAgo} min ago</p>
                     </div>
                 </div>
             `;
         }
 
+        // Enhanced mining live feed generator
+        const miningPlans = [
+            { name: 'Micro Plan', investment: '$600', duration: '3 Days', hashrate: '130 TH/s', dailyReturn: '36%', maintenance: '0%' },
+            { name: 'Gold Plan', investment: '$1,850', duration: '6 Days', hashrate: '720 TH/s', dailyReturn: '48%', maintenance: '0%' },
+            { name: 'Silver Plan', investment: '$2,450', duration: '13 Days', hashrate: '2,114 TH/s', dailyReturn: '40%', maintenance: '0%' },
+            { name: 'Diamond Plan', investment: '$2,200', duration: '7 Days', hashrate: '3,288 TH/s', dailyReturn: '80%', maintenance: '0%' }
+        ];
+        
+        const miningActions = ['Activated', 'Started', 'Received BTC Output', 'Completed'];
+        
         function generateRandomMining() {
-            const miningActions = ['Activated', 'Started', 'Received BTC Output', 'Withdrawal'];
-            // 50% activations/starts, 30% BTC outputs, 20% withdrawals
-            const actionIndex = Math.random() < 0.5 ? (Math.random() < 0.5 ? 0 : 1) : (Math.random() < 0.6 ? 2 : 3);
-            const action = miningActions[actionIndex];
-            
+            const action = miningActions[Math.floor(Math.random() * miningActions.length)];
             const plan = miningPlans[Math.floor(Math.random() * miningPlans.length)];
-            const username = `Miner_${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
-            const country = countries[Math.floor(Math.random() * countries.length)];
+            const username = `Miner_${Math.random().toString(36).substring(2, 8)}`;
+            const country = getRandomCountry();
             const timeAgo = Math.floor(Math.random() * 15) + 1;
             const animClass = animationClasses[Math.floor(Math.random() * animationClasses.length)];
-            const miningId = generateUniqueId();
-            
-            // Check if this mining activity already exists
-            if (miningHistory.has(miningId)) {
-                return generateRandomMining(); // Try again
-            }
-            miningHistory.add(miningId);
             
             let content = '';
             if (action === 'Received BTC Output') {
-                const btcAmount = (Math.random() * 0.01).toFixed(4);
+                const btcAmount = (Math.random() * 0.01 + 0.001).toFixed(4);
                 content = `
                     <div class="flex-1">
-                        <div class="flex items-center justify-between mb-1">
+                        <div class="flex items-center justify-between mb-2">
                             <p class="font-semibold text-white">⚡ ${username} <span class="text-xs text-gray-400">${country}</span></p>
-                            <span class="text-xs font-semibold text-green-400">${action}</span>
+                            <p class="text-xs text-gray-500">${timeAgo} min ago</p>
                         </div>
-                        <p class="text-sm text-gray-300 mb-1">${plan.name}</p>
-                        <div class="flex items-center justify-between text-xs">
-                            <span class="text-gray-400">BTC Output: ${btcAmount} BTC</span>
-                            <span class="text-orange-400">Daily: ${plan.dailyReturn}</span>
-                        </div>
-                    </div>
-                `;
-            } else if (action === 'Withdrawal') {
-                const withdrawalAmount = (parseFloat(plan.investment.replace('$', '')) * (Math.random() * 0.5 + 0.5)).toFixed(2);
-                content = `
-                    <div class="flex-1">
-                        <div class="flex items-center justify-between mb-1">
-                            <p class="font-semibold text-white">💰 ${username} <span class="text-xs text-gray-400">${country}</span></p>
-                            <span class="text-xs font-semibold text-blue-400">${action}</span>
-                        </div>
-                        <p class="text-sm text-gray-300 mb-1">${plan.name}</p>
-                        <div class="flex items-center justify-between text-xs">
-                            <span class="text-gray-400">Amount: $${withdrawalAmount}</span>
-                            <span class="text-green-400">Withdrawn</span>
+                        <p class="text-sm text-gray-300">${action} from ${plan.name}</p>
+                        <p class="text-sm text-orange-400 font-semibold">${btcAmount} BTC credited</p>
+                        <div class="grid grid-cols-2 gap-2 mt-2 text-xs">
+                            <div class="text-gray-400">Hashrate: <span class="text-white">${plan.hashrate}</span></div>
+                            <div class="text-gray-400">Daily: <span class="text-green-400">${plan.dailyReturn}</span></div>
                         </div>
                     </div>
                 `;
             } else {
                 content = `
                     <div class="flex-1">
-                        <div class="flex items-center justify-between mb-1">
+                        <div class="flex items-center justify-between mb-2">
                             <p class="font-semibold text-white">⛏️ ${username} <span class="text-xs text-gray-400">${country}</span></p>
-                            <span class="text-xs font-semibold text-orange-400">${action}</span>
+                            <p class="text-xs text-gray-500">${timeAgo} min ago</p>
                         </div>
-                        <p class="text-sm text-gray-300 mb-1">${plan.name}</p>
-                        <div class="flex items-center justify-between text-xs">
-                            <span class="text-gray-400">Investment: ${plan.investment}</span>
-                            <span class="text-orange-400">Hashrate: ${plan.hashrate}</span>
+                        <p class="text-sm text-gray-300">${action} ${plan.name}</p>
+                        <div class="grid grid-cols-2 gap-2 mt-2 text-xs">
+                            <div class="text-gray-400">Investment: <span class="text-white">${plan.investment}</span></div>
+                            <div class="text-gray-400">Duration: <span class="text-white">${plan.duration}</span></div>
+                            <div class="text-gray-400">Hashrate: <span class="text-white">${plan.hashrate}</span></div>
+                            <div class="text-gray-400">Daily: <span class="text-green-400">${plan.dailyReturn}</span></div>
                         </div>
+                        <p class="text-xs text-amber-400 mt-2">✓ AI Miner Included | Maintenance: ${plan.maintenance}</p>
                     </div>
                 `;
             }
@@ -1326,23 +1309,73 @@
                 <div class="p-4 rounded-lg border border-orange-500/30 bg-gradient-to-br from-orange-500/20 to-amber-500/10 backdrop-blur-sm ${animClass}">
                     <div class="flex items-center justify-between">
                         ${content}
-                        <p class="text-xs text-gray-500 ml-4 whitespace-nowrap">${timeAgo} min ago</p>
                     </div>
                 </div>
             `;
         }
 
-        // Initialize live feeds with random intervals between 3-10 seconds
+        // Track used transactions to avoid repeats
+        const usedTransactionIds = new Set();
+        const usedMiningIds = new Set();
+
+        function getUniqueTransaction() {
+            let transaction;
+            let attempts = 0;
+            const maxAttempts = 50;
+            
+            do {
+                transaction = generateRandomTransaction();
+                const transactionId = transaction.substring(0, 100); // Use first 100 chars as ID
+                
+                if (!usedTransactionIds.has(transactionId) || attempts >= maxAttempts) {
+                    usedTransactionIds.add(transactionId);
+                    
+                    // Keep only last 100 transactions in memory
+                    if (usedTransactionIds.size > 100) {
+                        const first = usedTransactionIds.values().next().value;
+                        usedTransactionIds.delete(first);
+                    }
+                    
+                    return transaction;
+                }
+                attempts++;
+            } while (true);
+        }
+
+        function getUniqueMining() {
+            let mining;
+            let attempts = 0;
+            const maxAttempts = 50;
+            
+            do {
+                mining = generateRandomMining();
+                const miningId = mining.substring(0, 100); // Use first 100 chars as ID
+                
+                if (!usedMiningIds.has(miningId) || attempts >= maxAttempts) {
+                    usedMiningIds.add(miningId);
+                    
+                    // Keep only last 100 mining entries in memory
+                    if (usedMiningIds.size > 100) {
+                        const first = usedMiningIds.values().next().value;
+                        usedMiningIds.delete(first);
+                    }
+                    
+                    return mining;
+                }
+                attempts++;
+            } while (true);
+        }
+
+        // Initialize live feeds with random intervals between 3-8 seconds
         function updateLiveTransactions() {
             const container = document.getElementById('liveTransactions');
             if (container.children.length > 8) {
                 container.removeChild(container.lastChild);
             }
-            const newTransaction = generateRandomTransaction();
-            container.insertAdjacentHTML('afterbegin', newTransaction);
+            container.insertAdjacentHTML('afterbegin', getUniqueTransaction());
             
             // Schedule next update with random interval
-            const nextInterval = Math.random() * 7000 + 3000; // 3-10 seconds
+            const nextInterval = Math.random() * 5000 + 3000; // 3-8 seconds
             setTimeout(updateLiveTransactions, nextInterval);
         }
 
@@ -1351,29 +1384,22 @@
             if (container.children.length > 8) {
                 container.removeChild(container.lastChild);
             }
-            const newMining = generateRandomMining();
-            container.insertAdjacentHTML('afterbegin', newMining);
+            container.insertAdjacentHTML('afterbegin', getUniqueMining());
             
             // Schedule next update with random interval
-            const nextInterval = Math.random() * 7000 + 3000; // 3-10 seconds
+            const nextInterval = Math.random() * 5000 + 3000; // 3-8 seconds
             setTimeout(updateLiveMining, nextInterval);
         }
 
-        // Initial setup
-        document.addEventListener('DOMContentLoaded', function() {
-            // Update auth buttons based on login status
-            updateAuthButtons();
-            
-            // Initial populate live feeds
-            for (let i = 0; i < 5; i++) {
-                document.getElementById('liveTransactions').insertAdjacentHTML('beforeend', generateRandomTransaction());
-                document.getElementById('liveMining').insertAdjacentHTML('beforeend', generateRandomMining());
-            }
+        // Initial populate with more entries
+        for (let i = 0; i < 8; i++) {
+            document.getElementById('liveTransactions').insertAdjacentHTML('beforeend', getUniqueTransaction());
+            document.getElementById('liveMining').insertAdjacentHTML('beforeend', getUniqueMining());
+        }
 
-            // Start live feeds
-            setTimeout(updateLiveTransactions, Math.random() * 5000 + 2000);
-            setTimeout(updateLiveMining, Math.random() * 5000 + 2000);
-        });
+        // Start live feeds
+        setTimeout(updateLiveTransactions, Math.random() * 5000 + 3000);
+        setTimeout(updateLiveMining, Math.random() * 5000 + 3000);
     </script>
 
 </body>
