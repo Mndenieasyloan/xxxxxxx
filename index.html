@@ -64,6 +64,89 @@
                 max-height: 300px;
             }
         }
+         /* Wobble animations */
+    @keyframes wobble {
+        0%, 100% { transform: translate(0, 0) rotate(0deg); }
+        25% { transform: translate(-5px, 5px) rotate(-0.5deg); }
+        50% { transform: translate(5px, -5px) rotate(0.5deg); }
+        75% { transform: translate(5px, 5px) rotate(-0.5deg); }
+    }
+    
+    @keyframes wobbleDiagonal {
+        0%, 100% { transform: translate(0, 0) rotate(0deg); }
+        25% { transform: translate(8px, 8px) rotate(1deg); }
+        50% { transform: translate(-8px, -8px) rotate(-1deg); }
+        75% { transform: translate(-8px, 8px) rotate(1deg); }
+    }
+    
+    @keyframes wobbleGentle {
+        0%, 100% { transform: translate(0, 0) rotate(0deg); }
+        33% { transform: translate(3px, -3px) rotate(0.3deg); }
+        66% { transform: translate(-3px, 3px) rotate(-0.3deg); }
+    }
+    
+    @keyframes wobbleCircular {
+        0%, 100% { transform: translate(0, 0) rotate(0deg); }
+        25% { transform: translate(4px, 0) rotate(0.5deg); }
+        50% { transform: translate(0, 4px) rotate(-0.5deg); }
+        75% { transform: translate(-4px, 0) rotate(0.5deg); }
+    }
+    
+    @keyframes wobbleCircularReverse {
+        0%, 100% { transform: translate(0, 0) rotate(0deg); }
+        25% { transform: translate(-3px, 0) rotate(-0.3deg); }
+        50% { transform: translate(0, -3px) rotate(0.3deg); }
+        75% { transform: translate(3px, 0) rotate(-0.3deg); }
+    }
+    
+    @keyframes wobbleSubtle {
+        0%, 100% { transform: translate(0, 0) scale(1); }
+        50% { transform: translate(2px, -2px) scale(1.02); }
+    }
+    
+    /* Animation classes */
+    .animate-wobble {
+        animation: wobble 3s ease-in-out infinite;
+    }
+    
+    .animate-wobble-diagonal {
+        animation: wobbleDiagonal 4s ease-in-out infinite;
+    }
+    
+    .animate-wobble-gentle {
+        animation: wobbleGentle 5s ease-in-out infinite;
+    }
+    
+    .animate-wobble-circular {
+        animation: wobbleCircular 6s ease-in-out infinite;
+    }
+    
+    .animate-wobble-circular-reverse {
+        animation: wobbleCircularReverse 7s ease-in-out infinite;
+    }
+    
+    .animate-wobble-subtle {
+        animation: wobbleSubtle 8s ease-in-out infinite;
+    }
+    
+    /* Existing animations (keeping your original animations) */
+    @keyframes float {
+        0%, 100% { transform: translateY(0px); }
+        50% { transform: translateY(-20px); }
+    }
+    
+    @keyframes glow-pulse {
+        0%, 100% { opacity: 0.4; }
+        50% { opacity: 0.8; }
+    }
+    
+    .animate-float {
+        animation: float 6s ease-in-out infinite;
+    }
+    
+    .animate-glow-pulse {
+        animation: glow-pulse 4s ease-in-out infinite;
+    }
     </style>
 </head>
 <body class="bg-gradient-to-b from-slate-950 via-purple-950 to-slate-950 text-white">
@@ -180,25 +263,32 @@
 
                 <!-- Right Visuals -->
                 <div class="relative h-96 md:h-full min-h-96">
-                    <div class="absolute inset-0 flex items-center justify-center">
-                        <div class="absolute animate-float">
-                            <div class="w-32 h-32 bg-gradient-to-br from-purple-400 via-purple-500 to-purple-600 opacity-80 shadow-2xl shadow-purple-500/60 rounded-lg transform -rotate-45 scale-75"></div>
-                        </div>
-                        <div class="absolute top-0 right-8 animate-float" style="animation-delay: 0.5s;">
-                            <div class="w-24 h-24 bg-gradient-to-br from-blue-400 to-cyan-500 rounded-lg transform rotate-45 opacity-75 shadow-2xl shadow-blue-500/50"></div>
-                        </div>
-                        <div class="absolute bottom-12 left-4 animate-float" style="animation-delay: 1s;">
-                            <div class="w-28 h-28 bg-gradient-to-br from-pink-400 to-pink-600 rounded-lg transform -rotate-12 opacity-70 shadow-2xl shadow-pink-500/50"></div>
-                        </div>
-                        <div class="absolute inset-0 flex items-center justify-center">
-                            <div class="relative w-64 h-64">
-                                <div class="absolute inset-0 rounded-full border-2 border-purple-500/40 animate-glow-pulse"></div>
-                                <div class="absolute inset-8 rounded-full border-2 border-pink-500/30 animate-glow-pulse" style="animation-delay: 0.3s;"></div>
-                                <div class="absolute inset-16 rounded-full bg-gradient-to-br from-purple-500 via-pink-500 to-blue-500 opacity-30 blur-3xl"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+    <div class="absolute inset-0 flex items-center justify-center">
+        <!-- Main diamond with up-down-left-right wobble -->
+        <div class="absolute animate-float animate-wobble">
+            <div class="w-32 h-32 bg-gradient-to-br from-purple-400 via-purple-500 to-purple-600 opacity-80 shadow-2xl shadow-purple-500/60 rounded-lg transform -rotate-45 scale-75"></div>
+        </div>
+        
+        <!-- Right top shape with diagonal wobble -->
+        <div class="absolute top-0 right-8 animate-float animate-wobble-diagonal" style="animation-delay: 0.5s;">
+            <div class="w-24 h-24 bg-gradient-to-br from-blue-400 to-cyan-500 rounded-lg transform rotate-45 opacity-75 shadow-2xl shadow-blue-500/50"></div>
+        </div>
+        
+        <!-- Bottom left shape with gentle wobble -->
+        <div class="absolute bottom-12 left-4 animate-float animate-wobble-gentle" style="animation-delay: 1s;">
+            <div class="w-28 h-28 bg-gradient-to-br from-pink-400 to-pink-600 rounded-lg transform -rotate-12 opacity-70 shadow-2xl shadow-pink-500/50"></div>
+        </div>
+        
+        <!-- Circles with circular wobble -->
+        <div class="absolute inset-0 flex items-center justify-center">
+            <div class="relative w-64 h-64 animate-wobble-circular">
+                <div class="absolute inset-0 rounded-full border-2 border-purple-500/40 animate-glow-pulse"></div>
+                <div class="absolute inset-8 rounded-full border-2 border-pink-500/30 animate-glow-pulse animate-wobble-circular-reverse" style="animation-delay: 0.3s;"></div>
+                <div class="absolute inset-16 rounded-full bg-gradient-to-br from-purple-500 via-pink-500 to-blue-500 opacity-30 blur-3xl animate-wobble-subtle"></div>
+            </div>
+        </div>
+    </div>
+</div>
             </div>
         </div>
         <div class="absolute top-20 right-0 w-96 h-96 bg-purple-500/20 rounded-full blur-3xl -z-10 opacity-60"></div>
