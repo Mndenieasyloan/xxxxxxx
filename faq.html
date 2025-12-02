@@ -11,14 +11,42 @@
         .faq-item.active .faq-answer { max-height: 500px; }
         .faq-item .arrow { transition: transform 0.3s ease; }
         .faq-item.active .arrow { transform: rotate(180deg); }
+        .group > div {
+            transition: opacity 0.2s ease-in-out, visibility 0.2s ease-in-out;
+        }
     </style>
 </head>
 <body class="bg-gradient-to-b from-slate-950 via-purple-950 to-slate-950 text-white">
     <!-- Header -->
+    <!-- Header (same as index.html) -->
     <header class="sticky top-0 z-50 border-b border-purple-500/20 bg-slate-950/80 backdrop-blur-md">
         <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div class="flex items-center justify-between py-4">
-                <a href="index.html" class="flex items-center gap-2">
+                <a href="index.html" class="flex items-center gap-2 hover:opacity-80 transition">
+                    <div class="h-10 w-10">
+                        <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" class="w-full h-full">
+                            <defs>
+                                <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" style="stop-color: #a78bfa; stop-opacity: 1" />
+                                    <stop offset="50%" style="stop-color: #ec4899; stop-opacity: 1" />
+                                    <stop offset="100%" style="stop-color: #06b6d4; stop-opacity: 1" />
+                                </linearGradient>
+                                <filter id="glow">
+                                    <feGaussianBlur stdDeviation="2" result="coloredBlur" />
+                                    <feMerge>
+                                        <feMergeNode in="coloredBlur" />
+                                        <feMergeNode in="SourceGraphic" />
+                                    </feMerge>
+                                </filter>
+                            </defs>
+                            <circle cx="100" cy="100" r="95" fill="url(#logoGradient)" opacity="0.2" />
+                            <circle cx="100" cy="100" r="90" fill="none" stroke="url(#logoGradient)" stroke-width="2" />
+                            <path d="M 50 60 L 80 140 M 150 60 L 120 140" stroke="url(#logoGradient)" stroke-width="8" stroke-linecap="round" fill="none" filter="url(#glow)" />
+                            <circle cx="100" cy="100" r="25" fill="none" stroke="url(#logoGradient)" stroke-width="6" filter="url(#glow)" />
+                            <line x1="75" y1="100" x2="125" y2="100" stroke="url(#logoGradient)" stroke-width="3" opacity="0.6" />
+                            <circle cx="100" cy="60" r="4" fill="url(#logoGradient)" filter="url(#glow)" />
+                        </svg>
+                    </div>
                     <span class="text-xl font-bold bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent">V0 Trade</span>
                 </a>
                 <nav class="hidden md:flex items-center gap-8">
@@ -26,7 +54,8 @@
                     <a href="about.html" class="text-sm text-gray-300 hover:text-white transition">About</a>
                     <a href="faq.html" class="text-sm text-white font-semibold">FAQ</a>
                 </nav>
-                <div class="hidden md:flex items-center gap-4">
+                <!-- Updated auth buttons container -->
+                <div class="hidden md:flex items-center gap-4 auth-buttons">
                     <a href="login.html" class="text-sm text-gray-300 hover:text-white transition">Login</a>
                     <a href="signup.html" class="inline-flex items-center justify-center rounded-md text-sm font-medium bg-gradient-to-r from-blue-500 to-purple-500 text-white px-4 py-2">Sign Up</a>
                 </div>
@@ -184,9 +213,81 @@
     </footer>
 
     <script>
+        // FAQ toggle function
         function toggleFAQ(element) {
             element.classList.toggle('active');
         }
+
+        // Login state detection and UI update
+        function updateAuthUI() {
+            const userEmail = localStorage.getItem("v0trade_user_email");
+            const authContainer = document.querySelector('.auth-buttons');
+            
+            if (authContainer) {
+                if (userEmail) {
+                    // User is logged in - show "My Account"
+                    authContainer.innerHTML = `
+                        <div class="relative group">
+                            <button class="flex items-center gap-2 text-sm text-gray-300 hover:text-white transition">
+                                <span class="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center text-white text-xs font-bold">
+                                    ${userEmail.charAt(0).toUpperCase()}
+                                </span>
+                                My Account
+                            </button>
+                            <div class="absolute right-0 mt-2 w-48 bg-slate-900 border border-purple-500/20 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                                <div class="p-4 border-b border-purple-500/20">
+                                    <p class="text-xs text-gray-400">Signed in as</p>
+                                    <p class="text-sm font-medium truncate">${userEmail}</p>
+                                </div>
+                                <div class="p-2">
+                                    <a href="dashboard.html" class="block px-3 py-2 text-sm text-gray-300 hover:bg-slate-800 hover:text-white rounded transition">Dashboard</a>
+                                    <a href="profile.html" class="block px-3 py-2 text-sm text-gray-300 hover:bg-slate-800 hover:text-white rounded transition">Profile Settings</a>
+                                    <button onclick="logout()" class="w-full text-left px-3 py-2 text-sm text-red-400 hover:bg-slate-800 hover:text-red-300 rounded transition mt-2 border-t border-purple-500/20 pt-2">
+                                        Logout
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    // User is not logged in - show Login/Sign Up
+                    authContainer.innerHTML = `
+                        <a href="login.html" class="text-sm text-gray-300 hover:text-white transition">Login</a>
+                        <a href="signup.html" class="inline-flex items-center justify-center rounded-md text-sm font-medium bg-gradient-to-r from-blue-500 to-purple-500 text-white px-4 py-2">Sign Up</a>
+                    `;
+                }
+            }
+        }
+
+        // Logout function
+        function logout() {
+            localStorage.removeItem("v0trade_user_email");
+            // Also remove any other user data if stored
+            localStorage.removeItem("v0trade_user_name");
+            localStorage.removeItem("v0trade_user_balance");
+            
+            // Redirect to home page after logout
+            window.location.href = "index.html";
+        }
+
+        // Update UI when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            updateAuthUI();
+            
+            // Optional: Check login state periodically (every 5 seconds)
+            setInterval(updateAuthUI, 5000);
+            
+            // Add click outside to close dropdown
+            document.addEventListener('click', function(event) {
+                if (!event.target.closest('.group')) {
+                    const dropdowns = document.querySelectorAll('.group > div');
+                    dropdowns.forEach(dropdown => {
+                        dropdown.classList.remove('opacity-100', 'visible');
+                        dropdown.classList.add('opacity-0', 'invisible');
+                    });
+                }
+            });
+        });
     </script>
 </body>
 </html>
