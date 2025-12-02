@@ -70,8 +70,9 @@
                     </div>
                 </nav>
 
-                <!-- Right Side - Auth -->
-                <div class="hidden items-center gap-4 md:flex">
+                <!-- Right Side - Auth (Will be updated by JavaScript) -->
+                <div id="authSection" class="hidden items-center gap-4 md:flex">
+                    <!-- Default state - shows login/signup -->
                     <a href="login.html" class="text-sm text-gray-300 hover:text-white transition">Login</a>
                     <a href="signup.html" class="inline-flex items-center justify-center rounded-md text-sm font-medium bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white px-4 py-2 transition">Sign Up</a>
                 </div>
@@ -97,8 +98,11 @@
                     <a href="security.html" class="text-sm text-gray-300 hover:text-white">Security</a>
                     <a href="contact.html" class="text-sm text-gray-300 hover:text-white">Contact</a>
                     <a href="faq.html" class="text-sm text-gray-300 hover:text-white">FAQ</a>
-                    <a href="login.html" class="text-sm text-gray-300 hover:text-white">Login</a>
-                    <a href="signup.html" class="text-sm bg-gradient-to-r from-blue-500 to-purple-500 text-white px-4 py-2 rounded inline-block">Sign Up</a>
+                    <!-- Mobile auth section (will be updated by JavaScript) -->
+                    <div id="mobileAuthSection">
+                        <a href="login.html" class="text-sm text-gray-300 hover:text-white">Login</a>
+                        <a href="signup.html" class="text-sm bg-gradient-to-r from-blue-500 to-purple-500 text-white px-4 py-2 rounded inline-block mt-2">Sign Up</a>
+                    </div>
                 </nav>
             </div>
         </div>
@@ -255,6 +259,53 @@
     </footer>
 
     <script>
+        // Login Detection and UI Update
+        function updateAuthUI() {
+            const userEmail = localStorage.getItem("v0trade_user_email");
+            const authSection = document.getElementById('authSection');
+            const mobileAuthSection = document.getElementById('mobileAuthSection');
+            
+            if (userEmail) {
+                // User is logged in - show "My Account" and "Logout"
+                authSection.innerHTML = `
+                    <div class="dropdown">
+                        <button class="text-sm text-gray-300 hover:text-white transition flex items-center gap-1">${userEmail} <span>▼</span></button>
+                        <div class="dropdown-content">
+                            <a href="dashboard.html" class="block px-3 py-2 text-sm text-gray-300 hover:text-white hover:bg-purple-500/10 rounded">My Account</a>
+                            <a href="#" onclick="logout()" class="block px-3 py-2 text-sm text-gray-300 hover:text-white hover:bg-purple-500/10 rounded">Logout</a>
+                        </div>
+                    </div>
+                `;
+                
+                mobileAuthSection.innerHTML = `
+                    <a href="dashboard.html" class="text-sm bg-gradient-to-r from-blue-500 to-purple-500 text-white px-4 py-2 rounded inline-block">My Account</a>
+                    <a href="#" onclick="logout()" class="text-sm text-gray-300 hover:text-white mt-2 block">Logout</a>
+                `;
+            } else {
+                // User is not logged in - show "Login" and "Sign Up"
+                authSection.innerHTML = `
+                    <a href="login.html" class="text-sm text-gray-300 hover:text-white transition">Login</a>
+                    <a href="signup.html" class="inline-flex items-center justify-center rounded-md text-sm font-medium bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white px-4 py-2 transition">Sign Up</a>
+                `;
+                
+                mobileAuthSection.innerHTML = `
+                    <a href="login.html" class="text-sm text-gray-300 hover:text-white">Login</a>
+                    <a href="signup.html" class="text-sm bg-gradient-to-r from-blue-500 to-purple-500 text-white px-4 py-2 rounded inline-block mt-2">Sign Up</a>
+                `;
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem("v0trade_user_email");
+            updateAuthUI();
+            return false; // Prevent default link behavior
+        }
+
+        // Run on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            updateAuthUI();
+        });
+
         function toggleMobileMenu() {
             const menu = document.getElementById('mobileMenu');
             menu.classList.toggle('active');
