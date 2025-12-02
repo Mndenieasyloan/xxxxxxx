@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Wallet Dashboard - V0 Trade</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -38,6 +38,7 @@
             border-radius: 1rem;
             padding: 1.5rem;
         }
+        
         @media (max-width: 768px) {
             .sidebar {
                 position: fixed;
@@ -67,16 +68,26 @@
                 display: flex;
             }
         }
+        
         @media (min-width: 769px) {
             .sidebar-toggle {
                 display: none;
             }
         }
+        
         .mobile-menu { display: none; }
         .mobile-menu.active { display: block; }
         .dropdown { position: relative; display: inline-block; }
         .dropdown-content { display: none; position: absolute; background-color: rgb(15 23 42 / 0.95); min-width: 12rem; border: 1px solid rgb(168 85 247 / 0.2); border-radius: 0.5rem; padding: 0.5rem; z-index: 1000; backdrop-filter: blur(10px); }
         .dropdown:hover .dropdown-content { display: block; }
+        
+        /* Transaction status colors */
+        .status-completed { color: #10b981; background-color: #10b98110; }
+        .status-pending { color: #f59e0b; background-color: #f59e0b10; }
+        .status-failed { color: #ef4444; background-color: #ef444410; }
+        .type-deposit { color: #10b981; }
+        .type-withdrawal { color: #ef4444; }
+        .type-investment { color: #3b82f6; }
     </style>
 </head>
 <body class="bg-gray-50">
@@ -136,7 +147,7 @@
 
                 <div class="hidden items-center gap-4 md:flex">
                     <a href="dashboard.html" class="text-sm text-purple-400 hover:text-purple-300 transition">Dashboard</a>
-                    <span class="text-sm text-gray-400" id="headerEmailDisplay"></span>
+                    <span class="text-sm text-gray-400" id="headerEmailDisplay">Loading...</span>
                     <a href="index.html" class="text-sm text-gray-300 hover:text-white transition">Logout</a>
                 </div>
 
@@ -248,8 +259,8 @@
                     <div class="flex items-center gap-4">
                         <div class="text-5xl">👋</div>
                         <div>
-                            <h2 class="text-2xl font-bold text-gray-900 mb-1">Welcome back, <span id="userName"></span>!</h2>
-                            <p class="text-gray-600 text-sm">Email: <span id="userEmailDisplay" class="font-medium text-gray-900"></span></p>
+                            <h2 class="text-2xl font-bold text-gray-900 mb-1">Welcome back, <span id="userName">User</span>!</h2>
+                            <p class="text-gray-600 text-sm">Email: <span id="userEmailDisplay" class="font-medium text-gray-900">Loading...</span></p>
                         </div>
                     </div>
                 </div>
@@ -263,7 +274,7 @@
                             </div>
                             <div class="text-4xl">📁</div>
                         </div>
-                        <p id="depositBalance" class="text-3xl font-bold text-gray-900 mb-4"></p>
+                        <p id="depositBalance" class="text-3xl font-bold text-gray-900 mb-4">$0.00</p>
                         <div class="flex items-center justify-between gap-2">
                             <a href="deposit-wallet.html" class="text-sm text-orange-500 hover:text-orange-600 font-medium">View Transactions</a>
                             <a href="deposit.html" class="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2">
@@ -280,7 +291,7 @@
                             </div>
                             <div class="text-4xl">💵</div>
                         </div>
-                        <p id="earningBalance" class="text-3xl font-bold text-gray-900 mb-4"></p>
+                        <p id="earningBalance" class="text-3xl font-bold text-gray-900 mb-4">$0.00</p>
                         <div class="flex items-center justify-between gap-2">
                             <a href="earning-wallet.html" class="text-sm text-green-500 hover:text-green-600 font-medium">View Transactions</a>
                             <a href="withdraw.html" class="bg-gray-900 hover:bg-gray-800 text-white px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2">
@@ -312,7 +323,7 @@
                             <div class="text-3xl">🔄</div>
                             <p class="text-sm font-medium text-gray-600">Miner Earning</p>
                         </div>
-                        <p id="totalReturned" class="text-2xl font-bold text-gray-900"></p>
+                        <p id="totalReturned" class="text-2xl font-bold text-gray-900">$0.00</p>
                     </div>
 
                     <div class="bg-white rounded-xl border-2 border-green-300 p-6">
@@ -320,7 +331,7 @@
                             <div class="text-3xl">💰</div>
                             <p class="text-sm font-medium text-gray-600">Total Ref. Commissions</p>
                         </div>
-                        <p id="totalCommissions" class="text-2xl font-bold text-gray-900"></p>
+                        <p id="totalCommissions" class="text-2xl font-bold text-gray-900">$0.00</p>
                     </div>
 
                     <div class="bg-white rounded-xl border-2 border-green-300 p-6">
@@ -328,117 +339,458 @@
                             <div class="text-3xl">💵</div>
                             <p class="text-sm font-medium text-gray-600">Investment Earning</p>
                         </div>
-                        <p id="totalEarnings" class="text-2xl font-bold text-gray-900"></p>
+                        <p id="totalEarnings" class="text-2xl font-bold text-gray-900">$0.00</p>
                     </div>
                 </div>
 
                 <div class="bg-white rounded-xl border border-gray-200 p-6">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Latest Transactions</h3>
-                    <div class="text-center py-12">
-                        <p class="text-gray-500">No transaction yet</p>
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-semibold text-gray-900">Latest Transactions</h3>
+                        <div class="flex gap-2">
+                            <button onclick="refreshTransactionsData()" class="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2">
+                                <span>🔄</span>
+                                <span class="hidden sm:inline">Refresh</span>
+                            </button>
+                            <button onclick="clearLocalTransactions()" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2">
+                                <span>🗑️</span>
+                                <span class="hidden sm:inline">Clear Cache</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div id="transactionsContainer">
+                        <!-- Transactions will be loaded here -->
+                        <div class="text-center py-12">
+                            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500 mx-auto mb-4"></div>
+                            <p class="text-gray-500">Loading transactions...</p>
+                        </div>
                     </div>
                 </div>
             </div>
         </main>
     </div>
 
-    
-
 <script>
-const BASEROW_TOKEN = "LG6hnTBxgBG78FueElsSwpHRd4Wep1oL";
-const WALLET_TABLE_ID = 756077;
+    const API_TOKEN = "LG6hnTBxgBG78FueElsSwpHRd4Wep1oL";
+    const WALLET_TABLE = 756077;
+    const TRANSACTIONS_TABLE = 756081;
+    const STORAGE_KEY_PREFIX = "v0trade_transactions_";
+    const LAST_FETCH_KEY_PREFIX = "v0trade_last_fetch_";
+    const TRANSACTIONS_EXPIRY_DAYS = 30;
 
-// ----------------------------
-// FORCE LOGIN CHECK
-// ----------------------------
-document.addEventListener("DOMContentLoaded", async () => {
-    const email = localStorage.getItem("v0trade_user_email");
-
-    // If no email → force login
-    if (!email) {
-        window.location.href = "login.html";
-        return;
+    // Toggle functions
+    function toggleSidebar() {
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('sidebarOverlay');
+        sidebar.classList.toggle('active');
+        overlay.classList.toggle('active');
     }
 
-    document.getElementById("headerEmailDisplay").textContent = email;
-    document.getElementById("userEmailDisplay").textContent = email;
+    function toggleMobileMenu() {
+        const menu = document.getElementById('mobileMenu');
+        menu.classList.toggle('active');
+    }
 
-    await loadWalletData(email);
-});
+    window.addEventListener("DOMContentLoaded", () => {
+        const userEmail = localStorage.getItem("v0trade_user_email");
 
-// ----------------------------
-// LOGOUT FUNCTION
-// ----------------------------
-function logoutUser() {
-    localStorage.removeItem("v0trade_user_email");
-    window.location.href = "index.html";
-}
-
-// Attach logout to link
-document.querySelectorAll("a[href='index.html']").forEach(a => {
-    a.addEventListener("click", e => {
-        e.preventDefault();
-        logoutUser();
-    });
-});
-
-// ----------------------------
-// LOAD WALLET DATA
-// ----------------------------
-async function loadWalletData(email) {
-    try {
-        const url =
-          `https://api.baserow.io/api/database/rows/table/${WALLET_TABLE_ID}/?user_field_names=true&filters=` +
-          encodeURIComponent(JSON.stringify({
-                filter_type: "AND",
-                filters: [
-                    { field: "field_6394418", type: "equal", value: email }
-                ]
-          }));
-
-        const response = await fetch(url, {
-            headers: {
-                "Authorization": `Token ${BASEROW_TOKEN}`,
-                "Content-Type": "application/json"
-            }
-        });
-
-        const data = await response.json();
-        const wallet = data.results?.[0];
-
-        if (!wallet) {
-            console.error("Wallet not found for:", email);
+        if (!userEmail) {
+            window.location.href = "login.html";
             return;
         }
 
-        // ----------------------------
-        // USER NAME (field_6394417)
-        // ----------------------------
-        const userName = wallet.field_6394417 || "User";
-        document.getElementById("userName").textContent = userName;
+        document.getElementById("headerEmailDisplay").textContent = userEmail;
+        document.getElementById("userEmailDisplay").textContent = userEmail;
 
-        // ----------------------------
-        // BALANCES
-        // ----------------------------
-        document.getElementById("allEarningWallet").textContent =
-            "$" + Number(wallet.field_6394419 || 0).toFixed(4);
+        loadUserData(userEmail);
+        loadTransactionsData(userEmail);
+    });
 
-        document.getElementById("earningBalance").textContent =
-            "$" + Number(wallet.field_6394423 || 0).toFixed(4);
+    async function loadUserData(email) {
+        try {
+            const filters = encodeURIComponent(JSON.stringify({
+                filter_type: "AND",
+                filters: [
+                    {
+                        type: "equal",
+                        field: "email",
+                        value: email
+                    }
+                ]
+            }));
 
-        document.getElementById("totalReturned").textContent =
-            "$" + Number(wallet.field_6394422 || 0).toFixed(4);
+            const url =
+                `https://api.baserow.io/api/database/rows/table/${WALLET_TABLE}/` +
+                `?user_field_names=true&filters=${filters}`;
 
-        document.getElementById("totalCommissions").textContent =
-            "$" + Number(wallet.field_6394421 || 0).toFixed(4);
+            const res = await fetch(url, {
+                headers: { Authorization: `Token ${API_TOKEN}` }
+            });
 
-        document.getElementById("totalEarnings").textContent =
-            "$" + Number(wallet.field_6394420 || 0).toFixed(4);
+            const data = await res.json();
 
-    } catch (err) {
-        console.error("Error loading wallet:", err);
+            if (!data.results || data.results.length === 0) {
+                console.warn("No wallet row found for:", email);
+                return;
+            }
+
+            const w = data.results[0];
+
+            document.getElementById("userName").textContent = w["name"] || "User";
+
+            const money = n => "$" + (parseFloat(n) || 0).toFixed(2);
+
+            document.getElementById("depositBalance").textContent = money(w["Total Wallet Balance"]);
+            document.getElementById("earningBalance").textContent = money(w["All Earning Wallet"]);
+            document.getElementById("totalReturned").textContent = money(w["Miner Earning"]);
+            document.getElementById("totalCommissions").textContent = money(w["Total Ref. Commissions"]);
+            document.getElementById("totalEarnings").textContent = money(w["Investment Earning"]);
+
+        } catch (err) {
+            console.error("LOAD ERROR:", err);
+        }
     }
-}
+
+    async function loadTransactionsData(email) {
+        try {
+            // Check if we should fetch from API (once every 24 hours)
+            const storageKey = STORAGE_KEY_PREFIX + email;
+            const lastFetchKey = LAST_FETCH_KEY_PREFIX + email;
+            const lastFetchTime = localStorage.getItem(lastFetchKey);
+            const now = new Date().getTime();
+            const oneDay = 24 * 60 * 60 * 1000;
+
+            let transactions = JSON.parse(localStorage.getItem(storageKey)) || [];
+
+            // Clean old transactions (older than 30 days)
+            transactions = cleanOldTransactions(transactions);
+
+            // If we have local transactions and it's been less than 24 hours since last fetch, use local data
+            if (transactions.length > 0 && lastFetchTime && (now - parseInt(lastFetchTime)) < oneDay) {
+                console.log("Using cached transactions (less than 24 hours old)");
+                displayTransactions(transactions);
+                return;
+            }
+
+            // Fetch from API
+            console.log("Fetching transactions from API...");
+            const filters = encodeURIComponent(JSON.stringify({
+                filter_type: "AND",
+                filters: [
+                    {
+                        type: "equal",
+                        field: "field_6394448", // email field
+                        value: email
+                    }
+                ]
+            }));
+
+            const url =
+                `https://api.baserow.io/api/database/rows/table/${TRANSACTIONS_TABLE}/` +
+                `?user_field_names=false&filters=${filters}`;
+
+            const res = await fetch(url, {
+                headers: { Authorization: `Token ${API_TOKEN}` }
+            });
+
+            const data = await res.json();
+
+            if (!data.results || data.results.length === 0) {
+                console.log("No transactions found in API");
+                // Still show cached transactions if available
+                if (transactions.length > 0) {
+                    displayTransactions(transactions);
+                } else {
+                    displayNoTransactions();
+                }
+                return;
+            }
+
+            // Process API results
+            const apiTransactions = data.results.map(item => ({
+                id: item.id,
+                email: item["field_6394448"] || "",
+                amount: item["field_6394449"] || "0",
+                type: item["field_6394450"] || "",
+                method: item["field_6394451"] || "",
+                status: item["field_6394452"] || "",
+                date: item["field_6394453"] || new Date().toISOString(),
+                api_timestamp: now
+            }));
+
+            // Merge with existing transactions, avoiding duplicates
+            const existingIds = new Set(transactions.map(t => t.id));
+            const newTransactions = apiTransactions.filter(t => !existingIds.has(t.id));
+            
+            // Add new transactions to the beginning
+            transactions = [...newTransactions, ...transactions];
+
+            // Clean again after merging
+            transactions = cleanOldTransactions(transactions);
+
+            // Save to localStorage
+            localStorage.setItem(storageKey, JSON.stringify(transactions));
+            localStorage.setItem(lastFetchKey, now.toString());
+
+            // Display transactions
+            displayTransactions(transactions);
+
+        } catch (err) {
+            console.error("TRANSACTIONS LOAD ERROR:", err);
+            
+            // Try to show cached transactions if API fails
+            const storageKey = STORAGE_KEY_PREFIX + email;
+            const transactions = JSON.parse(localStorage.getItem(storageKey)) || [];
+            
+            if (transactions.length > 0) {
+                displayTransactions(transactions);
+            } else {
+                displayNoTransactions();
+            }
+        }
+    }
+
+    function cleanOldTransactions(transactions) {
+        const now = new Date();
+        const thirtyDaysAgo = new Date(now.getTime() - (TRANSACTIONS_EXPIRY_DAYS * 24 * 60 * 60 * 1000));
+        
+        return transactions.filter(transaction => {
+            try {
+                const transactionDate = new Date(transaction.date || transaction.api_timestamp);
+                return transactionDate > thirtyDaysAgo;
+            } catch (e) {
+                // If date parsing fails, keep the transaction if it's less than 30 days old based on api_timestamp
+                if (transaction.api_timestamp) {
+                    const transactionTime = new Date(parseInt(transaction.api_timestamp));
+                    return transactionTime > thirtyDaysAgo;
+                }
+                return false; // Remove if we can't determine age
+            }
+        });
+    }
+
+    function displayTransactions(transactions) {
+        const container = document.getElementById("transactionsContainer");
+        
+        if (!transactions || transactions.length === 0) {
+            displayNoTransactions();
+            return;
+        }
+
+        // Sort by date (newest first)
+        transactions.sort((a, b) => {
+            const dateA = new Date(a.date || a.api_timestamp);
+            const dateB = new Date(b.date || b.api_timestamp);
+            return dateB - dateA;
+        });
+
+        // Show only latest 10 transactions
+        const latestTransactions = transactions.slice(0, 10);
+
+        let html = `
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead>
+                        <tr class="bg-gray-50">
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Method</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+        `;
+
+        latestTransactions.forEach(transaction => {
+            const type = (transaction.type || "").toLowerCase();
+            const status = (transaction.status || "").toLowerCase();
+            const date = formatDate(transaction.date);
+            const amount = formatAmount(transaction.amount);
+            
+            const typeClass = type.includes('deposit') ? 'type-deposit' : 
+                             type.includes('withdrawal') ? 'type-withdrawal' : 
+                             type.includes('investment') ? 'type-investment' : '';
+
+            const statusClass = status.includes('completed') || status.includes('success') ? 'status-completed' :
+                              status.includes('pending') ? 'status-pending' :
+                              status.includes('failed') || status.includes('cancel') ? 'status-failed' : '';
+
+            const typeIcon = type.includes('deposit') ? '📥' :
+                           type.includes('withdrawal') ? '📤' :
+                           type.includes('investment') ? '📈' : '💳';
+
+            const statusIcon = status.includes('completed') || status.includes('success') ? '✅' :
+                             status.includes('pending') ? '⏳' :
+                             status.includes('failed') || status.includes('cancel') ? '❌' : '';
+
+            html += `
+                <tr class="hover:bg-gray-50">
+                    <td class="px-4 py-3 whitespace-nowrap">
+                        <div class="flex items-center gap-2">
+                            <span class="text-lg">${typeIcon}</span>
+                            <span class="text-sm font-medium ${typeClass}">${capitalizeFirstLetter(type)}</span>
+                        </div>
+                    </td>
+                    <td class="px-4 py-3 whitespace-nowrap">
+                        <div class="text-sm font-semibold ${type.includes('deposit') || type.includes('investment') ? 'text-green-600' : 'text-red-600'}">
+                            ${type.includes('deposit') || type.includes('investment') ? '+' : '-'}${amount}
+                        </div>
+                    </td>
+                    <td class="px-4 py-3 whitespace-nowrap">
+                        <div class="text-sm text-gray-900">${transaction.method || 'N/A'}</div>
+                    </td>
+                    <td class="px-4 py-3 whitespace-nowrap">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusClass}">
+                            <span class="mr-1">${statusIcon}</span>
+                            ${capitalizeFirstLetter(status)}
+                        </span>
+                    </td>
+                    <td class="px-4 py-3 whitespace-nowrap">
+                        <div class="text-sm text-gray-500">${date}</div>
+                    </td>
+                </tr>
+            `;
+        });
+
+        html += `
+                    </tbody>
+                </table>
+            </div>
+            ${transactions.length > 10 ? `
+                <div class="mt-4 text-center">
+                    <p class="text-sm text-gray-500">Showing latest 10 of ${transactions.length} transactions</p>
+                    <a href="transactions.html" class="text-purple-500 hover:text-purple-600 text-sm font-medium">View All Transactions</a>
+                </div>
+            ` : ''}
+        `;
+
+        container.innerHTML = html;
+    }
+
+    function displayNoTransactions() {
+        const container = document.getElementById("transactionsContainer");
+        container.innerHTML = `
+            <div class="text-center py-12">
+                <div class="text-4xl mb-4">💳</div>
+                <p class="text-gray-500 mb-2">No transactions yet</p>
+                <p class="text-sm text-gray-400">Your transaction history will appear here</p>
+            </div>
+        `;
+    }
+
+    function formatDate(dateString) {
+        if (!dateString) return 'N/A';
+        
+        try {
+            const date = new Date(dateString);
+            if (isNaN(date.getTime())) {
+                // Try parsing timestamp if date string is invalid
+                const timestamp = parseInt(dateString);
+                if (!isNaN(timestamp)) {
+                    return new Date(timestamp).toLocaleDateString();
+                }
+                return 'Invalid date';
+            }
+            return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        } catch (e) {
+            return 'Invalid date';
+        }
+    }
+
+    function formatAmount(amount) {
+        if (!amount) return '$0.00';
+        
+        const num = parseFloat(amount);
+        if (isNaN(num)) return '$0.00';
+        
+        return '$' + num.toFixed(2);
+    }
+
+    function capitalizeFirstLetter(string) {
+        if (!string) return '';
+        return string.charAt(0).toUpperCase() + string.slice(1);
+    }
+
+    async function refreshTransactionsData() {
+        const userEmail = localStorage.getItem("v0trade_user_email");
+        if (!userEmail) return;
+
+        const container = document.getElementById("transactionsContainer");
+        container.innerHTML = `
+            <div class="text-center py-12">
+                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500 mx-auto mb-4"></div>
+                <p class="text-gray-500">Refreshing transactions...</p>
+            </div>
+        `;
+
+        // Clear last fetch time to force API call
+        const lastFetchKey = LAST_FETCH_KEY_PREFIX + userEmail;
+        localStorage.removeItem(lastFetchKey);
+
+        await loadTransactionsData(userEmail);
+        
+        // Show success message
+        setTimeout(() => {
+            const container = document.getElementById("transactionsContainer");
+            const successMsg = document.createElement('div');
+            successMsg.className = 'mb-4 p-3 bg-green-50 text-green-700 rounded-lg text-sm';
+            successMsg.textContent = '✓ Transactions refreshed successfully';
+            container.insertBefore(successMsg, container.firstChild);
+            
+            // Remove message after 3 seconds
+            setTimeout(() => {
+                if (successMsg.parentNode) {
+                    successMsg.parentNode.removeChild(successMsg);
+                }
+            }, 3000);
+        }, 100);
+    }
+
+    function clearLocalTransactions() {
+        const userEmail = localStorage.getItem("v0trade_user_email");
+        if (!userEmail) return;
+
+        if (confirm('Are you sure you want to clear cached transactions? This will force a fresh fetch from the server.')) {
+            const storageKey = STORAGE_KEY_PREFIX + userEmail;
+            const lastFetchKey = LAST_FETCH_KEY_PREFIX + userEmail;
+            
+            localStorage.removeItem(storageKey);
+            localStorage.removeItem(lastFetchKey);
+            
+            // Refresh the display
+            loadTransactionsData(userEmail);
+            
+            // Show success message
+            const container = document.getElementById("transactionsContainer");
+            const successMsg = document.createElement('div');
+            successMsg.className = 'mb-4 p-3 bg-blue-50 text-blue-700 rounded-lg text-sm';
+            successMsg.textContent = '✓ Cache cleared. Fetching fresh data...';
+            container.innerHTML = '';
+            container.appendChild(successMsg);
+        }
+    }
+
+    // Auto-refresh wallet data every 30 seconds
+    setInterval(() => {
+        const userEmail = localStorage.getItem("v0trade_user_email");
+        if (userEmail) loadUserData(userEmail);
+    }, 30000);
+
+    // Check for transactions update every 5 minutes
+    setInterval(() => {
+        const userEmail = localStorage.getItem("v0trade_user_email");
+        if (userEmail) {
+            const lastFetchKey = LAST_FETCH_KEY_PREFIX + userEmail;
+            const lastFetchTime = localStorage.getItem(lastFetchKey);
+            const now = new Date().getTime();
+            const oneDay = 24 * 60 * 60 * 1000;
+            
+            // Only auto-refresh if more than 24 hours have passed
+            if (!lastFetchTime || (now - parseInt(lastFetchTime)) >= oneDay) {
+                loadTransactionsData(userEmail);
+            }
+        }
+    }, 300000); // 5 minutes
 </script>
 </body>
 </html>
