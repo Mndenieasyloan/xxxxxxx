@@ -6,9 +6,43 @@
     <title>Deposit Wallet - V0 Trade</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        .sidebar-link { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1rem; color: rgb(107 114 128); border-radius: 0.5rem; transition: all 0.2s; }
-        .sidebar-link:hover { background-color: rgb(249 250 251); color: rgb(249 115 22); }
-        .sidebar-link.active { background-color: rgb(255 247 237); color: rgb(249 115 22); font-weight: 600; }
+        .sidebar-link { 
+            display: flex; 
+            align-items: center; 
+            gap: 0.75rem; 
+            padding: 0.75rem 1rem; 
+            color: rgb(107 114 128); 
+            border-radius: 0.5rem; 
+            transition: all 0.2s; 
+        }
+        .sidebar-link:hover { 
+            background-color: rgb(249 250 251); 
+            color: rgb(249 115 22); 
+        }
+        .sidebar-link.active { 
+            background-color: rgb(255 247 237); 
+            color: rgb(249 115 22); 
+            font-weight: 600; 
+        }
+        
+        .transaction-status {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .status-completed { background-color: #d1fae5; color: #065f46; }
+        .status-pending { background-color: #fef3c7; color: #92400e; }
+        .status-failed { background-color: #fee2e2; color: #991b1b; }
+        
+        .transaction-row {
+            border-bottom: 1px solid #e5e7eb;
+            transition: background-color 0.2s;
+        }
+        .transaction-row:hover {
+            background-color: #f9fafb;
+        }
     </style>
 </head>
 <body class="bg-gray-50">
@@ -17,8 +51,27 @@
         <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div class="flex items-center justify-between py-4">
                 <a href="index.html" class="flex items-center gap-2">
+                    <div class="h-8 w-8">
+                        <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" class="w-full h-full">
+                            <defs>
+                                <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" style="stop-color: #a78bfa; stop-opacity: 1" />
+                                    <stop offset="50%" style="stop-color: #ec4899; stop-opacity: 1" />
+                                    <stop offset="100%" style="stop-color: #06b6d4; stop-opacity: 1" />
+                                </linearGradient>
+                            </defs>
+                            <circle cx="100" cy="100" r="40" fill="url(#logoGradient)" opacity="0.2" />
+                            <circle cx="100" cy="100" r="38" fill="none" stroke="url(#logoGradient)" stroke-width="2" />
+                            <path d="M 50 60 L 80 140 M 150 60 L 120 140" stroke="url(#logoGradient)" stroke-width="8" stroke-linecap="round" fill="none" />
+                            <circle cx="100" cy="100" r="15" fill="none" stroke="url(#logoGradient)" stroke-width="6" />
+                        </svg>
+                    </div>
                     <span class="text-xl font-bold bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent">V0 Trade</span>
                 </a>
+                <div class="flex items-center gap-4">
+                    <span class="text-sm text-gray-300" id="headerEmailDisplay">Loading...</span>
+                    <a href="dashboard.html" class="text-sm text-purple-400 hover:text-purple-300 transition">Back to Dashboard</a>
+                </div>
             </div>
         </div>
     </header>
@@ -27,34 +80,348 @@
         <aside class="w-64 bg-white border-r border-gray-200 p-4">
             <div class="mb-6">
                 <a href="dashboard.html" class="sidebar-link">📊 Dashboard</a>
+                <a href="deposit.html" class="sidebar-link">💰 Deposit</a>
+                <a href="withdraw.html" class="sidebar-link">💸 Withdraw</a>
+            </div>
+            
+            <div class="mb-6">
+                <p class="text-xs font-semibold text-gray-400 uppercase px-4 mb-2">Wallets</p>
+                <a href="deposit-wallet.html" class="sidebar-link active">💼 Deposit Wallet</a>
+                <a href="earning-wallet.html" class="sidebar-link">💵 Earning Wallet</a>
+                <a href="coin-wallets.html" class="sidebar-link">🪙 Coin Wallets</a>
+            </div>
+            
+            <div class="mb-6">
+                <p class="text-xs font-semibold text-gray-400 uppercase px-4 mb-2">Transactions</p>
+                <a href="transactions.html" class="sidebar-link">💳 All Transactions</a>
+                <a href="deposit-history.html" class="sidebar-link">📥 Deposit History</a>
+                <a href="withdrawals-log.html" class="sidebar-link">📤 Withdrawals Log</a>
             </div>
         </aside>
 
-        <main class="flex-1 p-8">
-            <div class="max-w-5xl">
-                <h1 class="text-3xl font-bold text-gray-900 mb-8">Deposit Wallet Transactions</h1>
+        <main class="flex-1 p-4 md:p-8 bg-gray-50">
+            <div class="max-w-6xl">
+                <div class="flex items-center justify-between mb-8">
+                    <div>
+                        <h1 class="text-3xl font-bold text-gray-900">Deposit Wallet</h1>
+                        <p class="text-gray-600 mt-2">View and manage your deposit transactions</p>
+                    </div>
+                    <button onclick="refreshTransactions()" class="flex items-center gap-2 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-sm font-medium transition">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                        Refresh
+                    </button>
+                </div>
 
-                <div class="bg-white rounded-xl border border-gray-200 p-6 mb-6">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-sm text-gray-500 mb-1">Available Balance</p>
-                            <p class="text-4xl font-bold text-gray-900">$0.0000</p>
+                <div class="grid md:grid-cols-3 gap-6 mb-8">
+                    <div class="bg-white rounded-xl border-2 border-orange-400 p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <div>
+                                <p class="text-sm text-gray-500 mb-1">Total Deposits</p>
+                                <p id="totalDeposits" class="text-3xl font-bold text-gray-900">$0.00</p>
+                            </div>
+                            <div class="text-4xl">📥</div>
                         </div>
-                        <a href="deposit.html" class="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-lg font-semibold transition">
-                            Add Money
-                        </a>
+                        <p class="text-sm text-gray-500">All successful deposits</p>
+                    </div>
+
+                    <div class="bg-white rounded-xl border-2 border-green-400 p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <div>
+                                <p class="text-sm text-gray-500 mb-1">Available Balance</p>
+                                <p id="availableBalance" class="text-3xl font-bold text-gray-900">$0.00</p>
+                            </div>
+                            <div class="text-4xl">💰</div>
+                        </div>
+                        <p class="text-sm text-gray-500">Ready to use</p>
+                    </div>
+
+                    <div class="bg-white rounded-xl border-2 border-blue-400 p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <div>
+                                <p class="text-sm text-gray-500 mb-1">Deposit Count</p>
+                                <p id="depositCount" class="text-3xl font-bold text-gray-900">0</p>
+                            </div>
+                            <div class="text-4xl">🔢</div>
+                        </div>
+                        <p class="text-sm text-gray-500">Total deposit transactions</p>
                     </div>
                 </div>
 
-                <div class="bg-white rounded-xl border border-gray-200 p-6">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Transaction History</h3>
-                    <div class="text-center py-12">
-                        <p class="text-gray-500">No transactions yet</p>
+                <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                    <div class="p-6 border-b border-gray-200">
+                        <h3 class="text-lg font-semibold text-gray-900">Deposit Transaction History</h3>
+                        <p class="text-sm text-gray-500 mt-1">Showing only deposit transactions from your wallet</p>
                     </div>
+                    
+                    <div class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead>
+                                <tr class="bg-gray-50">
+                                    <th class="text-left py-3 px-4 text-sm font-medium text-gray-600">Date & Time</th>
+                                    <th class="text-left py-3 px-4 text-sm font-medium text-gray-600">Amount</th>
+                                    <th class="text-left py-3 px-4 text-sm font-medium text-gray-600">Method</th>
+                                    <th class="text-left py-3 px-4 text-sm font-medium text-gray-600">Status</th>
+                                    <th class="text-left py-3 px-4 text-sm font-medium text-gray-600">Reference</th>
+                                </tr>
+                            </thead>
+                            <tbody id="depositTransactionsList">
+                                <!-- Deposit transactions will be loaded here -->
+                                <tr>
+                                    <td colspan="5" class="text-center py-12">
+                                        <p class="text-gray-500">Loading deposit transactions...</p>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div id="noDepositsMessage" class="hidden">
+                        <div class="text-center py-12">
+                            <div class="inline-block p-4 bg-orange-50 rounded-full mb-4">
+                                <span class="text-3xl">📥</span>
+                            </div>
+                            <p class="text-gray-500 text-lg mb-2">No deposit transactions yet</p>
+                            <p class="text-gray-400 text-sm mb-6">Your deposit history will appear here once you make your first deposit</p>
+                            <a href="deposit.html" class="inline-flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-lg font-medium transition">
+                                <span>➕</span>
+                                Make Your First Deposit
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-6 text-center text-sm text-gray-500">
+                    <p>Transactions are automatically updated every 24 hours. Use the refresh button to get latest updates.</p>
                 </div>
             </div>
         </main>
     </div>
 
+<script>
+    // Constants for localStorage keys (must match dashboard)
+    const TRANSACTIONS_DATA_KEY = "v0trade_transactions_data";
+    
+    window.addEventListener("DOMContentLoaded", () => {
+        const userEmail = localStorage.getItem("v0trade_user_email");
+
+        if (!userEmail) {
+            window.location.href = "login.html";
+            return;
+        }
+
+        document.getElementById("headerEmailDisplay").textContent = userEmail;
+        loadDepositTransactions(userEmail);
+    });
+
+    function loadDepositTransactions(email) {
+        try {
+            // Get cached transactions from localStorage
+            const cachedData = localStorage.getItem(`${TRANSACTIONS_DATA_KEY}_${email}`);
+            
+            if (!cachedData) {
+                displayNoDeposits();
+                updateSummaryStats([], 0);
+                return;
+            }
+            
+            const allTransactions = JSON.parse(cachedData);
+            
+            // Filter to get only deposit transactions
+            const depositTransactions = allTransactions.filter(transaction => {
+                const type = transaction.type?.toLowerCase() || '';
+                return type.includes('deposit');
+            });
+            
+            console.log("Deposit transactions found:", depositTransactions);
+            
+            if (depositTransactions.length === 0) {
+                displayNoDeposits();
+                updateSummaryStats([], 0);
+                return;
+            }
+            
+            // Sort by date (newest first)
+            depositTransactions.sort((a, b) => b.timestamp - a.timestamp);
+            
+            // Display deposit transactions
+            displayDepositTransactions(depositTransactions);
+            
+            // Update summary statistics
+            updateSummaryStats(depositTransactions, allTransactions);
+            
+        } catch (err) {
+            console.error("Error loading deposit transactions:", err);
+            displayNoDeposits();
+        }
+    }
+    
+    function displayDepositTransactions(transactions) {
+        const container = document.getElementById("depositTransactionsList");
+        const noDepositsDiv = document.getElementById("noDepositsMessage");
+        
+        // Hide no deposits message
+        noDepositsDiv.classList.add('hidden');
+        
+        container.innerHTML = '';
+        
+        transactions.forEach((transaction, index) => {
+            const row = document.createElement('tr');
+            row.className = 'transaction-row';
+            
+            // Format date
+            let formattedDate = 'Unknown date';
+            try {
+                const date = new Date(transaction.date);
+                if (!isNaN(date.getTime())) {
+                    formattedDate = date.toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+                } else {
+                    formattedDate = transaction.date || 'Unknown date';
+                }
+            } catch (e) {
+                formattedDate = transaction.date || 'Unknown date';
+            }
+            
+            // Format amount
+            const amount = parseFloat(transaction.amount) || 0;
+            const formattedAmount = `$${amount.toFixed(2)}`;
+            
+            // Get status class
+            let statusClass = 'status-pending';
+            const status = transaction.status?.toLowerCase() || '';
+            if (status.includes('complete') || status.includes('success')) {
+                statusClass = 'status-completed';
+            } else if (status.includes('fail') || status.includes('error')) {
+                statusClass = 'status-failed';
+            }
+            
+            // Format status text
+            let statusText = transaction.status || 'Pending';
+            if (statusText) {
+                statusText = statusText.charAt(0).toUpperCase() + statusText.slice(1).toLowerCase();
+            }
+            
+            // Create reference ID from transaction ID
+            const referenceId = `DEP${String(transaction.id).padStart(6, '0')}`;
+            
+            row.innerHTML = `
+                <td class="py-3 px-4 text-sm text-gray-700 whitespace-nowrap">${formattedDate}</td>
+                <td class="py-3 px-4 text-sm font-semibold text-green-600">${formattedAmount}</td>
+                <td class="py-3 px-4 text-sm text-gray-700 capitalize">${transaction.method || 'Not specified'}</td>
+                <td class="py-3 px-4 text-sm">
+                    <span class="transaction-status ${statusClass}">${statusText}</span>
+                </td>
+                <td class="py-3 px-4 text-sm text-gray-500 font-mono">${referenceId}</td>
+            `;
+            
+            container.appendChild(row);
+        });
+    }
+    
+    function updateSummaryStats(depositTransactions, allTransactions) {
+        // Calculate total deposits
+        let totalDeposits = 0;
+        depositTransactions.forEach(transaction => {
+            const amount = parseFloat(transaction.amount) || 0;
+            totalDeposits += amount;
+        });
+        
+        document.getElementById("totalDeposits").textContent = `$${totalDeposits.toFixed(2)}`;
+        document.getElementById("depositCount").textContent = depositTransactions.length;
+        
+        // Try to get available balance from all transactions
+        // This is an approximation - in a real app, you'd get this from your backend
+        let availableBalance = totalDeposits;
+        
+        // If we have all transactions, we can calculate net balance
+        if (allTransactions && allTransactions.length > 0) {
+            let withdrawals = 0;
+            let investments = 0;
+            
+            allTransactions.forEach(transaction => {
+                const type = transaction.type?.toLowerCase() || '';
+                const amount = parseFloat(transaction.amount) || 0;
+                
+                if (type.includes('withdrawal') || type.includes('withdraw')) {
+                    withdrawals += amount;
+                } else if (type.includes('investment')) {
+                    investments += amount;
+                }
+            });
+            
+            availableBalance = totalDeposits - withdrawals - investments;
+        }
+        
+        document.getElementById("availableBalance").textContent = `$${Math.max(0, availableBalance).toFixed(2)}`;
+    }
+    
+    function displayNoDeposits() {
+        const container = document.getElementById("depositTransactionsList");
+        const noDepositsDiv = document.getElementById("noDepositsMessage");
+        
+        container.innerHTML = '';
+        noDepositsDiv.classList.remove('hidden');
+        
+        // Reset summary stats
+        document.getElementById("totalDeposits").textContent = "$0.00";
+        document.getElementById("availableBalance").textContent = "$0.00";
+        document.getElementById("depositCount").textContent = "0";
+    }
+    
+    function refreshTransactions() {
+        const userEmail = localStorage.getItem("v0trade_user_email");
+        if (!userEmail) return;
+        
+        // Show loading state
+        const container = document.getElementById("depositTransactionsList");
+        container.innerHTML = `
+            <tr>
+                <td colspan="5" class="text-center py-12">
+                    <div class="flex flex-col items-center gap-2">
+                        <svg class="animate-spin h-8 w-8 text-orange-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <p class="text-gray-500">Refreshing transactions...</p>
+                    </div>
+                </td>
+            </tr>
+        `;
+        
+        // Try to trigger a refresh from the dashboard's cache
+        // In a real app, you might want to fetch from API directly
+        setTimeout(() => {
+            loadDepositTransactions(userEmail);
+            
+            // Show temporary success indicator
+            const refreshBtn = document.querySelector('button[onclick="refreshTransactions()"]');
+            const originalText = refreshBtn.innerHTML;
+            refreshBtn.innerHTML = '✓ Refreshed';
+            refreshBtn.classList.remove('bg-orange-500', 'hover:bg-orange-600');
+            refreshBtn.classList.add('bg-green-500', 'hover:bg-green-600');
+            
+            setTimeout(() => {
+                refreshBtn.innerHTML = originalText;
+                refreshBtn.classList.remove('bg-green-500', 'hover:bg-green-600');
+                refreshBtn.classList.add('bg-orange-500', 'hover:bg-orange-600');
+            }, 2000);
+        }, 1000);
+    }
+    
+    // Auto-refresh when returning to the page
+    window.addEventListener('focus', () => {
+        const userEmail = localStorage.getItem("v0trade_user_email");
+        if (userEmail) {
+            loadDepositTransactions(userEmail);
+        }
+    });
+</script>
 </body>
 </html>
