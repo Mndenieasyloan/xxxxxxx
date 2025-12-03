@@ -483,7 +483,7 @@
         }
     }
 
-    // Upload file to Baserow and get file ID
+    // Upload file to Baserow and get the uploaded file data
     async function uploadFileToBaserow(file) {
         console.log('[USDT Deposit] Starting file upload...');
         
@@ -508,93 +508,13 @@
             const result = await response.json();
             console.log('[USDT Deposit] File uploaded successfully:', result);
             
-            // Return just the file name/ID for the file field
+            // Return the complete file object as shown in the API example
             return {
-                name: result.name,
-                size: result.size,
-                mime_type: result.mime_type,
-                uploaded_at: result.uploaded_at
+                name: result.name
             };
             
         } catch (error) {
             console.error('[USDT Deposit] File upload error:', error);
-            throw error;
-        }
-    }
-
-    // Send deposit data to Baserow with CORRECT field format
-    async function sendDepositToBaserow(depositData) {
-        console.log('[USDT Deposit] Sending deposit data to Baserow:', depositData);
-        
-        try {
-            // TRY METHOD 1: Without user_field_names parameter
-            let response = await fetch(DEPOSIT_API, {
-                method: "POST",
-                headers: {
-                    "Authorization": "Token " + BASEROW_TOKEN,
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify(depositData)
-            });
-
-            console.log('[USDT Deposit] Response status:', response.status);
-            
-            if (!response.ok) {
-                const errorText = await response.text();
-                console.error('[USDT Deposit] Method 1 failed:', errorText);
-                
-                // TRY METHOD 2: With user_field_names=false (field IDs)
-                const fieldIdPayload = {
-                    "6394426": depositData.email,
-                    "6394427": depositData.method,
-                    "6394428": depositData.amount,
-                    "6394429": depositData.pin,
-                    "6394430": depositData.wallet_address,
-                    "6394431": depositData.status,
-                    "6394432": depositData.transaction_id,
-                    "6394433": depositData.timestamp,
-                    "6445160": depositData.image
-                };
-                
-                console.log('[USDT Deposit] Trying Method 2 with field IDs:', fieldIdPayload);
-                
-                response = await fetch(DEPOSIT_API, {
-                    method: "POST",
-                    headers: {
-                        "Authorization": "Token " + BASEROW_TOKEN,
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify(fieldIdPayload)
-                });
-                
-                if (!response.ok) {
-                    const errorText2 = await response.text();
-                    console.error('[USDT Deposit] Method 2 failed:', errorText2);
-                    
-                    // TRY METHOD 3: With user_field_names=true
-                    response = await fetch(DEPOSIT_API + '?user_field_names=true', {
-                        method: "POST",
-                        headers: {
-                            "Authorization": "Token " + BASEROW_TOKEN,
-                            "Content-Type": "application/json"
-                        },
-                        body: JSON.stringify(depositData)
-                    });
-                    
-                    if (!response.ok) {
-                        const errorText3 = await response.text();
-                        console.error('[USDT Deposit] All methods failed:', errorText3);
-                        throw new Error(`All API methods failed. Last status: ${response.status}`);
-                    }
-                }
-            }
-
-            const result = await response.json();
-            console.log('[USDT Deposit] Baserow response successful:', result);
-            return result;
-            
-        } catch (error) {
-            console.error('[USDT Deposit] Error sending to Baserow:', error);
             throw error;
         }
     }
@@ -629,11 +549,6 @@
 
         try {
             console.log('[USDT Deposit] Starting deposit process...');
-            console.log('[USDT Deposit] Data collected:');
-            console.log('- Email:', email);
-            console.log('- Amount:', amount);
-            console.log('- Method: USDT');
-            console.log('- Wallet:', usdtWallet);
             
             // 1. Upload file to Baserow
             console.log('[USDT Deposit] Uploading proof file...');
@@ -644,27 +559,48 @@
             const transactionId = 'TXN-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9).toUpperCase();
             const timestamp = new Date().toISOString();
 
-            // 3. Prepare data in different formats to try
-            const depositData = {
-                email: email,
-                method: 'USDT',
-                amount: amount,
-                pin: 'N/A',
-                wallet_address: usdtWallet,
-                status: 'pending',
-                transaction_id: transactionId,
-                timestamp: timestamp,
-                image: [uploadedFileData.name]  // Try with just file name array
+            // 3. Prepare the EXACT payload format from the API documentation
+            const depositPayload = {
+                // Note: Using the actual field names as shown in the API docs
+                "id 2": "",  // This is field_6394425 - optional string field
+                "email": email,
+                "method": "USDT",
+                "amount": amount,
+                "pin": "N/A",
+                "wallet_address": usdtWallet,
+                "status": "pending",
+                "transaction_id": transactionId,
+                "timestamp": timestamp,
+                "image": [
+                    {
+                        "name": uploadedFileData.name
+                    }
+                ]
             };
 
-            console.log('[USDT Deposit] Prepared deposit data:', depositData);
+            console.log('[USDT Deposit] Sending payload to Baserow:', JSON.stringify(depositPayload, null, 2));
+            console.log('[USDT Deposit] API URL:', DEPOSIT_API + '?user_field_names=true');
 
-            // 4. Send data to Baserow
-            console.log('[USDT Deposit] Sending to Baserow API...');
-            const baserowResponse = await sendDepositToBaserow(depositData);
+            // 4. Send data to Baserow using the EXACT format from documentation
+            const response = await fetch(DEPOSIT_API + '?user_field_names=true', {
+                method: "POST",
+                headers: {
+                    "Authorization": "Token " + BASEROW_TOKEN,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(depositPayload)
+            });
+
+            console.log('[USDT Deposit] Response status:', response.status);
             
-            console.log('[USDT Deposit] Baserow created row:', baserowResponse);
-            console.log('[USDT Deposit] Row ID:', baserowResponse.id);
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('[USDT Deposit] API Error:', errorText);
+                throw new Error(`API Error: ${response.status} - ${errorText}`);
+            }
+
+            const result = await response.json();
+            console.log('[USDT Deposit] Baserow response successful:', result);
 
             // 5. Save to localStorage as backup
             const localDepositData = {
@@ -681,9 +617,9 @@
                     size: proofFile.size,
                     type: proofFile.type,
                     lastModified: proofFile.lastModified,
-                    baserowFileData: uploadedFileData
+                    baserowFileName: uploadedFileData.name
                 },
-                baserowId: baserowResponse.id,
+                baserowId: result.id,
                 expiry: Date.now() + (24 * 60 * 60 * 1000)
             };
 
@@ -701,10 +637,10 @@
             localStorage.setItem('transaction_id', transactionId);
             localStorage.setItem('deposit_timestamp', timestamp);
             localStorage.setItem('deposit_status', 'pending');
-            localStorage.setItem('deposit_baserow_id', baserowResponse.id);
+            localStorage.setItem('deposit_baserow_id', result.id);
             localStorage.setItem('deposit_proof_file', JSON.stringify(localDepositData.proofFile));
 
-            console.log('[USDT Deposit] Data saved to localStorage');
+            console.log('[USDT Deposit] Data saved to localStorage:', localDepositData);
 
             // 6. Show success and redirect
             alert('✅ Deposit submitted successfully!\nTransaction ID: ' + transactionId + '\nYou will be redirected to the payment pending page.');
@@ -716,48 +652,58 @@
         } catch (error) {
             console.error('[USDT Deposit] Error processing deposit:', error);
             
-            // Try alternative: Simple POST without file upload first
-            if (error.message.includes('All API methods failed')) {
-                console.log('[USDT Deposit] Trying simple POST...');
+            // Try alternative format WITHOUT user_field_names=true
+            console.log('[USDT Deposit] Trying alternative format without user_field_names...');
+            
+            try {
+                // Try with field ID format
+                const altPayload = {
+                    "field_6394425": "",  // id 2 field
+                    "field_6394426": email,
+                    "field_6394427": "USDT",
+                    "field_6394428": amount,
+                    "field_6394429": "N/A",
+                    "field_6394430": usdtWallet,
+                    "field_6394431": "pending",
+                    "field_6394432": "TXN-" + Date.now(),
+                    "field_6394433": new Date().toISOString(),
+                    "field_6445160": ["test_file.jpg"]  // Simple array of file names
+                };
                 
-                try {
-                    // Simple test payload
-                    const testPayload = {
-                        "field_6394426": email,
-                        "field_6394427": "USDT",
-                        "field_6394428": amount,
-                        "field_6394429": "N/A",
-                        "field_6394430": usdtWallet,
-                        "field_6394431": "pending",
-                        "field_6394432": "TXN-TEST-" + Date.now(),
-                        "field_6394433": new Date().toISOString(),
-                        "field_6445160": ["test_file.jpg"]
-                    };
+                console.log('[USDT Deposit] Trying alternative payload:', altPayload);
+                
+                const altResponse = await fetch(DEPOSIT_API, {  // WITHOUT user_field_names
+                    method: "POST",
+                    headers: {
+                        "Authorization": "Token " + BASEROW_TOKEN,
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(altPayload)
+                });
+                
+                if (altResponse.ok) {
+                    const altResult = await altResponse.json();
+                    console.log('[USDT Deposit] Alternative succeeded:', altResult);
+                    alert('Deposit submitted (alternative format). Please check Baserow.');
                     
-                    const testResponse = await fetch(DEPOSIT_API, {
-                        method: "POST",
-                        headers: {
-                            "Authorization": "Token " + BASEROW_TOKEN,
-                            "Content-Type": "application/json"
-                        },
-                        body: JSON.stringify(testPayload)
-                    });
+                    // Still save to localStorage
+                    localStorage.setItem('deposit_method', 'USDT');
+                    localStorage.setItem('deposit_amount', amount);
+                    localStorage.setItem('deposit_wallet_address', usdtWallet);
+                    localStorage.setItem('deposit_email', email);
                     
-                    if (testResponse.ok) {
-                        const testResult = await testResponse.json();
-                        console.log('[USDT Deposit] Simple test succeeded:', testResult);
-                        alert('Deposit submitted (test mode). Please check Baserow.');
-                    } else {
-                        const testError = await testResponse.text();
-                        console.error('[USDT Deposit] Simple test failed:', testError);
-                        alert('Failed to submit deposit. Please check console for details and contact support.');
-                    }
-                } catch (testError) {
-                    console.error('[USDT Deposit] Test also failed:', testError);
-                    alert('Deposit system error. Please contact support with error details.');
+                    setTimeout(() => {
+                        window.location.href = 'payment-pending.html';
+                    }, 1500);
+                    return;
+                } else {
+                    const altError = await altResponse.text();
+                    console.error('[USDT Deposit] Alternative failed:', altError);
+                    throw new Error('Alternative format also failed: ' + altError);
                 }
-            } else {
-                alert('Deposit submission error: ' + error.message);
+            } catch (altError) {
+                console.error('[USDT Deposit] Alternative attempt failed:', altError);
+                alert('Deposit submission failed. Please check console for details and contact support.\nError: ' + error.message);
             }
             
             // Re-enable button
