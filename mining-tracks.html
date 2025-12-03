@@ -5,8 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mining Tracks - V0 Trade</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js for charts -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+    <!-- TradingView Lightweight Charts -->
+    <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
     <style>
         .sidebar-link {
             display: flex;
@@ -69,63 +71,75 @@
         .dropdown-content { display: none; position: absolute; background-color: rgb(15 23 42 / 0.95); min-width: 12rem; border: 1px solid rgb(168 85 247 / 0.2); border-radius: 0.5rem; padding: 0.5rem; z-index: 1000; backdrop-filter: blur(10px); }
         .dropdown:hover .dropdown-content { display: block; }
         
-        /* Custom styles for mining tracking */
-        .mining-card {
+        .mining-plan-card {
             background: linear-gradient(135deg, rgba(168, 85, 247, 0.1), rgba(236, 72, 153, 0.1));
-            border: 1px solid rgba(168, 85, 247, 0.2);
+            border: 1px solid rgba(168, 85, 247, 0.3);
             border-radius: 1rem;
+            padding: 1.5rem;
             transition: all 0.3s ease;
         }
         
-        .mining-card:hover {
-            border-color: rgba(168, 85, 247, 0.4);
-            transform: translateY(-2px);
-            box-shadow: 0 10px 25px -5px rgba(168, 85, 247, 0.1);
+        .mining-plan-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(168, 85, 247, 0.2);
+            border-color: rgba(168, 85, 247, 0.5);
         }
         
         .progress-bar {
             height: 8px;
-            background: linear-gradient(90deg, #10b981, #3b82f6, #8b5cf6);
+            background: rgba(255, 255, 255, 0.1);
             border-radius: 4px;
-            animation: progressAnimation 2s ease-in-out infinite alternate;
+            overflow: hidden;
         }
         
-        @keyframes progressAnimation {
-            0% { background-position: 0% 50%; }
-            100% { background-position: 100% 50%; }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #a855f7, #ec4899);
+            border-radius: 4px;
+            transition: width 1s ease-in-out;
         }
         
-        .pulse {
-            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        .plan-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
         }
         
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
-        
-        .coin-animation {
-            animation: coinSpin 3s linear infinite;
-        }
-        
-        @keyframes coinSpin {
-            0% { transform: rotateY(0deg); }
-            100% { transform: rotateY(360deg); }
-        }
-        
-        .glowing-border {
-            border: 2px solid transparent;
-            background: linear-gradient(45deg, #f59e0b, #ef4444, #8b5cf6) border-box;
-            -webkit-mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
-            -webkit-mask-composite: xor;
-            mask-composite: exclude;
-        }
+        .badge-micro { background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: white; }
+        .badge-gold { background: linear-gradient(135deg, #f59e0b, #d97706); color: white; }
+        .badge-silver { background: linear-gradient(135deg, #9ca3af, #6b7280); color: white; }
+        .badge-diamond { background: linear-gradient(135deg, #06b6d4, #0e7490); color: white; }
         
         .chart-container {
-            background: rgba(30, 41, 59, 0.5);
-            backdrop-filter: blur(10px);
-            border-radius: 1rem;
+            background: rgba(15, 23, 42, 0.7);
             border: 1px solid rgba(168, 85, 247, 0.2);
+            border-radius: 1rem;
+            padding: 1rem;
+            backdrop-filter: blur(10px);
+        }
+        
+        .tracking-card {
+            background: rgba(15, 23, 42, 0.7);
+            border: 1px solid rgba(168, 85, 247, 0.2);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            backdrop-filter: blur(10px);
+        }
+        
+        .candle-chart {
+            height: 300px;
+            width: 100%;
+        }
+        
+        .stats-card {
+            background: linear-gradient(135deg, rgba(168, 85, 247, 0.1), rgba(236, 72, 153, 0.05));
+            border: 1px solid rgba(168, 85, 247, 0.2);
+            border-radius: 1rem;
+            padding: 1.5rem;
         }
     </style>
 </head>
@@ -289,14 +303,14 @@
         </aside>
 
         <main class="flex-1 p-4 md:p-8 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
-            <div class="max-w-7xl mx-auto">
-                <!-- Page Header -->
-                <div class="flex flex-col md:flex-row md:items-center justify-between mb-8">
+            <div class="max-w-7xl">
+                <!-- Header with refresh button -->
+                <div class="flex flex-col md:flex-row md:items-center justify-between mb-6 md:mb-8 gap-4">
                     <div>
-                        <h1 class="text-2xl md:text-3xl font-bold text-white mb-2">BTC Mining Tracks</h1>
-                        <p class="text-gray-400">Track your Bitcoin mining investments and earnings in real-time</p>
+                        <h1 class="text-2xl md:text-3xl font-bold text-white">Mining Tracks</h1>
+                        <p class="text-gray-400 mt-2">Track your active Bitcoin mining plans and returns</p>
                     </div>
-                    <button onclick="refreshMiningData()" class="mt-4 md:mt-0 flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white rounded-lg font-medium transition">
+                    <button onclick="refreshMiningData()" class="flex items-center gap-2 px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg font-medium transition w-full md:w-auto justify-center">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                         </svg>
@@ -304,127 +318,97 @@
                     </button>
                 </div>
 
-                <!-- Mining Stats Summary -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                    <div class="mining-card p-6">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <p class="text-sm text-gray-400 mb-1">Total Mining Investment</p>
-                                <p id="totalInvestment" class="text-2xl font-bold text-white">$0.00</p>
-                            </div>
-                            <div class="text-3xl coin-animation">₿</div>
+                <!-- Summary Stats -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+                    <div class="stats-card">
+                        <div class="flex items-center justify-between mb-2">
+                            <p class="text-sm text-gray-400">Active Plans</p>
+                            <span class="text-2xl">⛏️</span>
                         </div>
-                        <div class="mt-4">
-                            <div class="flex justify-between text-sm mb-1">
-                                <span class="text-gray-400">Active Plans</span>
-                                <span id="activePlansCount" class="text-green-400">0</span>
-                            </div>
-                        </div>
+                        <p id="activePlansCount" class="text-2xl font-bold text-white">0</p>
                     </div>
-
-                    <div class="mining-card p-6">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <p class="text-sm text-gray-400 mb-1">Total Mining Earnings</p>
-                                <p id="totalEarnings" class="text-2xl font-bold text-white">$0.00</p>
-                            </div>
-                            <div class="text-3xl text-yellow-400">💰</div>
+                    
+                    <div class="stats-card">
+                        <div class="flex items-center justify-between mb-2">
+                            <p class="text-sm text-gray-400">Total Investment</p>
+                            <span class="text-2xl">💰</span>
                         </div>
-                        <div class="mt-4">
-                            <div class="flex justify-between text-sm mb-1">
-                                <span class="text-gray-400">Daily Average</span>
-                                <span id="dailyAverage" class="text-green-400">$0.00</span>
-                            </div>
-                        </div>
+                        <p id="totalInvestment" class="text-2xl font-bold text-white">$0</p>
                     </div>
-
-                    <div class="mining-card p-6">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <p class="text-sm text-gray-400 mb-1">Total Days Mining</p>
-                                <p id="totalDays" class="text-2xl font-bold text-white">0</p>
-                            </div>
-                            <div class="text-3xl pulse">⏱️</div>
+                    
+                    <div class="stats-card">
+                        <div class="flex items-center justify-between mb-2">
+                            <p class="text-sm text-gray-400">Estimated Returns</p>
+                            <span class="text-2xl">📈</span>
                         </div>
-                        <div class="mt-4">
-                            <div class="flex justify-between text-sm mb-1">
-                                <span class="text-gray-400">Remaining Days</span>
-                                <span id="remainingDays" class="text-blue-400">0</span>
-                            </div>
+                        <p id="estimatedReturns" class="text-2xl font-bold text-white">$0</p>
+                    </div>
+                    
+                    <div class="stats-card">
+                        <div class="flex items-center justify-between mb-2">
+                            <p class="text-sm text-gray-400">Mining Hashrate</p>
+                            <span class="text-2xl">⚡</span>
                         </div>
+                        <p id="totalHashrate" class="text-2xl font-bold text-white">0 TH/s</p>
                     </div>
                 </div>
 
                 <!-- Charts Section -->
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-                    <!-- Earnings Line Chart -->
-                    <div class="chart-container p-6">
-                        <h3 class="text-lg font-semibold text-white mb-4">Mining Earnings Trend</h3>
-                        <div class="h-64">
-                            <canvas id="earningsChart"></canvas>
-                        </div>
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+                    <!-- Candlestick Chart -->
+                    <div class="lg:col-span-2 tracking-card">
+                        <h3 class="text-lg font-semibold text-white mb-4">Mining Performance</h3>
+                        <div id="candlestickChart" class="candle-chart"></div>
                     </div>
-
-                    <!-- Mining Distribution Pie Chart -->
-                    <div class="chart-container p-6">
-                        <h3 class="text-lg font-semibold text-white mb-4">Mining Plan Distribution</h3>
-                        <div class="h-64">
-                            <canvas id="distributionChart"></canvas>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Active Mining Tracks -->
-                <div class="mb-8">
-                    <div class="flex items-center justify-between mb-6">
-                        <h2 class="text-xl font-bold text-white">Active Mining Plans</h2>
-                        <a href="btc-miner.html" class="text-sm bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white px-4 py-2 rounded-lg font-medium transition">
-                            + Add Mining Plan
-                        </a>
-                    </div>
-
-                    <div id="miningPlansContainer">
-                        <!-- Mining plans will be loaded here -->
-                        <div class="mining-card p-6 text-center">
-                            <div class="text-5xl mb-4">⛏️</div>
-                            <h3 class="text-xl font-semibold text-white mb-3">No Active Mining Plans</h3>
-                            <p class="text-gray-400 mb-6">Start mining Bitcoin today with our AI-powered cloud mining platform</p>
-                            <a href="btc-miner.html" class="inline-block bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white px-6 py-3 rounded-lg font-semibold transition">
-                                Browse Mining Plans
-                            </a>
+                    
+                    <!-- Pie Chart -->
+                    <div class="tracking-card">
+                        <h3 class="text-lg font-semibold text-white mb-4">Plan Distribution</h3>
+                        <div class="relative">
+                            <canvas id="planDistributionChart"></canvas>
                         </div>
                     </div>
                 </div>
 
-                <!-- Candlestick Chart for Mining Performance -->
-                <div class="chart-container p-6 mb-8">
-                    <h3 class="text-lg font-semibold text-white mb-4">Daily Mining Performance</h3>
-                    <div class="h-80">
-                        <canvas id="candlestickChart"></canvas>
-                    </div>
+                <!-- Line Chart for Returns -->
+                <div class="tracking-card mb-8">
+                    <h3 class="text-lg font-semibold text-white mb-4">Daily Returns Projection</h3>
+                    <canvas id="returnsChart"></canvas>
                 </div>
 
-                <!-- Mining Transactions History -->
-                <div class="chart-container p-6">
-                    <h3 class="text-lg font-semibold text-white mb-4">Mining Transactions</h3>
+                <!-- Active Mining Plans -->
+                <div id="activeMiningPlans" class="space-y-6 mb-8">
+                    <!-- Plans will be loaded here -->
+                </div>
+
+                <!-- No Plans Message -->
+                <div id="noPlansMessage" class="bg-slate-900/80 backdrop-blur-sm rounded-xl border border-purple-500/20 p-8 text-center mb-8">
+                    <div class="text-6xl mb-4">⛏️</div>
+                    <h2 class="text-2xl font-semibold text-white mb-4">No Active Mining Plans</h2>
+                    <p class="text-gray-400 mb-6">Start mining Bitcoin today with our AI-powered cloud mining platform</p>
+                    <a href="btc-miner.html" class="inline-block bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white px-8 py-3 rounded-lg font-semibold transition">
+                        Browse Mining Plans
+                    </a>
+                </div>
+
+                <!-- Plan Details Table -->
+                <div class="tracking-card">
+                    <h3 class="text-lg font-semibold text-white mb-4">Mining Plan Details</h3>
                     <div class="overflow-x-auto">
                         <table class="w-full">
                             <thead>
-                                <tr class="border-b border-gray-700">
-                                    <th class="text-left py-3 px-4 text-sm font-medium text-gray-400">Date</th>
+                                <tr class="border-b border-purple-500/20">
                                     <th class="text-left py-3 px-4 text-sm font-medium text-gray-400">Plan</th>
                                     <th class="text-left py-3 px-4 text-sm font-medium text-gray-400">Investment</th>
                                     <th class="text-left py-3 px-4 text-sm font-medium text-gray-400">Duration</th>
-                                    <th class="text-left py-3 px-4 text-sm font-medium text-gray-400">Status</th>
+                                    <th class="text-left py-3 px-4 text-sm font-medium text-gray-400">Hashrate</th>
                                     <th class="text-left py-3 px-4 text-sm font-medium text-gray-400">Daily Return</th>
+                                    <th class="text-left py-3 px-4 text-sm font-medium text-gray-400">Progress</th>
+                                    <th class="text-left py-3 px-4 text-sm font-medium text-gray-400">Status</th>
                                 </tr>
                             </thead>
-                            <tbody id="miningTransactionsList">
-                                <tr>
-                                    <td colspan="6" class="text-center py-12">
-                                        <p class="text-gray-500">Loading mining transactions...</p>
-                                    </td>
-                                </tr>
+                            <tbody id="planDetailsTable">
+                                <!-- Plan details will be loaded here -->
                             </tbody>
                         </table>
                     </div>
@@ -434,14 +418,55 @@
     </div>
 
     <script>
-        // Constants for localStorage keys (must match dashboard)
+        // Constants
         const TRANSACTIONS_DATA_KEY = "v0trade_transactions_data";
         
-        // Chart instances
-        let earningsChart = null;
-        let distributionChart = null;
-        let candlestickChart = null;
+        // Mining plan configurations - UPDATED WITH EXACT PLAN NAMES
+        const MINING_PLANS = {
+            'micro plan btc miner': {
+                name: 'Micro Plan',
+                investment: 600,
+                duration: 3,
+                hashrate: '130 TH/s',
+                dailyReturn: 36,
+                badgeClass: 'badge-micro',
+                color: '#3b82f6'
+            },
+            'gold plan btc miner': {
+                name: 'Gold Plan',
+                investment: 1850,
+                duration: 6,
+                hashrate: '720 TH/s',
+                dailyReturn: 48,
+                badgeClass: 'badge-gold',
+                color: '#f59e0b'
+            },
+            'silver plan btc miner': {
+                name: 'Silver Plan',
+                investment: 2450,
+                duration: 13,
+                hashrate: '2,114 TH/s',
+                dailyReturn: 40,
+                badgeClass: 'badge-silver',
+                color: '#9ca3af'
+            },
+            'diamond plan btc miner': {
+                name: 'Diamond Plan',
+                investment: 2200,
+                duration: 7,
+                hashrate: '3,288 TH/s',
+                dailyReturn: 80,
+                badgeClass: 'badge-diamond',
+                color: '#06b6d4'
+            }
+        };
         
+        let charts = {
+            candlestick: null,
+            distribution: null,
+            returns: null
+        };
+
         window.addEventListener('DOMContentLoaded', function() {
             const userEmail = localStorage.getItem("v0trade_user_email");
             
@@ -459,494 +484,545 @@
             
             // Load mining data
             loadMiningData(userEmail);
+            
+            // Initialize charts
+            initializeCharts();
         });
 
         function loadMiningData(email) {
             try {
+                console.log("Loading mining data for:", email);
+                
                 // Get cached transactions from localStorage
                 const cachedData = localStorage.getItem(`${TRANSACTIONS_DATA_KEY}_${email}`);
                 
                 if (!cachedData) {
-                    displayNoMiningPlans();
+                    console.log("No cached data found");
+                    showNoPlansMessage();
+                    updateSummaryStats([], {});
                     return;
                 }
                 
                 const allTransactions = JSON.parse(cachedData);
+                console.log("Total transactions found:", allTransactions.length);
                 
-                // Filter to get only mining/investment transactions
+                // Filter to get only mining plan transactions - FIXED FILTERING
                 const miningTransactions = allTransactions.filter(transaction => {
-                    const type = transaction.type?.toLowerCase() || '';
-                    const method = transaction.method?.toLowerCase() || '';
+                    // Check transaction type or method for mining plans
+                    const type = (transaction.type || '').toLowerCase();
+                    const method = (transaction.method || '').toLowerCase();
                     
-                    // Look for mining-related transactions
-                    return type.includes('investment') || 
-                           type.includes('mining') || 
-                           method.includes('btc') ||
-                           method.includes('mining') ||
-                           method.includes('crypto');
+                    // Check if transaction contains any mining plan keywords
+                    const transactionText = (type + ' ' + method).toLowerCase();
+                    
+                    return transactionText.includes('micro') || 
+                           transactionText.includes('gold') || 
+                           transactionText.includes('silver') || 
+                           transactionText.includes('diamond') ||
+                           transactionText.includes('btc miner') ||
+                           transactionText.includes('mining');
                 });
                 
                 console.log("Mining transactions found:", miningTransactions);
                 
                 if (miningTransactions.length === 0) {
-                    displayNoMiningPlans();
+                    console.log("No mining transactions found");
+                    showNoPlansMessage();
+                    updateSummaryStats([], {});
                     return;
                 }
                 
-                // Process mining transactions into mining plans
-                const miningPlans = processMiningPlans(miningTransactions);
+                // Group transactions by plan type and calculate stats
+                const miningStats = processMiningTransactions(miningTransactions);
+                console.log("Processed mining stats:", miningStats);
                 
-                // Display mining plans
-                displayMiningPlans(miningPlans);
-                
-                // Display mining transactions
-                displayMiningTransactions(miningTransactions);
-                
-                // Update summary statistics
-                updateMiningStats(miningPlans, miningTransactions);
-                
-                // Initialize charts
-                initializeCharts(miningPlans, miningTransactions);
+                // Update UI with mining data
+                updateMiningPlansDisplay(miningStats);
+                updateSummaryStats(miningTransactions, miningStats);
+                updatePlanDetailsTable(miningStats);
+                updateCharts(miningStats);
                 
             } catch (err) {
                 console.error("Error loading mining data:", err);
-                displayNoMiningPlans();
+                showNoPlansMessage();
             }
         }
         
-        function processMiningPlans(transactions) {
-            const miningPlans = [];
+        function processMiningTransactions(transactions) {
+            const planStats = {};
+            const now = new Date();
             
             transactions.forEach(transaction => {
+                const type = (transaction.type || '').toLowerCase();
+                const method = (transaction.method || '').toLowerCase();
                 const amount = parseFloat(transaction.amount) || 0;
-                const method = transaction.method || '';
+                const transactionDate = new Date(transaction.date || now);
                 
-                // Extract duration from method field (e.g., "BTC Miner 30 days")
-                let duration = 30; // Default duration
-                const durationMatch = method.match(/\d+/);
-                if (durationMatch) {
-                    duration = parseInt(durationMatch[0]);
+                console.log("Processing transaction:", { type, method, amount });
+                
+                // Find matching plan - check both type and method
+                let planKey = null;
+                const transactionText = (type + ' ' + method).toLowerCase();
+                
+                // Check for exact plan matches
+                for (const key in MINING_PLANS) {
+                    if (transactionText.includes(key)) {
+                        planKey = key;
+                        break;
+                    }
                 }
                 
-                // Calculate days passed since transaction
-                const transactionDate = new Date(transaction.date);
-                const now = new Date();
-                const daysPassed = Math.floor((now - transactionDate) / (1000 * 60 * 60 * 24));
-                const daysRemaining = Math.max(0, duration - daysPassed);
+                // If no exact match, try partial matches
+                if (!planKey) {
+                    if (transactionText.includes('micro')) planKey = 'micro plan btc miner';
+                    else if (transactionText.includes('gold')) planKey = 'gold plan btc miner';
+                    else if (transactionText.includes('silver')) planKey = 'silver plan btc miner';
+                    else if (transactionText.includes('diamond')) planKey = 'diamond plan btc miner';
+                }
                 
-                // Calculate progress percentage
-                const progressPercentage = Math.min(100, (daysPassed / duration) * 100);
+                if (!planKey) {
+                    console.log("No plan match found for transaction");
+                    return;
+                }
                 
-                // Calculate earnings (simulated based on investment amount)
-                const dailyReturnRate = 0.02; // 2% daily return for simulation
-                const totalEarnings = amount * dailyReturnRate * daysPassed;
-                const dailyEarnings = amount * dailyReturnRate;
+                console.log("Matched plan:", planKey);
                 
-                miningPlans.push({
-                    id: transaction.id,
-                    name: method || 'BTC Mining Plan',
-                    amount: amount,
-                    duration: duration,
-                    startDate: transaction.date,
-                    daysPassed: daysPassed,
-                    daysRemaining: daysRemaining,
-                    progress: progressPercentage,
-                    totalEarnings: totalEarnings,
-                    dailyEarnings: dailyEarnings,
-                    status: daysRemaining > 0 ? 'Active' : 'Completed',
-                    method: transaction.method || 'Cloud Mining'
+                if (!planStats[planKey]) {
+                    planStats[planKey] = {
+                        count: 0,
+                        totalInvestment: 0,
+                        transactions: [],
+                        planInfo: MINING_PLANS[planKey]
+                    };
+                }
+                
+                planStats[planKey].count++;
+                planStats[planKey].totalInvestment += amount;
+                planStats[planKey].transactions.push({
+                    ...transaction,
+                    transactionDate: transactionDate
                 });
             });
             
-            return miningPlans;
+            return planStats;
         }
         
-        function displayMiningPlans(miningPlans) {
-            const container = document.getElementById('miningPlansContainer');
+        function updateMiningPlansDisplay(planStats) {
+            const container = document.getElementById('activeMiningPlans');
+            const noPlansDiv = document.getElementById('noPlansMessage');
             
-            if (miningPlans.length === 0) {
-                displayNoMiningPlans();
+            if (Object.keys(planStats).length === 0) {
+                showNoPlansMessage();
                 return;
             }
             
+            // Hide no plans message
+            noPlansDiv.classList.add('hidden');
             container.innerHTML = '';
             
-            // Sort by status (active first) and then by amount (largest first)
-            miningPlans.sort((a, b) => {
-                if (a.status === 'Active' && b.status !== 'Active') return -1;
-                if (a.status !== 'Active' && b.status === 'Active') return 1;
-                return b.amount - a.amount;
-            });
-            
-            miningPlans.forEach(plan => {
-                const planCard = document.createElement('div');
-                planCard.className = 'mining-card p-6 mb-4';
+            // Create plan cards
+            for (const [planKey, stats] of Object.entries(planStats)) {
+                const plan = stats.planInfo;
+                const now = new Date();
                 
-                // Determine status color
-                let statusColor = 'text-green-400';
-                let statusBg = 'bg-green-400/10';
-                if (plan.status === 'Completed') {
-                    statusColor = 'text-blue-400';
-                    statusBg = 'bg-blue-400/10';
-                } else if (plan.daysRemaining < 7) {
-                    statusColor = 'text-yellow-400';
-                    statusBg = 'bg-yellow-400/10';
+                // Get the most recent transaction for this plan
+                let latestTransaction = stats.transactions.reduce((latest, current) => {
+                    return current.transactionDate > latest ? current.transactionDate : latest;
+                }, new Date(0));
+                
+                if (latestTransaction.getTime() === 0) {
+                    latestTransaction = now;
                 }
                 
-                planCard.innerHTML = `
-                    <div class="flex flex-col md:flex-row md:items-center justify-between">
-                        <div class="mb-4 md:mb-0">
-                            <div class="flex items-center gap-3 mb-2">
-                                <span class="text-2xl">⛏️</span>
-                                <h3 class="text-lg font-semibold text-white">${plan.name}</h3>
-                                <span class="text-xs px-3 py-1 rounded-full ${statusBg} ${statusColor}">${plan.status}</span>
+                const endDate = new Date(latestTransaction);
+                endDate.setDate(endDate.getDate() + plan.duration);
+                
+                // Calculate progress
+                const totalTime = plan.duration * 24 * 60 * 60 * 1000;
+                const elapsedTime = now - latestTransaction;
+                const progress = Math.min(Math.max((elapsedTime / totalTime) * 100, 0), 100);
+                
+                // Calculate estimated returns
+                const dailyReturnAmount = (plan.investment * plan.dailyReturn) / 100;
+                const totalReturn = dailyReturnAmount * plan.duration * stats.count;
+                
+                const card = document.createElement('div');
+                card.className = 'mining-plan-card';
+                
+                card.innerHTML = `
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div class="flex-1">
+                            <div class="flex items-center gap-3 mb-3">
+                                <span class="${plan.badgeClass} plan-badge">${plan.name}</span>
+                                <span class="text-sm text-gray-400">${stats.count} Active</span>
                             </div>
-                            <div class="flex flex-wrap gap-4 text-sm">
+                            
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
                                 <div>
-                                    <span class="text-gray-400">Investment:</span>
-                                    <span class="ml-2 text-white font-medium">$${plan.amount.toFixed(2)}</span>
+                                    <p class="text-sm text-gray-400">Investment</p>
+                                    <p class="text-lg font-bold text-white">$${plan.investment.toLocaleString()}</p>
                                 </div>
                                 <div>
-                                    <span class="text-gray-400">Duration:</span>
-                                    <span class="ml-2 text-white font-medium">${plan.duration} days</span>
+                                    <p class="text-sm text-gray-400">Hashrate</p>
+                                    <p class="text-lg font-bold text-white">${plan.hashrate}</p>
                                 </div>
                                 <div>
-                                    <span class="text-gray-400">Daily Return:</span>
-                                    <span class="ml-2 text-green-400 font-medium">$${plan.dailyEarnings.toFixed(2)}</span>
+                                    <p class="text-sm text-gray-400">Daily Return</p>
+                                    <p class="text-lg font-bold text-green-400">${plan.dailyReturn}%</p>
                                 </div>
+                                <div>
+                                    <p class="text-sm text-gray-400">Est. Total</p>
+                                    <p class="text-lg font-bold text-amber-400">$${totalReturn.toLocaleString()}</p>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-2">
+                                <div class="flex justify-between text-sm text-gray-400 mb-1">
+                                    <span>Progress</span>
+                                    <span>${progress.toFixed(1)}%</span>
+                                </div>
+                                <div class="progress-bar">
+                                    <div class="progress-fill" style="width: ${progress}%"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="flex justify-between text-sm text-gray-400">
+                                <span>Started: ${latestTransaction.toLocaleDateString()}</span>
+                                <span>Ends: ${endDate.toLocaleDateString()}</span>
                             </div>
                         </div>
                         
-                        <div class="md:text-right">
-                            <div class="mb-2">
-                                <span class="text-gray-400">Total Earnings:</span>
-                                <div class="text-xl font-bold text-yellow-400">$${plan.totalEarnings.toFixed(2)}</div>
-                            </div>
-                            <div class="text-sm text-gray-400">
-                                ${plan.daysPassed} days elapsed • ${plan.daysRemaining} days remaining
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="mt-6">
-                        <div class="flex justify-between text-sm mb-1">
-                            <span class="text-gray-400">Progress</span>
-                            <span class="text-white">${plan.progress.toFixed(1)}%</span>
-                        </div>
-                        <div class="w-full bg-gray-700 rounded-full h-2.5">
-                            <div class="progress-bar h-2.5 rounded-full" style="width: ${plan.progress}%"></div>
+                        <div class="flex flex-col items-center">
+                            <div class="text-5xl mb-2">⛏️</div>
+                            <span class="text-sm font-medium text-white">${Math.round(progress)}% Complete</span>
                         </div>
                     </div>
                 `;
                 
-                container.appendChild(planCard);
-            });
+                container.appendChild(card);
+            }
         }
         
-        function displayMiningTransactions(transactions) {
-            const container = document.getElementById('miningTransactionsList');
+        function updateSummaryStats(transactions, planStats) {
+            let totalInvestment = 0;
+            let totalHashrate = 0;
+            let totalEstimatedReturns = 0;
+            let activePlansCount = 0;
             
-            if (transactions.length === 0) {
-                container.innerHTML = `
-                    <tr>
-                        <td colspan="6" class="text-center py-12">
-                            <p class="text-gray-500">No mining transactions found</p>
-                        </td>
-                    </tr>
-                `;
-                return;
+            for (const [planKey, stats] of Object.entries(planStats)) {
+                activePlansCount += stats.count;
+                totalInvestment += stats.totalInvestment;
+                totalEstimatedReturns += (stats.planInfo.investment * stats.planInfo.dailyReturn / 100) * stats.planInfo.duration * stats.count;
+                
+                // Parse hashrate number
+                const hashrateStr = stats.planInfo.hashrate.replace(/[^0-9]/g, '');
+                totalHashrate += parseInt(hashrateStr) * stats.count;
             }
             
-            // Sort by date (newest first)
-            transactions.sort((a, b) => new Date(b.date) - new Date(a.date));
+            document.getElementById('activePlansCount').textContent = activePlansCount;
+            document.getElementById('totalInvestment').textContent = `$${totalInvestment.toLocaleString()}`;
+            document.getElementById('estimatedReturns').textContent = `$${Math.round(totalEstimatedReturns).toLocaleString()}`;
+            document.getElementById('totalHashrate').textContent = `${totalHashrate.toLocaleString()} TH/s`;
+        }
+        
+        function updatePlanDetailsTable(planStats) {
+            const tableBody = document.getElementById('planDetailsTable');
+            tableBody.innerHTML = '';
             
-            container.innerHTML = '';
-            
-            transactions.slice(0, 10).forEach(transaction => {
-                const row = document.createElement('tr');
-                row.className = 'border-b border-gray-800 hover:bg-gray-800/50';
+            for (const [planKey, stats] of Object.entries(planStats)) {
+                const plan = stats.planInfo;
+                const now = new Date();
                 
-                const date = new Date(transaction.date);
-                const formattedDate = date.toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'short',
-                    day: 'numeric'
-                });
+                // Get the most recent transaction for this plan
+                let latestTransaction = stats.transactions.reduce((latest, current) => {
+                    return current.transactionDate > latest ? current.transactionDate : latest;
+                }, new Date(0));
                 
-                const amount = parseFloat(transaction.amount) || 0;
-                
-                // Extract duration from method
-                let duration = '30 days';
-                if (transaction.method) {
-                    const durationMatch = transaction.method.match(/\d+/);
-                    if (durationMatch) {
-                        duration = `${durationMatch[0]} days`;
-                    }
+                if (latestTransaction.getTime() === 0) {
+                    latestTransaction = now;
                 }
                 
-                // Calculate daily return (simulated)
-                const dailyReturn = amount * 0.02; // 2% daily return
+                const endDate = new Date(latestTransaction);
+                endDate.setDate(endDate.getDate() + plan.duration);
+                
+                const totalTime = plan.duration * 24 * 60 * 60 * 1000;
+                const elapsedTime = now - latestTransaction;
+                const progress = Math.min(Math.max((elapsedTime / totalTime) * 100, 0), 100);
+                
+                const row = document.createElement('tr');
+                row.className = 'border-b border-purple-500/10 hover:bg-purple-500/5';
                 
                 row.innerHTML = `
-                    <td class="py-3 px-4 text-sm text-gray-300">${formattedDate}</td>
-                    <td class="py-3 px-4 text-sm text-white font-medium">${transaction.method || 'BTC Mining'}</td>
-                    <td class="py-3 px-4 text-sm text-green-400 font-semibold">$${amount.toFixed(2)}</td>
-                    <td class="py-3 px-4 text-sm text-gray-300">${duration}</td>
-                    <td class="py-3 px-4 text-sm">
-                        <span class="px-2 py-1 rounded-full text-xs bg-green-400/10 text-green-400">Active</span>
+                    <td class="py-3 px-4">
+                        <span class="${plan.badgeClass} plan-badge">${plan.name}</span>
                     </td>
-                    <td class="py-3 px-4 text-sm text-yellow-400 font-semibold">$${dailyReturn.toFixed(2)}/day</td>
+                    <td class="py-3 px-4 text-white font-medium">$${plan.investment.toLocaleString()}</td>
+                    <td class="py-3 px-4 text-gray-300">${plan.duration} Days</td>
+                    <td class="py-3 px-4 text-gray-300">${plan.hashrate}</td>
+                    <td class="py-3 px-4 text-green-400 font-medium">${plan.dailyReturn}%</td>
+                    <td class="py-3 px-4">
+                        <div class="flex items-center gap-2">
+                            <div class="progress-bar flex-1">
+                                <div class="progress-fill" style="width: ${progress}%"></div>
+                            </div>
+                            <span class="text-sm text-gray-400">${Math.round(progress)}%</span>
+                        </div>
+                    </td>
+                    <td class="py-3 px-4">
+                        <span class="inline-flex items-center gap-1 ${progress >= 100 ? 'text-blue-400' : 'text-green-400'}">
+                            <span class="w-2 h-2 ${progress >= 100 ? 'bg-blue-400' : 'bg-green-400'} rounded-full animate-pulse"></span>
+                            ${progress >= 100 ? 'Completed' : 'Active'}
+                        </span>
+                    </td>
                 `;
                 
-                container.appendChild(row);
-            });
-        }
-        
-        function updateMiningStats(miningPlans, transactions) {
-            // Calculate total investment
-            let totalInvestment = 0;
-            let totalEarnings = 0;
-            let totalDays = 0;
-            let activePlans = 0;
-            
-            miningPlans.forEach(plan => {
-                totalInvestment += plan.amount;
-                totalEarnings += plan.totalEarnings;
-                totalDays += plan.daysPassed;
-                if (plan.status === 'Active') activePlans++;
-            });
-            
-            // Calculate daily average
-            const dailyAverage = totalDays > 0 ? totalEarnings / totalDays : 0;
-            
-            // Calculate remaining days across all active plans
-            let remainingDays = 0;
-            miningPlans.forEach(plan => {
-                if (plan.status === 'Active') {
-                    remainingDays += plan.daysRemaining;
-                }
-            });
-            
-            // Update DOM
-            document.getElementById('totalInvestment').textContent = `$${totalInvestment.toFixed(2)}`;
-            document.getElementById('totalEarnings').textContent = `$${totalEarnings.toFixed(2)}`;
-            document.getElementById('totalDays').textContent = totalDays;
-            document.getElementById('activePlansCount').textContent = activePlans;
-            document.getElementById('dailyAverage').textContent = `$${dailyAverage.toFixed(2)}`;
-            document.getElementById('remainingDays').textContent = remainingDays;
-        }
-        
-        function initializeCharts(miningPlans, transactions) {
-            // Destroy existing charts if they exist
-            if (earningsChart) earningsChart.destroy();
-            if (distributionChart) distributionChart.destroy();
-            if (candlestickChart) candlestickChart.destroy();
-            
-            // 1. Earnings Line Chart
-            const earningsCtx = document.getElementById('earningsChart').getContext('2d');
-            
-            // Generate sample earnings data for the last 30 days
-            const dates = [];
-            const earningsData = [];
-            let cumulativeEarnings = 0;
-            
-            for (let i = 29; i >= 0; i--) {
-                const date = new Date();
-                date.setDate(date.getDate() - i);
-                dates.push(date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
-                
-                // Simulate daily earnings with some randomness
-                const dailyEarn = miningPlans.reduce((sum, plan) => {
-                    return sum + (plan.status === 'Active' ? plan.dailyEarnings : 0);
-                }, 0) * (0.8 + Math.random() * 0.4);
-                
-                cumulativeEarnings += dailyEarn;
-                earningsData.push(cumulativeEarnings);
+                tableBody.appendChild(row);
             }
-            
-            earningsChart = new Chart(earningsCtx, {
-                type: 'line',
-                data: {
-                    labels: dates,
-                    datasets: [{
-                        label: 'Total Earnings',
-                        data: earningsData,
-                        borderColor: '#8b5cf6',
-                        backgroundColor: 'rgba(139, 92, 246, 0.1)',
-                        borderWidth: 2,
-                        fill: true,
-                        tension: 0.4
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            labels: { color: '#9ca3af' }
-                        }
-                    },
-                    scales: {
-                        x: {
-                            grid: { color: 'rgba(255, 255, 255, 0.1)' },
-                            ticks: { color: '#9ca3af' }
-                        },
-                        y: {
-                            grid: { color: 'rgba(255, 255, 255, 0.1)' },
-                            ticks: { 
-                                color: '#9ca3af',
-                                callback: function(value) {
-                                    return '$' + value.toFixed(0);
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-            
-            // 2. Distribution Pie Chart
-            const distributionCtx = document.getElementById('distributionChart').getContext('2d');
-            
-            // Group by mining plan type
-            const planTypes = {};
-            miningPlans.forEach(plan => {
-                const type = plan.name;
-                if (!planTypes[type]) {
-                    planTypes[type] = 0;
-                }
-                planTypes[type] += plan.amount;
-            });
-            
-            const planLabels = Object.keys(planTypes);
-            const planAmounts = Object.values(planTypes);
-            
-            // Generate colors for each plan
-            const planColors = planLabels.map((_, i) => {
-                const hue = (i * 137.508) % 360; // Golden angle approximation
-                return `hsl(${hue}, 70%, 60%)`;
-            });
-            
-            distributionChart = new Chart(distributionCtx, {
+        }
+        
+        function initializeCharts() {
+            // Initialize distribution pie chart
+            const distCtx = document.getElementById('planDistributionChart').getContext('2d');
+            charts.distribution = new Chart(distCtx, {
                 type: 'doughnut',
                 data: {
-                    labels: planLabels,
+                    labels: [],
                     datasets: [{
-                        data: planAmounts,
-                        backgroundColor: planColors,
-                        borderWidth: 0,
-                        hoverOffset: 15
+                        data: [],
+                        backgroundColor: [],
+                        borderWidth: 0
                     }]
                 },
                 options: {
                     responsive: true,
-                    maintainAspectRatio: false,
+                    maintainAspectRatio: true,
                     plugins: {
                         legend: {
-                            position: 'right',
-                            labels: { color: '#9ca3af', padding: 20 }
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    const value = context.raw;
-                                    const total = planAmounts.reduce((a, b) => a + b, 0);
-                                    const percentage = Math.round((value / total) * 100);
-                                    return `${context.label}: $${value.toFixed(2)} (${percentage}%)`;
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-            
-            // 3. Candlestick Chart for Daily Performance
-            const candlestickCtx = document.getElementById('candlestickChart').getContext('2d');
-            
-            // Generate candlestick data for last 7 days
-            const candlestickLabels = [];
-            const candlestickData = [];
-            
-            for (let i = 6; i >= 0; i--) {
-                const date = new Date();
-                date.setDate(date.getDate() - i);
-                candlestickLabels.push(date.toLocaleDateString('en-US', { weekday: 'short' }));
-                
-                // Simulate OHLC data
-                const base = 100 + Math.random() * 50;
-                const open = base;
-                const close = base * (0.95 + Math.random() * 0.1);
-                const high = Math.max(open, close) * (1 + Math.random() * 0.05);
-                const low = Math.min(open, close) * (0.95 - Math.random() * 0.05);
-                
-                candlestickData.push({
-                    o: open,
-                    h: high,
-                    l: low,
-                    c: close
-                });
-            }
-            
-            candlestickChart = new Chart(candlestickCtx, {
-                type: 'candlestick',
-                data: {
-                    labels: candlestickLabels,
-                    datasets: [{
-                        label: 'Daily Performance',
-                        data: candlestickData,
-                        color: {
-                            up: '#10b981',
-                            down: '#ef4444',
-                            unchanged: '#6b7280'
-                        }
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        x: {
-                            grid: { color: 'rgba(255, 255, 255, 0.1)' },
-                            ticks: { color: '#9ca3af' }
-                        },
-                        y: {
-                            grid: { color: 'rgba(255, 255, 255, 0.1)' },
-                            ticks: { 
-                                color: '#9ca3af',
-                                callback: function(value) {
-                                    return '$' + value.toFixed(0);
+                            position: 'bottom',
+                            labels: {
+                                color: '#94a3b8',
+                                padding: 20,
+                                font: {
+                                    size: 12
                                 }
                             }
                         }
                     },
+                    animation: {
+                        animateScale: true,
+                        animateRotate: true
+                    }
+                }
+            });
+            
+            // Initialize returns line chart
+            const returnsCtx = document.getElementById('returnsChart').getContext('2d');
+            charts.returns = new Chart(returnsCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Daily Returns',
+                        data: [],
+                        borderColor: '#a855f7',
+                        backgroundColor: 'rgba(168, 85, 247, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4,
+                        pointBackgroundColor: '#ec4899',
+                        pointBorderColor: '#ffffff',
+                        pointBorderWidth: 2,
+                        pointRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    animation: {
+                        duration: 2000,
+                        easing: 'easeInOutQuart'
+                    },
                     plugins: {
                         legend: {
-                            labels: { color: '#9ca3af' }
+                            labels: {
+                                color: '#94a3b8'
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                color: 'rgba(168, 85, 247, 0.1)'
+                            },
+                            ticks: {
+                                color: '#94a3b8'
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(168, 85, 247, 0.1)'
+                            },
+                            ticks: {
+                                color: '#94a3b8',
+                                callback: function(value) {
+                                    return '$' + value.toLocaleString();
+                                }
+                            }
                         }
                     }
                 }
             });
         }
         
-        function displayNoMiningPlans() {
-            const container = document.getElementById('miningPlansContainer');
-            container.innerHTML = `
-                <div class="mining-card p-6 text-center">
-                    <div class="text-5xl mb-4">⛏️</div>
-                    <h3 class="text-xl font-semibold text-white mb-3">No Active Mining Plans</h3>
-                    <p class="text-gray-400 mb-6">Start mining Bitcoin today with our AI-powered cloud mining platform</p>
-                    <a href="btc-miner.html" class="inline-block bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white px-6 py-3 rounded-lg font-semibold transition">
-                        Browse Mining Plans
-                    </a>
-                </div>
+        function updateCharts(planStats) {
+            // Update distribution chart
+            const planNames = [];
+            const planCounts = [];
+            const planColors = [];
+            
+            for (const [planKey, stats] of Object.entries(planStats)) {
+                planNames.push(stats.planInfo.name);
+                planCounts.push(stats.count);
+                planColors.push(stats.planInfo.color);
+            }
+            
+            charts.distribution.data.labels = planNames;
+            charts.distribution.data.datasets[0].data = planCounts;
+            charts.distribution.data.datasets[0].backgroundColor = planColors;
+            charts.distribution.update();
+            
+            // Update returns chart with projected data
+            const days = [];
+            const returns = [];
+            
+            // Generate 30 days of projected returns
+            let totalDailyReturn = 0;
+            for (const [planKey, stats] of Object.entries(planStats)) {
+                const plan = stats.planInfo;
+                totalDailyReturn += (plan.investment * plan.dailyReturn / 100) * stats.count;
+            }
+            
+            // Start from today
+            const today = new Date();
+            for (let i = 0; i < 30; i++) {
+                const date = new Date(today);
+                date.setDate(date.getDate() + i);
+                days.push(date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+                returns.push(totalDailyReturn * (i + 1));
+            }
+            
+            charts.returns.data.labels = days;
+            charts.returns.data.datasets[0].data = returns;
+            charts.returns.update();
+            
+            // Create candlestick chart if not exists
+            if (!charts.candlestick) {
+                const candlestickElement = document.getElementById('candlestickChart');
+                charts.candlestick = LightweightCharts.createChart(candlestickElement, {
+                    width: candlestickElement.clientWidth,
+                    height: 300,
+                    layout: {
+                        background: { color: 'transparent' },
+                        textColor: '#94a3b8',
+                    },
+                    grid: {
+                        vertLines: { color: 'rgba(168, 85, 247, 0.1)' },
+                        horzLines: { color: 'rgba(168, 85, 247, 0.1)' },
+                    },
+                });
+                
+                const candlestickSeries = charts.candlestick.addCandlestickSeries({
+                    upColor: '#10b981',
+                    downColor: '#ef4444',
+                    borderVisible: false,
+                    wickUpColor: '#10b981',
+                    wickDownColor: '#ef4444',
+                });
+                
+                // Generate sample candlestick data for mining performance
+                const now = new Date();
+                const candlestickData = [];
+                let currentPrice = 50000; // Starting mining performance value
+                
+                for (let i = 19; i >= 0; i--) {
+                    const date = new Date(now);
+                    date.setDate(date.getDate() - i);
+                    
+                    const open = currentPrice;
+                    const change = (Math.random() - 0.5) * 1000;
+                    const close = open + change;
+                    const high = Math.max(open, close) + Math.random() * 500;
+                    const low = Math.min(open, close) - Math.random() * 500;
+                    
+                    candlestickData.push({
+                        time: date.toISOString().split('T')[0],
+                        open: open,
+                        high: high,
+                        low: low,
+                        close: close
+                    });
+                    
+                    currentPrice = close;
+                }
+                
+                candlestickSeries.setData(candlestickData);
+                
+                // Add a simple moving average
+                const smaSeries = charts.candlestick.addLineSeries({
+                    color: '#a855f7',
+                    lineWidth: 2,
+                });
+                
+                // Calculate SMA
+                const smaData = [];
+                const period = 5;
+                for (let i = period - 1; i < candlestickData.length; i++) {
+                    let sum = 0;
+                    for (let j = 0; j < period; j++) {
+                        sum += candlestickData[i - j].close;
+                    }
+                    smaData.push({
+                        time: candlestickData[i].time,
+                        value: sum / period
+                    });
+                }
+                smaSeries.setData(smaData);
+            }
+        }
+        
+        function showNoPlansMessage() {
+            const container = document.getElementById('activeMiningPlans');
+            const noPlansDiv = document.getElementById('noPlansMessage');
+            const tableBody = document.getElementById('planDetailsTable');
+            
+            container.innerHTML = '';
+            noPlansDiv.classList.remove('hidden');
+            tableBody.innerHTML = `
+                <tr>
+                    <td colspan="7" class="py-8 text-center text-gray-400">
+                        No active mining plans found. Visit the BTC Miner page to start mining.
+                    </td>
+                </tr>
             `;
             
-            // Reset stats
-            document.getElementById('totalInvestment').textContent = '$0.00';
-            document.getElementById('totalEarnings').textContent = '$0.00';
-            document.getElementById('totalDays').textContent = '0';
+            // Reset summary stats
             document.getElementById('activePlansCount').textContent = '0';
-            document.getElementById('dailyAverage').textContent = '$0.00';
-            document.getElementById('remainingDays').textContent = '0';
+            document.getElementById('totalInvestment').textContent = '$0';
+            document.getElementById('estimatedReturns').textContent = '$0';
+            document.getElementById('totalHashrate').textContent = '0 TH/s';
+            
+            // Clear charts data
+            if (charts.distribution) {
+                charts.distribution.data.labels = [];
+                charts.distribution.data.datasets[0].data = [];
+                charts.distribution.update();
+            }
+            
+            if (charts.returns) {
+                charts.returns.data.labels = [];
+                charts.returns.data.datasets[0].data = [];
+                charts.returns.update();
+            }
         }
         
         function refreshMiningData() {
@@ -954,34 +1030,31 @@
             if (!userEmail) return;
             
             // Show loading state
-            const container = document.getElementById('miningPlansContainer');
-            container.innerHTML = `
-                <div class="mining-card p-6 text-center">
-                    <div class="flex flex-col items-center justify-center">
-                        <svg class="animate-spin h-12 w-12 text-purple-500 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        <p class="text-gray-400">Refreshing mining data...</p>
-                    </div>
-                </div>
+            const refreshBtn = document.querySelector('button[onclick="refreshMiningData()"]');
+            const originalText = refreshBtn.innerHTML;
+            refreshBtn.innerHTML = `
+                <svg class="animate-spin w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                Refreshing...
             `;
+            refreshBtn.disabled = true;
             
-            // Reload data
             setTimeout(() => {
                 loadMiningData(userEmail);
                 
                 // Show success indicator
-                const refreshBtn = document.querySelector('button[onclick="refreshMiningData()"]');
-                const originalText = refreshBtn.innerHTML;
                 refreshBtn.innerHTML = '✓ Refreshed';
-                refreshBtn.classList.add('glowing-border');
+                refreshBtn.classList.remove('bg-purple-500', 'hover:bg-purple-600');
+                refreshBtn.classList.add('bg-green-500', 'hover:bg-green-600');
                 
                 setTimeout(() => {
                     refreshBtn.innerHTML = originalText;
-                    refreshBtn.classList.remove('glowing-border');
+                    refreshBtn.classList.remove('bg-green-500', 'hover:bg-green-600');
+                    refreshBtn.classList.add('bg-purple-500', 'hover:bg-purple-600');
+                    refreshBtn.disabled = false;
                 }, 2000);
-            }, 1000);
+            }, 1500);
         }
         
         function toggleMobileMenu() {
@@ -996,31 +1069,30 @@
             overlay.classList.toggle('active');
         }
         
+        // Handle window resize for charts
+        window.addEventListener('resize', function() {
+            if (charts.candlestick) {
+                const candlestickElement = document.getElementById('candlestickChart');
+                charts.candlestick.applyOptions({ width: candlestickElement.clientWidth });
+            }
+        });
+        
         // Auto-refresh when returning to the page
         window.addEventListener('focus', () => {
             const userEmail = localStorage.getItem("v0trade_user_email");
             if (userEmail) {
+                console.log("Page focused, refreshing mining data...");
                 loadMiningData(userEmail);
             }
         });
         
-        // Auto-refresh charts every 30 seconds for real-time feel
-        setInterval(() => {
+        // Add debug function to check localStorage data
+        window.debugMiningData = function() {
             const userEmail = localStorage.getItem("v0trade_user_email");
-            if (userEmail && earningsChart) {
-                // Just update the current charts with new data
-                if (earningsChart) {
-                    const dataset = earningsChart.data.datasets[0];
-                    const lastValue = dataset.data[dataset.data.length - 1];
-                    const newValue = lastValue * (0.99 + Math.random() * 0.02); // Small random change
-                    dataset.data.push(newValue);
-                    dataset.data.shift();
-                    
-                    earningsChart.update('none');
-                }
-            }
-        }, 30000);
+            const cachedData = localStorage.getItem(`${TRANSACTIONS_DATA_KEY}_${userEmail}`);
+            console.log("Debug - User Email:", userEmail);
+            console.log("Debug - Cached Data:", cachedData ? JSON.parse(cachedData) : "No data");
+        };
     </script>
-
 </body>
 </html>
