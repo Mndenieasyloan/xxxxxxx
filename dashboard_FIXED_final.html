@@ -473,53 +473,21 @@
                 }
             }
             
-            console.log("Fetching transactions for email:", email);
+            // Fetch ALL transactions from Baserow and filter client-side
+            // Note: We need to fetch all because Baserow API might not support filtering directly
+            const url = `https://api.baserow.io/api/database/rows/table/${TRANSACTIONS_TABLE}/?user_field_names=true&size=200`;
             
-            // Let's try without filters first to see what data is available
-            let url = `https://api.baserow.io/api/database/rows/table/${TRANSACTIONS_TABLE}/?user_field_names=false&size=100`;
-            
-            console.log("API URL:", url);
+            console.log("Fetching ALL transactions from:", url);
 
             const res = await fetch(url, {
                 headers: { Authorization: `Token ${API_TOKEN}` }
             });
 
             const data = await res.json();
-            console.log("Raw transactions API response:", data);
+            console.log("All transactions API response:", data);
             
             if (!data.results || data.results.length === 0) {
                 console.log("No transactions found in table");
-                displayNoTransactions();
-                return;
-            }
-
-            // Process all transactions and filter by email locally
-            const allTransactions = data.results.map(row => {
-                return {
-                    id: row.id,
-                    email: row["field_6394448"] || "",  // email field
-                    amount: row["field_6394449"] || "0.00",  // amount field
-                    type: row["field_6394450"] || "",  // type field
-                    method: row["field_6394451"] || "",  // method field
-                    status: row["field_6394452"] || "",  // status field
-                    date: row["field_6394453"] || new Date().toISOString(),  // date field
-                    timestamp: row["field_6394453"] ? new Date(row["field_6394453"]).getTime() : now
-                };
-            });
-
-            console.log("All transactions from API:", allTransactions);
-            
-            // Filter by user's email
-            const userTransactions = allTransactions.filter(t => {
-                const transactionEmail = t.email ? t.email.trim().toLowerCase() : "";
-                const userEmailLower = email.trim().toLowerCase();
-                return transactionEmail === userEmailLower;
-            });
-
-            console.log("Filtered transactions for user:", userTransactions);
-
-            if (userTransactions.length === 0) {
-                console.log("No transactions found for this email");
                 displayNoTransactions();
                 // Clear cache if no transactions
                 localStorage.removeItem(`${TRANSACTIONS_DATA_KEY}_${email}`);
@@ -527,41 +495,86 @@
                 return;
             }
 
+            // Filter transactions by user email on client side
+            const userTransactions = data.results.filter(row => {
+                const rowEmail = row["email"] || row["field_6394448"] || "";
+                return rowEmail.toLowerCase() === email.toLowerCase();
+            });
+
+            console.log("Filtered transactions for user:", userTransactions);
+
+            if (userTransactions.length === 0) {
+                console.log("No transactions found for email:", email);
+                displayNoTransactions();
+                // Clear cache if no transactions for this user
+                localStorage.removeItem(`${TRANSACTIONS_DATA_KEY}_${email}`);
+                localStorage.removeItem(`${LAST_TRANSACTION_SYNC_KEY}_${email}`);
+                return;
+            }
+
+            // Process transactions data
+            const transactions = userTransactions.map(row => {
+                // Try to get values from field names first, then fall back to field IDs
+                const transaction = {
+                    id: row.id,
+                    email: row["email"] || row["field_6394448"] || "",
+                    amount: row["amount"] || row["field_6394449"] || "0.00",
+                    type: row["type"] || row["field_6394450"] || "",
+                    method: row["method"] || row["field_6394451"] || "",
+                    status: row["status"] || row["field_6394452"] || "",
+                    date: row["date"] || row["field_6394453"] || new Date().toISOString(),
+                    timestamp: 0
+                };
+                
+                // Parse date to timestamp
+                try {
+                    transaction.timestamp = new Date(transaction.date).getTime();
+                    if (isNaN(transaction.timestamp)) {
+                        transaction.timestamp = now;
+                    }
+                } catch (e) {
+                    transaction.timestamp = now;
+                }
+                
+                return transaction;
+            });
+
+            console.log("Processed user transactions:", transactions);
+
             // Get existing cached transactions
-            let allUserTransactions = [];
+            let allTransactions = [];
             if (cachedData && !forceRefresh) {
                 const cachedTransactions = JSON.parse(cachedData);
-                allUserTransactions = [...cachedTransactions];
+                allTransactions = [...cachedTransactions];
             }
 
             // Add new transactions from Baserow
-            userTransactions.forEach(newTransaction => {
+            transactions.forEach(newTransaction => {
                 // Check if transaction already exists in cache
-                const exists = allUserTransactions.some(t => t.id === newTransaction.id);
+                const exists = allTransactions.some(t => t.id === newTransaction.id);
                 if (!exists) {
-                    allUserTransactions.push(newTransaction);
+                    allTransactions.push(newTransaction);
                 }
             });
 
             // Filter out transactions older than 30 days
             const thirtyDaysAgo = now - (30 * 24 * 60 * 60 * 1000);
-            allUserTransactions = allUserTransactions.filter(t => t.timestamp > thirtyDaysAgo);
+            allTransactions = allTransactions.filter(t => t.timestamp > thirtyDaysAgo);
 
             // Sort by date (newest first)
-            allUserTransactions.sort((a, b) => b.timestamp - a.timestamp);
+            allTransactions.sort((a, b) => b.timestamp - a.timestamp);
 
-            console.log("Final transactions to save:", allUserTransactions);
+            console.log("Final transactions to save:", allTransactions);
 
             // Save to localStorage
-            localStorage.setItem(`${TRANSACTIONS_DATA_KEY}_${email}`, JSON.stringify(allUserTransactions));
+            localStorage.setItem(`${TRANSACTIONS_DATA_KEY}_${email}`, JSON.stringify(allTransactions));
             localStorage.setItem(`${LAST_TRANSACTION_SYNC_KEY}_${email}`, now.toString());
 
             // Display transactions
-            displayTransactions(allUserTransactions);
+            displayTransactions(allTransactions);
 
         } catch (err) {
             console.error("TRANSACTIONS LOAD ERROR:", err);
-            console.error("Error details:", err.message);
             
             // Try to show cached data if available
             const cachedData = localStorage.getItem(`${TRANSACTIONS_DATA_KEY}_${email}`);
@@ -596,21 +609,24 @@
             // Format date
             let formattedDate = 'Unknown date';
             try {
-                if (transaction.date) {
-                    const date = new Date(transaction.date);
-                    if (!isNaN(date.getTime())) {
-                        formattedDate = date.toLocaleDateString('en-US', {
-                            year: 'numeric',
-                            month: 'short',
-                            day: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                        });
+                const date = new Date(transaction.date);
+                if (!isNaN(date.getTime())) {
+                    formattedDate = date.toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+                } else {
+                    // Try parsing string date
+                    const dateStr = transaction.date.toString();
+                    if (dateStr) {
+                        formattedDate = dateStr;
                     }
                 }
             } catch (e) {
-                console.log("Error formatting date:", e);
-                formattedDate = transaction.date || 'Date not available';
+                formattedDate = transaction.date || 'Unknown date';
             }
             
             // Format amount
@@ -631,12 +647,10 @@
             // Get status class
             let statusClass = 'status-pending';
             const status = transaction.status?.toLowerCase() || '';
-            if (status.includes('complete') || status === 'completed' || status === 'success') {
+            if (status.includes('complete') || status.includes('success')) {
                 statusClass = 'status-completed';
-            } else if (status.includes('fail') || status === 'failed' || status === 'rejected') {
+            } else if (status.includes('fail') || status.includes('error')) {
                 statusClass = 'status-failed';
-            } else if (status.includes('pending') || status === 'processing') {
-                statusClass = 'status-pending';
             }
             
             // Get transaction type icon
@@ -652,13 +666,7 @@
             // Format type text
             let typeText = transaction.type || 'Transaction';
             if (typeText) {
-                typeText = typeText.charAt(0).toUpperCase() + typeText.slice(1);
-            }
-            
-            // Format status text
-            let statusText = transaction.status || 'Pending';
-            if (statusText) {
-                statusText = statusText.charAt(0).toUpperCase() + statusText.slice(1);
+                typeText = typeText.charAt(0).toUpperCase() + typeText.slice(1).toLowerCase();
             }
             
             row.innerHTML = `
@@ -672,7 +680,7 @@
                 <td class="py-3 px-4 text-sm ${amountColor} font-semibold">${formattedAmount}</td>
                 <td class="py-3 px-4 text-sm text-gray-700 capitalize">${transaction.method || 'N/A'}</td>
                 <td class="py-3 px-4 text-sm">
-                    <span class="transaction-status ${statusClass}">${statusText}</span>
+                    <span class="transaction-status ${statusClass} capitalize">${transaction.status || 'Pending'}</span>
                 </td>
             `;
             
@@ -700,11 +708,7 @@
                     <div class="flex flex-col items-center gap-2">
                         <span class="text-4xl">📄</span>
                         <p class="text-gray-500">No transactions found</p>
-                        <p class="text-sm text-gray-400">Your transactions will appear here once you make a deposit or investment</p>
-                        <div class="mt-4 flex gap-2">
-                            <a href="deposit.html" class="px-4 py-2 bg-orange-500 text-white rounded-lg text-sm hover:bg-orange-600 transition">Make Deposit</a>
-                            <a href="investment-tracks.html" class="px-4 py-2 bg-purple-500 text-white rounded-lg text-sm hover:bg-purple-600 transition">Start Investment</a>
-                        </div>
+                        <p class="text-sm text-gray-400">Complete your first deposit or withdrawal to see transactions here</p>
                     </div>
                 </td>
             </tr>
