@@ -1,385 +1,10 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>USDT Deposit - V0 Trade</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        .sidebar-link {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            padding: 0.75rem 1rem;
-            color: rgb(203 213 225);
-            border-radius: 0.5rem;
-            transition: all 0.2s;
-        }
-        .sidebar-link:hover {
-            background-color: rgb(168 85 247 / 0.1);
-            color: rgb(168 85 247);
-        }
-        .sidebar-link.active {
-            background: linear-gradient(135deg, rgba(168, 85, 247, 0.2), rgba(236, 72, 153, 0.2));
-            color: rgb(168 85 247);
-            font-weight: 600;
-        }
-        
-        @media (max-width: 768px) {
-            .sidebar {
-                position: fixed;
-                left: 0;
-                top: 0;
-                height: 100vh;
-                transform: translateX(-100%);
-                transition: transform 0.3s ease-in-out;
-                z-index: 40;
-                width: 240px;
-            }
-            .sidebar.active {
-                transform: translateX(0);
-            }
-            .sidebar-overlay {
-                display: none;
-                position: fixed;
-                inset: 0;
-                background: rgba(0, 0, 0, 0.5);
-                z-index: 30;
-            }
-            .sidebar-overlay.active {
-                display: block;
-            }
-            .sidebar-toggle {
-                display: flex;
-            }
-        }
-        
-        @media (min-width: 769px) {
-            .sidebar-toggle {
-                display: none;
-            }
-        }
-        
-        .mobile-menu { display: none; }
-        .mobile-menu.active { display: block; }
-        .dropdown { position: relative; display: inline-block; }
-        .dropdown-content { display: none; position: absolute; background-color: rgb(15 23 42 / 0.95); min-width: 12rem; border: 1px solid rgb(168 85 247 / 0.2); border-radius: 0.5rem; padding: 0.5rem; z-index: 1000; backdrop-filter: blur(10px); }
-        .dropdown:hover .dropdown-content { display: block; }
-        
-        .file-upload-container {
-            border: 2px dashed rgba(168, 85, 247, 0.3);
-            border-radius: 0.75rem;
-            padding: 1.5rem;
-            text-align: center;
-            transition: all 0.3s;
-            cursor: pointer;
-            background: rgba(15, 23, 42, 0.5);
-        }
-        .file-upload-container:hover {
-            border-color: rgba(168, 85, 247, 0.5);
-            background: rgba(15, 23, 42, 0.7);
-        }
-        .file-upload-container.dragover {
-            border-color: rgba(168, 85, 247, 0.8);
-            background: rgba(168, 85, 247, 0.1);
-        }
-        .upload-preview {
-            max-width: 200px;
-            max-height: 200px;
-            border-radius: 0.5rem;
-            margin: 0 auto;
-            display: none;
-        }
-        .upload-preview.show {
-            display: block;
-        }
-    </style>
-</head>
-<body class="bg-slate-950">
-    
-    <button onclick="toggleSidebar()" class="sidebar-toggle fixed left-4 top-20 z-50 bg-purple-500 hover:bg-purple-600 text-white p-2 rounded-lg shadow-lg transition">
-        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
-        </svg>
-    </button>
-    
-    <div id="sidebarOverlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
-    
-    <header class="sticky top-0 z-50 border-b border-purple-500/20 bg-slate-950/80 backdrop-blur-md">
-        <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div class="flex items-center justify-between py-4">
-                <a href="index.html" class="flex items-center gap-2 hover:opacity-80 transition">
-                    <div class="h-10 w-10">
-                        <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" class="w-full h-full">
-                            <defs>
-                                <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                                    <stop offset="0%" style="stop-color: #a78bfa; stop-opacity: 1" />
-                                    <stop offset="50%" style="stop-color: #ec4899; stop-opacity: 1" />
-                                    <stop offset="100%" style="stop-color: #06b6d4; stop-opacity: 1" />
-                                </linearGradient>
-                            </defs>
-                            <circle cx="100" cy="100" r="95" fill="url(#logoGradient)" opacity="0.2" />
-                            <circle cx="100" cy="100" r="90" fill="none" stroke="url(#logoGradient)" stroke-width="2" />
-                            <path d="M 50 60 L 80 140 M 150 60 L 120 140" stroke="url(#logoGradient)" stroke-width="8" stroke-linecap="round" fill="none" />
-                            <circle cx="100" cy="100" r="25" fill="none" stroke="url(#logoGradient)" stroke-width="6" />
-                        </svg>
-                    </div>
-                    <span class="text-xl font-bold bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent">V0 Trade</span>
-                </a>
-
-                <nav class="hidden items-center gap-8 md:flex">
-                    <a href="index.html" class="text-sm text-gray-300 hover:text-white transition">Home</a>
-                    <div class="dropdown">
-                        <button class="text-sm text-gray-300 hover:text-white transition flex items-center gap-1">Invest <span>▼</span></button>
-                        <div class="dropdown-content">
-                            <a href="cryptocurrencies.html" class="block px-3 py-2 text-sm text-gray-300 hover:text-white hover:bg-purple-500/10 rounded">Cryptocurrencies</a>
-                            <a href="precious-metals.html" class="block px-3 py-2 text-sm text-gray-300 hover:text-white hover:bg-purple-500/10 rounded">Precious Metals</a>
-                            <a href="stocks.html" class="block px-3 py-2 text-sm text-gray-300 hover:text-white hover:bg-purple-500/10 rounded">Stocks</a>
-                            <a href="etfs.html" class="block px-3 py-2 text-sm text-gray-300 hover:text-white hover:bg-purple-500/10 rounded">ETFs</a>
-                        </div>
-                    </div>
-                    <a href="btc-miner.html" class="text-sm text-gray-300 hover:text-white transition">BTC Miner</a>
-                    <a href="about.html" class="text-sm text-gray-300 hover:text-white transition">About</a>
-                    <a href="security.html" class="text-sm text-gray-300 hover:text-white transition">Security</a>
-                    <div class="dropdown">
-                        <button class="text-sm text-gray-300 hover:text-white transition flex items-center gap-1">Support <span>▼</span></button>
-                        <div class="dropdown-content">
-                            <a href="contact.html" class="block px-3 py-2 text-sm text-gray-300 hover:text-white hover:bg-purple-500/10 rounded">Contact Support</a>
-                            <a href="faq.html" class="block px-3 py-2 text-sm text-gray-300 hover:text-white hover:bg-purple-500/10 rounded">FAQ</a>
-                        </div>
-                    </div>
-                </nav>
-
-                <div class="hidden items-center gap-4 md:flex">
-                    <a href="dashboard.html" class="text-sm text-purple-400 hover:text-purple-300 transition">Dashboard</a>
-                    <span id="headerEmailDisplay" class="text-sm text-gray-400"></span>
-                    <a href="index.html" class="text-sm text-gray-300 hover:text-white transition">Logout</a>
-                </div>
-
-                <button class="md:hidden" onclick="toggleMobileMenu()">
-                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
-                    </svg>
-                </button>
-            </div>
-
-            <div id="mobileMenu" class="mobile-menu border-t border-purple-500/20 py-4 md:hidden">
-                <nav class="flex flex-col gap-3">
-                    <a href="index.html" class="text-sm text-gray-300 hover:text-white">Home</a>
-                    <a href="cryptocurrencies.html" class="text-sm text-gray-300 hover:text-white">Cryptocurrencies</a>
-                    <a href="precious-metals.html" class="text-sm text-gray-300 hover:text-white">Precious Metals</a>
-                    <a href="stocks.html" class="text-sm text-gray-300 hover:text-white">Stocks</a>
-                    <a href="etfs.html" class="text-sm text-gray-300 hover:text-white">ETFs</a>
-                    <a href="btc-miner.html" class="text-sm text-gray-300 hover:text-white">BTC Miner</a>
-                    <a href="about.html" class="text-sm text-gray-300 hover:text-white">About</a>
-                    <a href="security.html" class="text-sm text-gray-300 hover:text-white">Security</a>
-                    <a href="contact.html" class="text-sm text-gray-300 hover:text-white">Contact</a>
-                    <a href="faq.html" class="text-sm text-gray-300 hover:text-white">FAQ</a>
-                    <a href="dashboard.html" class="text-sm text-purple-400 hover:text-purple-300">Dashboard</a>
-                    <a href="index.html" class="text-sm text-gray-300 hover:text-white">Logout</a>
-                </nav>
-            </div>
-        </div>
-    </header>
-
-    <div class="flex min-h-screen">
-        <aside id="sidebar" class="sidebar w-64 bg-slate-900/50 border-r border-purple-500/20 p-4 backdrop-blur-sm">
-            <div class="space-y-1 mb-6">
-                <a href="deposit.html" class="sidebar-link active">
-                    <span>💰</span>
-                    <span class="sidebar-text">Deposit</span>
-                </a>
-                <a href="withdraw.html" class="sidebar-link">
-                    <span>💸</span>
-                    <span class="sidebar-text">Withdraw</span>
-                </a>
-            </div>
-            
-            <div class="mb-6">
-                <a href="dashboard.html" class="sidebar-link">
-                    <span>📊</span>
-                    <span class="sidebar-text">Dashboard</span>
-                </a>
-                <a href="coin-wallets.html" class="sidebar-link">
-                    <span>🪙</span>
-                    <span class="sidebar-text">Coin Wallets</span>
-                </a>
-                <a href="mining-tracks.html" class="sidebar-link">
-                    <span>⛏️</span>
-                    <span class="sidebar-text">Mining Tracks</span>
-                </a>
-                <a href="investment-tracks.html" class="sidebar-link">
-                    <span>📈</span>
-                    <span class="sidebar-text">Investment Tracks</span>
-                </a>
-            </div>
-
-            <div class="mb-2">
-                <p class="text-xs font-semibold text-gray-500 uppercase px-4 mb-2 sidebar-text">Report</p>
-                <a href="referral-commissions.html" class="sidebar-link">
-                    <span>🎁</span>
-                    <span class="sidebar-text">Ref. Commissions</span>
-                </a>
-                <a href="deposit-history.html" class="sidebar-link">
-                    <span>📥</span>
-                    <span class="sidebar-text">Deposit History</span>
-                </a>
-                <a href="order-history.html" class="sidebar-link">
-                    <span>📋</span>
-                    <span class="sidebar-text">Order History</span>
-                </a>
-                <a href="withdrawals-log.html" class="sidebar-link">
-                    <span>📤</span>
-                    <span class="sidebar-text">Withdrawals Log</span>
-                </a>
-                <a href="transactions.html" class="sidebar-link">
-                    <span>💳</span>
-                    <span class="sidebar-text">Transactions</span>
-                </a>
-            </div>
-
-            <div>
-                <p class="text-xs font-semibold text-gray-500 uppercase px-4 mb-2 sidebar-text">Support</p>
-                <a href="open-ticket.html" class="sidebar-link">
-                    <span>🎫</span>
-                    <span class="sidebar-text">Open New Ticket</span>
-                </a>
-                <a href="support-tickets.html" class="sidebar-link">
-                    <span>📨</span>
-                    <span class="sidebar-text">Support Tickets</span>
-                </a>
-            </div>
-        </aside>
-
-        <main class="flex-1 p-4 md:p-8 bg-gradient-to-br from-slate-950 via-slate-950 to-slate-950">
-            <div class="max-w-2xl mx-auto">
-                <div class="mb-8">
-                    <h1 class="text-3xl md:text-4xl font-bold text-white mb-2">Payment via USDT</h1>
-                    <p class="text-gray-400">Complete your deposit using USDT</p>
-                </div>
-
-                <div class="bg-slate-900/80 backdrop-blur-sm rounded-xl border border-purple-500/20 p-6 md:p-8 mb-6">
-                    <div class="mb-6">
-                        <p class="text-gray-400 text-sm mb-1">You have requested:</p>
-                        <p class="text-2xl font-bold text-white" id="requestedAmount">$0.00 USD</p>
-                    </div>
-
-                    <div class="mb-6">
-                        <p class="text-gray-400 text-sm mb-1">Please pay:</p>
-                        <p class="text-2xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent" id="payAmount">$0.00 USD worth of USDT</p>
-                    </div>
-
-                    <div class="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4 mb-6">
-                        <div class="flex gap-3">
-                            <span class="text-2xl">⚠️</span>
-                            <div>
-                                <p class="text-yellow-400 font-semibold mb-1">Warning</p>
-                                <p class="text-gray-300 text-sm">Only send USDT (TRC20 or ERC20 as specified) to this address. Sending other tokens will be lost permanently.</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4 mb-6">
-                        <div class="flex gap-3">
-                            <span class="text-2xl">⚠️</span>
-                            <div>
-                                <p class="text-yellow-400 font-semibold mb-1">Important Reminder</p>
-                                <p class="text-gray-300 text-sm">Please make sure you deposit the exact amount shown above (<span id="reminderAmount" class="font-bold">$0.00 USD</span>). Depositing a different amount may cause delays in processing your transaction.</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="mb-6">
-                        <label class="text-sm font-semibold text-gray-300 mb-2 block">Wallet Address</label>
-                        <div class="bg-slate-950/50 border border-purple-500/30 rounded-lg p-4 mb-4">
-                            <p class="text-white break-all font-mono text-sm" id="usdtWallet">TN3W4H6rK2ce4vX9YnFm3cfpV4ELzqCcPh</p>
-                        </div>
-                        
-                        <div class="flex justify-center mb-4">
-                            <div class="bg-white p-4 rounded-lg">
-                                <img src="/placeholder.svg?height=200&width=200" alt="USDT QR Code" class="w-48 h-48">
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="mb-6">
-                        <label for="userEmail" class="text-sm font-semibold text-gray-300 mb-2 block">Your V0 Trade Account Email</label>
-                        <input 
-                            type="email" 
-                            id="userEmail" 
-                            class="w-full bg-slate-950/50 border border-purple-500/30 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-purple-500 transition"
-                            placeholder="Enter your email"
-                            required
-                        >
-                    </div>
-
-                    <!-- NEW: Proof of Payment Upload Section -->
-                    <div class="mb-6">
-                        <label class="text-sm font-semibold text-gray-300 mb-2 block">
-                            Proof of Payment <span class="text-red-400">*</span>
-                        </label>
-                        <p class="text-gray-400 text-sm mb-4">Upload a screenshot or photo of your transaction confirmation (required for processing).</p>
-                        
-                        <div 
-                            id="fileUploadContainer" 
-                            class="file-upload-container"
-                            onclick="document.getElementById('proofFile').click()"
-                            ondrop="handleDrop(event)"
-                            ondragover="handleDragOver(event)"
-                            ondragleave="handleDragLeave(event)"
-                        >
-                            <input 
-                                type="file" 
-                                id="proofFile" 
-                                accept="image/*,.pdf,.png,.jpg,.jpeg,.gif" 
-                                class="hidden"
-                                onchange="handleFileSelect(event)"
-                                required
-                            >
-                            <div class="text-center">
-                                <div class="text-4xl mb-3">📎</div>
-                                <p class="text-gray-300 font-medium mb-1">Click to upload or drag and drop</p>
-                                <p class="text-gray-400 text-sm">PNG, JPG, GIF, PDF (Max 5MB)</p>
-                                <p class="text-purple-400 text-xs mt-2" id="fileName"></p>
-                            </div>
-                        </div>
-                        
-                        <div class="mt-4 text-center">
-                            <img id="imagePreview" class="upload-preview mx-auto" alt="Image Preview">
-                        </div>
-                        
-                        <p class="text-red-400 text-xs mt-2 hidden" id="fileError">Please upload a proof of payment image</p>
-                    </div>
-
-                    <div class="bg-slate-950/50 border border-purple-500/20 rounded-lg p-4 mb-6">
-                        <p class="text-white font-semibold mb-2">Instructions</p>
-                        <ol class="list-decimal list-inside space-y-2 text-gray-400 text-sm">
-                            <li>Send the USDT amount to the wallet address above.</li>
-                            <li>Take a screenshot of your transaction confirmation.</li>
-                            <li>Upload the screenshot above and click Confirm Payment.</li>
-                        </ol>
-                    </div>
-
-                    <button 
-                        onclick="confirmPayment()"
-                        class="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold py-3 px-6 rounded-lg transition transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
-                        id="confirmBtn"
-                    >
-                        Confirm Payment
-                    </button>
-                </div>
-            </div>
-        </main>
-    </div>
-
-    <script>
+<script>
     const DEPOSIT_API = "https://api.baserow.io/api/database/rows/table/756078/";
     const FILE_UPLOAD_API = "https://api.baserow.io/api/user-files/upload-file/";
     const BASEROW_TOKEN = "LG6hnTBxgBG78FueElsSwpHRd4Wep1oL";
     
     let currentUserEmail = '';
     let proofFile = null;
-    let uploadedFileData = null;
 
     // Check if user is logged in
     function checkAuth() {
@@ -484,7 +109,7 @@
         }
     }
 
-    // Upload file to Baserow
+    // Upload file to Baserow and get file ID
     async function uploadFileToBaserow(file) {
         console.log('[USDT Deposit] Starting file upload...');
         
@@ -508,19 +133,28 @@
 
             const result = await response.json();
             console.log('[USDT Deposit] File uploaded successfully:', result);
-            return result;
+            
+            // Return just the file name/ID for the file field
+            return {
+                name: result.name,
+                size: result.size,
+                mime_type: result.mime_type,
+                uploaded_at: result.uploaded_at
+            };
+            
         } catch (error) {
             console.error('[USDT Deposit] File upload error:', error);
             throw error;
         }
     }
 
-    // Send deposit data to Baserow
+    // Send deposit data to Baserow with CORRECT field format
     async function sendDepositToBaserow(depositData) {
         console.log('[USDT Deposit] Sending deposit data to Baserow:', depositData);
         
         try {
-            const response = await fetch(DEPOSIT_API + '?user_field_names=true', {
+            // TRY METHOD 1: Without user_field_names parameter
+            let response = await fetch(DEPOSIT_API, {
                 method: "POST",
                 headers: {
                     "Authorization": "Token " + BASEROW_TOKEN,
@@ -529,15 +163,62 @@
                 body: JSON.stringify(depositData)
             });
 
+            console.log('[USDT Deposit] Response status:', response.status);
+            
             if (!response.ok) {
                 const errorText = await response.text();
-                console.error('[USDT Deposit] Baserow API error:', errorText);
-                throw new Error(`HTTP error! status: ${response.status}`);
+                console.error('[USDT Deposit] Method 1 failed:', errorText);
+                
+                // TRY METHOD 2: With user_field_names=false (field IDs)
+                const fieldIdPayload = {
+                    "6394426": depositData.email,
+                    "6394427": depositData.method,
+                    "6394428": depositData.amount,
+                    "6394429": depositData.pin,
+                    "6394430": depositData.wallet_address,
+                    "6394431": depositData.status,
+                    "6394432": depositData.transaction_id,
+                    "6394433": depositData.timestamp,
+                    "6445160": depositData.image
+                };
+                
+                console.log('[USDT Deposit] Trying Method 2 with field IDs:', fieldIdPayload);
+                
+                response = await fetch(DEPOSIT_API, {
+                    method: "POST",
+                    headers: {
+                        "Authorization": "Token " + BASEROW_TOKEN,
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(fieldIdPayload)
+                });
+                
+                if (!response.ok) {
+                    const errorText2 = await response.text();
+                    console.error('[USDT Deposit] Method 2 failed:', errorText2);
+                    
+                    // TRY METHOD 3: With user_field_names=true
+                    response = await fetch(DEPOSIT_API + '?user_field_names=true', {
+                        method: "POST",
+                        headers: {
+                            "Authorization": "Token " + BASEROW_TOKEN,
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify(depositData)
+                    });
+                    
+                    if (!response.ok) {
+                        const errorText3 = await response.text();
+                        console.error('[USDT Deposit] All methods failed:', errorText3);
+                        throw new Error(`All API methods failed. Last status: ${response.status}`);
+                    }
+                }
             }
 
             const result = await response.json();
             console.log('[USDT Deposit] Baserow response successful:', result);
             return result;
+            
         } catch (error) {
             console.error('[USDT Deposit] Error sending to Baserow:', error);
             throw error;
@@ -556,64 +237,63 @@
             return;
         }
 
-        // Validate email format
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(email)) {
             alert('Please enter a valid email address');
             return;
         }
 
-        // Validate proof file
         if (!proofFile) {
             document.getElementById('fileError').classList.remove('hidden');
             alert('Please upload proof of payment screenshot');
             return;
         }
 
-        // Disable button and show loading
         const confirmBtn = document.getElementById('confirmBtn');
         confirmBtn.disabled = true;
         confirmBtn.textContent = 'Processing...';
 
         try {
             console.log('[USDT Deposit] Starting deposit process...');
-            console.log('[USDT Deposit] Amount:', amount);
-            console.log('[USDT Deposit] Email:', email);
-            console.log('[USDT Deposit] Wallet:', usdtWallet);
+            console.log('[USDT Deposit] Data collected:');
+            console.log('- Email:', email);
+            console.log('- Amount:', amount);
+            console.log('- Method: USDT');
+            console.log('- Wallet:', usdtWallet);
             
-            // 1. Upload file to Baserow first
+            // 1. Upload file to Baserow
             console.log('[USDT Deposit] Uploading proof file...');
-            uploadedFileData = await uploadFileToBaserow(proofFile);
+            const uploadedFileData = await uploadFileToBaserow(proofFile);
             console.log('[USDT Deposit] File uploaded data:', uploadedFileData);
             
-            // 2. Generate transaction ID
+            // 2. Generate transaction ID and timestamp
             const transactionId = 'TXN-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9).toUpperCase();
-            
-            // 3. Get current timestamp
             const timestamp = new Date().toISOString();
 
-            // 4. Prepare COMPLETE deposit data for Baserow
-            const depositPayload = {
-                field_6394426: email,                    // email field
-                field_6394427: 'USDT',                   // method field
-                field_6394428: amount.toString(),        // amount field (ensure string)
-                field_6394429: 'N/A',                    // pin field
-                field_6394430: usdtWallet,               // wallet_address field
-                field_6394431: 'pending',                // status field
-                field_6394432: transactionId,            // transaction_id field
-                field_6394433: timestamp,                // timestamp field
-                field_6445160: [uploadedFileData]        // image field with uploaded file object
+            // 3. Prepare data in different formats to try
+            const depositData = {
+                email: email,
+                method: 'USDT',
+                amount: amount,
+                pin: 'N/A',
+                wallet_address: usdtWallet,
+                status: 'pending',
+                transaction_id: transactionId,
+                timestamp: timestamp,
+                image: [uploadedFileData.name]  // Try with just file name array
             };
 
-            console.log('[USDT Deposit] Complete payload for Baserow:', JSON.stringify(depositPayload, null, 2));
+            console.log('[USDT Deposit] Prepared deposit data:', depositData);
 
-            // 5. Send ALL deposit data to Baserow
-            const baserowResponse = await sendDepositToBaserow(depositPayload);
+            // 4. Send data to Baserow
+            console.log('[USDT Deposit] Sending to Baserow API...');
+            const baserowResponse = await sendDepositToBaserow(depositData);
             
             console.log('[USDT Deposit] Baserow created row:', baserowResponse);
+            console.log('[USDT Deposit] Row ID:', baserowResponse.id);
 
-            // 6. Save ALL data to localStorage as backup
-            const depositData = {
+            // 5. Save to localStorage as backup
+            const localDepositData = {
                 id: transactionId,
                 type: 'deposit',
                 method: 'USDT',
@@ -627,19 +307,19 @@
                     size: proofFile.size,
                     type: proofFile.type,
                     lastModified: proofFile.lastModified,
-                    baserowReference: uploadedFileData
+                    baserowFileData: uploadedFileData
                 },
                 baserowId: baserowResponse.id,
                 expiry: Date.now() + (24 * 60 * 60 * 1000)
             };
 
-            // Save to latest_transactions array
+            // Save to transactions array
             const existingTransactions = JSON.parse(localStorage.getItem('latest_transactions') || '[]');
-            existingTransactions.unshift(depositData);
+            existingTransactions.unshift(localDepositData);
             const limitedTransactions = existingTransactions.slice(0, 10);
             localStorage.setItem('latest_transactions', JSON.stringify(limitedTransactions));
             
-            // Save individual deposit details
+            // Save individual details
             localStorage.setItem('deposit_method', 'USDT');
             localStorage.setItem('deposit_amount', amount);
             localStorage.setItem('deposit_wallet_address', usdtWallet);
@@ -648,36 +328,63 @@
             localStorage.setItem('deposit_timestamp', timestamp);
             localStorage.setItem('deposit_status', 'pending');
             localStorage.setItem('deposit_baserow_id', baserowResponse.id);
-            localStorage.setItem('deposit_proof_file', JSON.stringify(depositData.proofFile));
+            localStorage.setItem('deposit_proof_file', JSON.stringify(localDepositData.proofFile));
 
-            console.log('[USDT Deposit] Complete deposit data saved locally:', depositData);
+            console.log('[USDT Deposit] Data saved to localStorage');
 
-            // 7. Show success message and redirect
-            alert('Deposit submitted successfully! You will be redirected to the payment pending page.');
+            // 6. Show success and redirect
+            alert('✅ Deposit submitted successfully!\nTransaction ID: ' + transactionId + '\nYou will be redirected to the payment pending page.');
             
-            // Redirect to payment pending page
             setTimeout(() => {
                 window.location.href = 'payment-pending.html';
-            }, 1000);
+            }, 1500);
 
         } catch (error) {
             console.error('[USDT Deposit] Error processing deposit:', error);
             
-            // More detailed error message
-            let errorMessage = 'Failed to process deposit. ';
-            if (error.message.includes('401')) {
-                errorMessage += 'Authentication error. Please check your API token.';
-            } else if (error.message.includes('400')) {
-                errorMessage += 'Bad request. Please check the data format.';
-            } else if (error.message.includes('404')) {
-                errorMessage += 'API endpoint not found.';
-            } else if (error.message.includes('500')) {
-                errorMessage += 'Server error. Please try again later.';
+            // Try alternative: Simple POST without file upload first
+            if (error.message.includes('All API methods failed')) {
+                console.log('[USDT Deposit] Trying simple POST...');
+                
+                try {
+                    // Simple test payload
+                    const testPayload = {
+                        "field_6394426": email,
+                        "field_6394427": "USDT",
+                        "field_6394428": amount,
+                        "field_6394429": "N/A",
+                        "field_6394430": usdtWallet,
+                        "field_6394431": "pending",
+                        "field_6394432": "TXN-TEST-" + Date.now(),
+                        "field_6394433": new Date().toISOString(),
+                        "field_6445160": ["test_file.jpg"]
+                    };
+                    
+                    const testResponse = await fetch(DEPOSIT_API, {
+                        method: "POST",
+                        headers: {
+                            "Authorization": "Token " + BASEROW_TOKEN,
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify(testPayload)
+                    });
+                    
+                    if (testResponse.ok) {
+                        const testResult = await testResponse.json();
+                        console.log('[USDT Deposit] Simple test succeeded:', testResult);
+                        alert('Deposit submitted (test mode). Please check Baserow.');
+                    } else {
+                        const testError = await testResponse.text();
+                        console.error('[USDT Deposit] Simple test failed:', testError);
+                        alert('Failed to submit deposit. Please check console for details and contact support.');
+                    }
+                } catch (testError) {
+                    console.error('[USDT Deposit] Test also failed:', testError);
+                    alert('Deposit system error. Please contact support with error details.');
+                }
             } else {
-                errorMessage += 'Please check your connection and try again.';
+                alert('Deposit submission error: ' + error.message);
             }
-            
-            alert(errorMessage + '\n\nError details: ' + error.message);
             
             // Re-enable button
             confirmBtn.disabled = false;
@@ -702,7 +409,7 @@
         }
     }
 
-    // Clean up expired transactions (runs on page load)
+    // Clean up expired transactions
     function cleanupExpiredTransactions() {
         try {
             const transactions = JSON.parse(localStorage.getItem('latest_transactions') || '[]');
@@ -715,27 +422,19 @@
     }
 
     window.addEventListener('DOMContentLoaded', () => {
-        // Check authentication
         const userEmail = checkAuth();
         currentUserEmail = userEmail || '';
         
-        // Update header with user email if logged in
         if (currentUserEmail) {
             updateHeaderEmail(currentUserEmail);
         }
 
-        // Load amount from localStorage
         const amount = localStorage.getItem('deposit_amount') || '0.00';
         document.getElementById('requestedAmount').textContent = `$${amount} USD`;
         document.getElementById('payAmount').textContent = `$${amount} USD worth of USDT`;
         document.getElementById('reminderAmount').textContent = `$${amount} USD`;
 
-        // Auto-fill email if user is logged in
         autoFillUserEmail();
-
-        // Run cleanup on page load
         cleanupExpiredTransactions();
     });
 </script>
-</body>
-</html>
