@@ -66,15 +66,15 @@
         .dropdown-content { display: none; position: absolute; background-color: rgb(15 23 42 / 0.95); min-width: 12rem; border: 1px solid rgb(168 85 247 / 0.2); border-radius: 0.5rem; padding: 0.5rem; z-index: 1000; backdrop-filter: blur(10px); }
         .dropdown:hover .dropdown-content { display: block; }
         
-        /* File upload styles */
         .file-upload-container {
             border: 2px dashed rgba(168, 85, 247, 0.3);
             border-radius: 0.75rem;
-            padding: 1.5rem;
+            padding: 2rem;
             text-align: center;
             transition: all 0.3s;
             cursor: pointer;
             background: rgba(15, 23, 42, 0.5);
+            margin-top: 0.5rem;
         }
         .file-upload-container:hover {
             border-color: rgba(168, 85, 247, 0.5);
@@ -85,29 +85,30 @@
             background: rgba(168, 85, 247, 0.1);
         }
         .upload-preview {
-            max-width: 200px;
-            max-height: 200px;
+            max-width: 300px;
+            max-height: 300px;
             border-radius: 0.5rem;
-            margin: 0 auto;
+            margin: 1rem auto;
             display: none;
+            border: 2px solid rgba(168, 85, 247, 0.3);
         }
         .upload-preview.show {
             display: block;
         }
-        .remove-file-btn {
-            position: absolute;
-            top: -8px;
-            right: -8px;
-            background: rgba(239, 68, 68, 0.9);
-            color: white;
-            border-radius: 50%;
-            width: 24px;
-            height: 24px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+        .file-name {
+            margin-top: 0.5rem;
+            color: #a78bfa;
+            font-size: 0.875rem;
+        }
+        .remove-file {
+            margin-top: 0.5rem;
+            color: #ef4444;
             cursor: pointer;
-            font-size: 12px;
+            font-size: 0.875rem;
+            text-decoration: underline;
+        }
+        .remove-file:hover {
+            color: #dc2626;
         }
     </style>
 </head>
@@ -329,61 +330,56 @@
                         >
                     </div>
 
-                    <!-- NEW: Proof of Payment Upload Section -->
+                    <!-- Proof of Payment Upload Section -->
                     <div class="mb-6">
-                        <label class="text-sm font-semibold text-gray-300 mb-2 block">Proof of Payment (Optional but Recommended)</label>
-                        <p class="text-gray-400 text-sm mb-4">Upload a screenshot or photo of your transaction confirmation for faster processing. Max file size: 5MB. Accepted formats: JPG, PNG, PDF.</p>
+                        <label class="text-sm font-semibold text-gray-300 mb-2 block">Proof of Payment (Required)</label>
+                        <p class="text-gray-400 text-sm mb-3">Upload a screenshot or photo of your transaction confirmation for verification.</p>
                         
                         <div 
                             id="fileUploadContainer" 
                             class="file-upload-container"
                             onclick="document.getElementById('proofFile').click()"
-                            ondrop="handleDrop(event)"
                             ondragover="handleDragOver(event)"
                             ondragleave="handleDragLeave(event)"
+                            ondrop="handleDrop(event)"
                         >
                             <input 
                                 type="file" 
                                 id="proofFile" 
-                                accept=".jpg,.jpeg,.png,.pdf"
+                                accept="image/*,.pdf,.png,.jpg,.jpeg,.webp" 
                                 class="hidden"
                                 onchange="handleFileSelect(event)"
                             >
                             <div class="text-center">
-                                <svg class="w-12 h-12 text-purple-500 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                                <svg class="w-12 h-12 text-purple-400 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
                                 </svg>
-                                <p class="text-gray-300 font-medium mb-1">Click to upload or drag and drop</p>
-                                <p class="text-gray-500 text-sm">PNG, JPG, PDF up to 5MB</p>
+                                <p class="text-gray-300 mb-1">Click to upload or drag and drop</p>
+                                <p class="text-gray-500 text-sm">PNG, JPG, PDF or WEBP (Max: 5MB)</p>
                             </div>
                         </div>
                         
-                        <!-- File preview container -->
-                        <div id="filePreview" class="mt-4 text-center hidden">
-                            <div class="relative inline-block">
-                                <img id="imagePreview" class="upload-preview" alt="Preview">
-                                <div onclick="removeFile()" class="remove-file-btn">×</div>
-                            </div>
-                            <p id="fileName" class="text-gray-300 mt-2 text-sm"></p>
-                            <p id="fileSize" class="text-gray-500 text-xs"></p>
+                        <div id="filePreview" class="text-center">
+                            <img id="uploadPreview" class="upload-preview" alt="Preview">
+                            <div id="fileName" class="file-name"></div>
+                            <div id="removeFile" class="remove-file" onclick="removeSelectedFile()">Remove file</div>
                         </div>
-                        
-                        <div id="fileError" class="mt-2 text-red-400 text-sm hidden"></div>
                     </div>
 
                     <div class="bg-slate-950/50 border border-purple-500/20 rounded-lg p-4 mb-6">
                         <p class="text-white font-semibold mb-2">Instructions</p>
                         <ol class="list-decimal list-inside space-y-2 text-gray-400 text-sm">
                             <li>Send the USDT amount to the wallet address above.</li>
-                            <li>Upload a screenshot of your transaction confirmation (optional but recommended).</li>
-                            <li>Once payment is sent, click Confirm Payment.</li>
+                            <li>Take a screenshot or photo of your transaction confirmation.</li>
+                            <li>Upload the proof of payment using the upload section above.</li>
+                            <li>Once payment proof is uploaded, click Confirm Payment.</li>
                         </ol>
                     </div>
 
                     <button 
                         onclick="confirmPayment()"
-                        id="confirmBtn"
-                        class="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold py-3 px-6 rounded-lg transition transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                        class="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold py-3 px-6 rounded-lg transition transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+                        id="confirmButton"
                     >
                         Confirm Payment
                     </button>
@@ -395,11 +391,11 @@
     <script>
         const DEPOSIT_API = "https://api.baserow.io/api/database/rows/table/756078/";
         const BASEROW_TOKEN = "LG6hnTBxgBG78FueElsSwpHRd4Wep1oL";
-        const IMAGE_FIELD_ID = "6445160"; // Image field ID for proof of payment
+        const IMAGE_FIELD_ID = "field_6445160"; // Image field ID
         
         let currentUserEmail = '';
-        let selectedFile = null;
-        let fileBase64 = '';
+        let proofFile = null;
+        let proofFileBase64 = '';
 
         // Check if user is logged in
         function checkAuth() {
@@ -408,7 +404,6 @@
             
             if (!userEmail) {
                 console.log('[USDT Deposit] No user logged in - allowing access');
-                // Don't redirect, just show the page without pre-filled email
                 return null;
             }
             
@@ -432,149 +427,163 @@
                 if (emailInput) {
                     emailInput.value = currentUserEmail;
                     emailInput.readOnly = true;
-                    emailInput.classList.add('bg-gray-100', 'cursor-not-allowed');
+                    emailInput.classList.add('bg-gray-800', 'cursor-not-allowed');
                 }
             }
         }
 
-        // File handling functions
-        function handleFileSelect(event) {
-            const file = event.target.files[0];
-            validateAndProcessFile(file);
+        // File upload handlers
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            const container = document.getElementById('fileUploadContainer');
+            container.classList.add('dragover');
         }
 
-        function handleDrop(event) {
-            event.preventDefault();
-            event.stopPropagation();
-            
+        function handleDragLeave(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            const container = document.getElementById('fileUploadContainer');
+            container.classList.remove('dragover');
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            e.stopPropagation();
             const container = document.getElementById('fileUploadContainer');
             container.classList.remove('dragover');
             
-            const files = event.dataTransfer.files;
+            const files = e.dataTransfer.files;
             if (files.length > 0) {
-                validateAndProcessFile(files[0]);
+                handleFile(files[0]);
             }
         }
 
-        function handleDragOver(event) {
-            event.preventDefault();
-            event.stopPropagation();
-            document.getElementById('fileUploadContainer').classList.add('dragover');
+        function handleFileSelect(e) {
+            const files = e.target.files;
+            if (files.length > 0) {
+                handleFile(files[0]);
+            }
         }
 
-        function handleDragLeave(event) {
-            event.preventDefault();
-            event.stopPropagation();
-            document.getElementById('fileUploadContainer').classList.remove('dragover');
-        }
+        function handleFile(file) {
+            // Validate file size (5MB max)
+            if (file.size > 5 * 1024 * 1024) {
+                alert('File size must be less than 5MB');
+                return;
+            }
 
-        function validateAndProcessFile(file) {
-            const errorDiv = document.getElementById('fileError');
-            errorDiv.classList.add('hidden');
-            
             // Validate file type
-            const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'];
+            const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'application/pdf'];
             if (!validTypes.includes(file.type)) {
-                errorDiv.textContent = 'Invalid file type. Please upload JPG, PNG, or PDF files only.';
-                errorDiv.classList.remove('hidden');
+                alert('Please upload only image files (PNG, JPG, WEBP) or PDF');
                 return;
             }
+
+            proofFile = file;
             
-            // Validate file size (5MB)
-            const maxSize = 5 * 1024 * 1024; // 5MB in bytes
-            if (file.size > maxSize) {
-                errorDiv.textContent = 'File size exceeds 5MB limit. Please choose a smaller file.';
-                errorDiv.classList.remove('hidden');
-                return;
-            }
+            // Show file name
+            document.getElementById('fileName').textContent = file.name;
+            document.getElementById('filePreview').style.display = 'block';
             
-            selectedFile = file;
-            
-            // Show preview for images
+            // If it's an image, show preview
             if (file.type.startsWith('image/')) {
                 const reader = new FileReader();
                 reader.onload = function(e) {
-                    const preview = document.getElementById('imagePreview');
-                    preview.src = e.target.result;
-                    preview.classList.add('show');
-                    document.getElementById('filePreview').classList.remove('hidden');
-                };
+                    const img = document.getElementById('uploadPreview');
+                    img.src = e.target.result;
+                    img.classList.add('show');
+                    proofFileBase64 = e.target.result;
+                }
                 reader.readAsDataURL(file);
             } else {
-                // For PDF, show file info without preview
-                document.getElementById('filePreview').classList.remove('hidden');
-                document.getElementById('imagePreview').classList.remove('show');
+                // For PDF, show a placeholder
+                document.getElementById('uploadPreview').src = '/placeholder.svg?height=200&width=200';
+                document.getElementById('uploadPreview').classList.add('show');
+                
+                // Convert PDF to base64 for storage
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    proofFileBase64 = e.target.result;
+                }
+                reader.readAsDataURL(file);
             }
             
-            // Update file info
-            document.getElementById('fileName').textContent = file.name;
-            document.getElementById('fileSize').textContent = formatFileSize(file.size);
-            
-            // Convert file to base64
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                fileBase64 = e.target.result.split(',')[1]; // Remove data URL prefix
-            };
-            reader.readAsDataURL(file);
+            // Enable confirm button
+            document.getElementById('confirmButton').disabled = false;
         }
 
-        function removeFile() {
-            selectedFile = null;
-            fileBase64 = '';
+        function removeSelectedFile() {
+            proofFile = null;
+            proofFileBase64 = '';
             document.getElementById('proofFile').value = '';
-            document.getElementById('filePreview').classList.add('hidden');
-            document.getElementById('imagePreview').src = '';
-            document.getElementById('imagePreview').classList.remove('show');
-            document.getElementById('fileError').classList.add('hidden');
-        }
-
-        function formatFileSize(bytes) {
-            if (bytes === 0) return '0 Bytes';
-            const k = 1024;
-            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-            const i = Math.floor(Math.log(bytes) / Math.log(k));
-            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+            document.getElementById('fileName').textContent = '';
+            document.getElementById('uploadPreview').classList.remove('show');
+            document.getElementById('uploadPreview').src = '';
+            document.getElementById('filePreview').style.display = 'none';
+            
+            // Disable confirm button
+            document.getElementById('confirmButton').disabled = true;
         }
 
         // Save deposit data to local storage
-        function saveDepositToLocalStorage(transactionData) {
+        function saveDepositToLocalStorage(depositData) {
             try {
                 // Get existing deposits or initialize empty array
                 const existingDeposits = JSON.parse(localStorage.getItem('v0trade_deposits') || '[]');
                 
-                // Add new deposit with proof of payment info
-                const depositRecord = {
-                    ...transactionData,
-                    proofUploaded: !!selectedFile,
-                    proofFileName: selectedFile ? selectedFile.name : null,
-                    proofFileType: selectedFile ? selectedFile.type : null,
-                    localTimestamp: new Date().toISOString(),
-                    localId: 'LOCAL-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9)
-                };
+                // Add new deposit
+                existingDeposits.push(depositData);
                 
-                // Add to beginning of array (most recent first)
-                existingDeposits.unshift(depositRecord);
-                
-                // Keep only last 50 deposits to avoid storage issues
-                const limitedDeposits = existingDeposits.slice(0, 50);
+                // Keep only last 50 deposits
+                const limitedDeposits = existingDeposits.slice(-50);
                 
                 // Save back to localStorage
                 localStorage.setItem('v0trade_deposits', JSON.stringify(limitedDeposits));
                 
-                console.log('[USDT Deposit] Deposit saved locally:', depositRecord);
-                return depositRecord;
+                console.log('[USDT Deposit] Deposit saved to local storage:', depositData);
+                
+                return true;
             } catch (error) {
                 console.error('[USDT Deposit] Error saving to local storage:', error);
-                return null;
+                return false;
             }
         }
 
+        window.addEventListener('DOMContentLoaded', () => {
+            // Check authentication
+            const userEmail = checkAuth();
+            currentUserEmail = userEmail || '';
+            
+            // Update header with user email if logged in
+            if (currentUserEmail) {
+                updateHeaderEmail(currentUserEmail);
+            }
+
+            // Load amount from localStorage
+            const amount = localStorage.getItem('deposit_amount') || '0.00';
+            document.getElementById('requestedAmount').textContent = `$${amount} USD`;
+            document.getElementById('payAmount').textContent = `$${amount} USD worth of USDT`;
+            document.getElementById('reminderAmount').textContent = `$${amount} USD`;
+
+            // Auto-fill email if user is logged in
+            autoFillUserEmail();
+            
+            // Initially disable confirm button until file is uploaded
+            document.getElementById('confirmButton').disabled = true;
+        });
+
         async function confirmPayment() {
+            // Check if proof file is uploaded
+            if (!proofFile) {
+                alert('Please upload proof of payment before confirming.');
+                return;
+            }
+
             const emailInput = document.getElementById('userEmail');
             const email = emailInput.value.trim();
             const amount = localStorage.getItem('deposit_amount') || '0.00';
             const usdtWallet = document.getElementById('usdtWallet').textContent;
-            const confirmBtn = document.getElementById('confirmBtn');
 
             if (!email) {
                 alert('Please enter your email address');
@@ -588,38 +597,56 @@
                 return;
             }
 
-            // Disable button to prevent double submission
-            confirmBtn.disabled = true;
-            confirmBtn.textContent = 'Processing...';
-
             // Generate transaction ID
             const transactionId = 'TXN-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9).toUpperCase();
             
             // Get current timestamp
             const timestamp = new Date().toISOString();
 
-            // Prepare payload for Baserow
-            const depositPayload = {
-                field_6394426: email,                    // email
-                field_6394427: 'USDT',                   // method
-                field_6394428: amount,                   // amount
-                field_6394429: 'N/A',                    // pin (ignored as requested)
-                field_6394430: usdtWallet,               // wallet_address
-                field_6394431: 'incoming',               // status (marked as incoming)
-                field_6394432: transactionId,            // transaction_id
-                field_6394433: timestamp                 // timestamp
-            };
-
-            // Add proof of payment if uploaded
-            if (selectedFile && fileBase64) {
-                depositPayload[`field_${IMAGE_FIELD_ID}`] = [{
-                    base64: fileBase64,
-                    name: selectedFile.name
-                }];
-            }
+            // Disable button and show loading
+            const confirmButton = document.getElementById('confirmButton');
+            confirmButton.disabled = true;
+            confirmButton.textContent = 'Processing...';
 
             try {
-                console.log('[USDT Deposit] Sending to Baserow:', depositPayload);
+                // Prepare deposit data for local storage
+                const depositData = {
+                    id: transactionId,
+                    type: 'deposit',
+                    method: 'USDT',
+                    amount: amount,
+                    email: email,
+                    wallet: usdtWallet,
+                    proofFileName: proofFile.name,
+                    proofFileType: proofFile.type,
+                    proofFileSize: proofFile.size,
+                    status: 'pending',
+                    timestamp: timestamp,
+                    localTimestamp: new Date().toLocaleString(),
+                    expiry: Date.now() + (24 * 60 * 60 * 1000)
+                };
+
+                // Save to local storage first
+                const localSaveSuccess = saveDepositToLocalStorage(depositData);
+                
+                if (!localSaveSuccess) {
+                    console.warn('[USDT Deposit] Warning: Could not save to local storage');
+                }
+
+                // Send data to Baserow
+                const depositPayload = {
+                    field_6394426: email,                    // email
+                    field_6394427: 'USDT',                   // method
+                    field_6394428: amount,                   // amount
+                    field_6394429: 'N/A',                    // pin (ignored as requested)
+                    field_6394430: usdtWallet,               // wallet_address
+                    field_6394431: 'incoming',               // status (marked as incoming)
+                    field_6394432: transactionId,            // transaction_id
+                    field_6394433: timestamp,                // timestamp
+                    [IMAGE_FIELD_ID]: proofFileBase64        // proof image as base64
+                };
+
+                console.log('[USDT Deposit] Sending to Baserow:', { ...depositPayload, [IMAGE_FIELD_ID]: 'BASE64_DATA...' });
 
                 const response = await fetch(DEPOSIT_API + '?user_field_names=true', {
                     method: "POST",
@@ -645,9 +672,10 @@
                     amount: amount,
                     email: email,
                     wallet: usdtWallet,
+                    hasProof: true,
                     status: 'pending',
                     timestamp: timestamp,
-                    expiry: Date.now() + (24 * 60 * 60 * 1000) // 24 hours from now
+                    expiry: Date.now() + (24 * 60 * 60 * 1000)
                 };
 
                 // Get existing transactions or initialize empty array
@@ -669,9 +697,8 @@
                 localStorage.setItem('deposit_email', email);
                 localStorage.setItem('transaction_id', transactionId);
                 localStorage.setItem('deposit_timestamp', timestamp);
-
-                // Save complete deposit data to local storage
-                saveDepositToLocalStorage(transactionData);
+                localStorage.setItem('deposit_has_proof', 'true');
+                localStorage.setItem('deposit_proof_filename', proofFile.name);
 
                 console.log('[USDT Deposit] Transaction saved locally:', transactionData);
 
@@ -683,33 +710,10 @@
                 alert('Failed to submit deposit. Please check your connection and try again.');
                 
                 // Re-enable button
-                confirmBtn.disabled = false;
-                confirmBtn.textContent = 'Confirm Payment';
+                confirmButton.disabled = false;
+                confirmButton.textContent = 'Confirm Payment';
             }
         }
-
-        window.addEventListener('DOMContentLoaded', () => {
-            // Check authentication
-            const userEmail = checkAuth();
-            currentUserEmail = userEmail || '';
-            
-            // Update header with user email if logged in
-            if (currentUserEmail) {
-                updateHeaderEmail(currentUserEmail);
-            }
-
-            // Load amount from localStorage
-            const amount = localStorage.getItem('deposit_amount') || '0.00';
-            document.getElementById('requestedAmount').textContent = `$${amount} USD`;
-            document.getElementById('payAmount').textContent = `$${amount} USD worth of USDT`;
-            document.getElementById('reminderAmount').textContent = `$${amount} USD`;
-
-            // Auto-fill email if user is logged in
-            autoFillUserEmail();
-            
-            // Clean up expired transactions
-            cleanupExpiredTransactions();
-        });
 
         // Navigation functions
         function toggleMobileMenu() {
@@ -739,6 +743,9 @@
                 console.error('[USDT Deposit] Error cleaning up transactions:', error);
             }
         }
+
+        // Run cleanup on page load
+        cleanupExpiredTransactions();
     </script>
 
 </body>
