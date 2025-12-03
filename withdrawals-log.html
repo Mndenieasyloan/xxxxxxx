@@ -243,18 +243,38 @@
             return null;
         }
         
-        // Fetch all withdrawals from Baserow
+        // Fetch withdrawals from Baserow filtered by user email
         async function fetchWithdrawals() {
             try {
                 const userEmail = loadUserData();
+                
+                if (!userEmail) {
+                    showError('Please log in to view your withdrawal history.');
+                    return [];
+                }
                 
                 // Show loading state
                 document.getElementById('loadingState').classList.remove('hidden');
                 document.getElementById('contentState').classList.add('hidden');
                 document.getElementById('errorState').classList.add('hidden');
                 
-                // Fetch all rows
-                const response = await fetch(`${BASEROW_API_URL}?user_field_names=true&size=200`, {
+                // Create filter object to filter by email
+                // Baserow uses filter_type and filters parameter for filtering
+                const filterParams = new URLSearchParams({
+                    'user_field_names': 'true',
+                    'size': '200',
+                    'filters': JSON.stringify({
+                        'filter_type': 'AND',
+                        'filters': [{
+                            'field': 'email',  // Field name in Baserow
+                            'type': 'equal',
+                            'value': userEmail
+                        }]
+                    })
+                });
+                
+                // Fetch filtered rows
+                const response = await fetch(`${BASEROW_API_URL}?${filterParams.toString()}`, {
                     method: 'GET',
                     headers: {
                         'Authorization': `Token ${BASEROW_API_TOKEN}`,
@@ -263,22 +283,47 @@
                 });
                 
                 if (!response.ok) {
-                    throw new Error(`API Error: ${response.status}`);
+                    throw new Error(`API Error: ${response.status} ${response.statusText}`);
                 }
                 
                 const data = await response.json();
                 
-                // Filter withdrawals for current user
-                const userWithdrawals = data.results.filter(row => 
-                    row.email && row.email.toLowerCase() === userEmail?.toLowerCase()
-                );
-                
-                return userWithdrawals;
+                // Return the filtered results
+                return data.results || [];
                 
             } catch (error) {
                 console.error('Error fetching withdrawals:', error);
-                showError('Failed to load withdrawal history. Please try again.');
-                return [];
+                
+                // If filtering by email fails, fall back to fetching all and filtering client-side
+                try {
+                    console.log('Falling back to client-side filtering...');
+                    const fallbackResponse = await fetch(`${BASEROW_API_URL}?user_field_names=true&size=200`, {
+                        method: 'GET',
+                        headers: {
+                            'Authorization': `Token ${BASEROW_API_TOKEN}`,
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                    
+                    if (!fallbackResponse.ok) {
+                        throw new Error(`Fallback API Error: ${fallbackResponse.status}`);
+                    }
+                    
+                    const fallbackData = await fallbackResponse.json();
+                    const userEmail = loadUserData();
+                    
+                    // Filter client-side by email
+                    const filteredResults = fallbackData.results.filter(row => 
+                        row.email && row.email.toLowerCase() === userEmail?.toLowerCase()
+                    );
+                    
+                    return filteredResults;
+                    
+                } catch (fallbackError) {
+                    console.error('Fallback also failed:', fallbackError);
+                    showError('Failed to load withdrawal history. Please check your connection and try again.');
+                    return [];
+                }
             }
         }
         
@@ -297,6 +342,12 @@
                 document.getElementById('contentState').classList.remove('hidden');
                 document.getElementById('noWithdrawalsMessage').classList.remove('hidden');
                 document.getElementById('withdrawalsTableBody').innerHTML = '';
+                
+                // Reset stats
+                document.getElementById('totalWithdrawals').textContent = '$0.00';
+                document.getElementById('completedWithdrawals').textContent = '0';
+                document.getElementById('pendingWithdrawals').textContent = '0';
+                document.getElementById('monthWithdrawals').textContent = '$0.00';
             }
         }
         
@@ -321,14 +372,14 @@
             });
             
             let html = '';
-            withdrawals.forEach((withdrawal, index) => {
+            withdrawals.forEach((withdrawal) => {
                 const amount = parseFloat(withdrawal.amount || 0);
                 const fee = parseFloat(withdrawal.fee || 0);
                 const netAmount = amount - fee;
                 const method = withdrawal.method || 'Bank Transfer';
                 const status = withdrawal.status || 'pending';
                 const date = withdrawal.date || withdrawal.created_at;
-                const transactionId = withdrawal.transaction_id || `W${String(withdrawal.id || index + 1).padStart(4, '0')}`;
+                const transactionId = withdrawal.transaction_id || `W${String(withdrawal.id).padStart(4, '0')}`;
                 const id = withdrawal['id 2'] || transactionId;
                 
                 // Format date
@@ -358,6 +409,9 @@
                         statusText = 'Completed';
                         break;
                     case 'pending':
+                        statusClass = 'status-pending';
+                        statusText = 'Pending';
+                        break;
                     case 'processing':
                         statusClass = 'status-processing';
                         statusText = 'Processing';
