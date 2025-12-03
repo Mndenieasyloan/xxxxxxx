@@ -132,8 +132,8 @@
 
                 <div class="hidden items-center gap-4 md:flex">
                     <a href="dashboard.html" class="text-sm text-purple-400 hover:text-purple-300 transition">Dashboard</a>
-                    <span class="text-sm text-gray-400">user@email.com</span>
-                    <a href="index.html" class="text-sm text-gray-300 hover:text-white transition">Logout</a>
+                    <span id="headerEmailDisplay" class="text-sm text-gray-400"></span>
+                    <a href="javascript:void(0)" onclick="logout()" class="text-sm text-gray-300 hover:text-white transition">Logout</a>
                 </div>
 
                 <button class="md:hidden" onclick="toggleMobileMenu()">
@@ -156,7 +156,7 @@
                     <a href="contact.html" class="text-sm text-gray-300 hover:text-white">Contact</a>
                     <a href="faq.html" class="text-sm text-gray-300 hover:text-white">FAQ</a>
                     <a href="dashboard.html" class="text-sm text-purple-400 hover:text-purple-300">Dashboard</a>
-                    <a href="index.html" class="text-sm text-gray-300 hover:text-white">Logout</a>
+                    <a href="javascript:void(0)" onclick="logout()" class="text-sm text-gray-300 hover:text-white">Logout</a>
                 </nav>
             </div>
         </div>
@@ -258,9 +258,21 @@
                                 <span class="text-gray-400">Email:</span>
                                 <span class="text-white font-semibold" id="paymentEmail">-</span>
                             </div>
+                            <div class="flex justify-between py-2 border-b border-slate-700" id="walletAddressContainer">
+                                <span class="text-gray-400">Wallet Address:</span>
+                                <span class="text-white font-semibold font-mono text-sm" id="paymentWallet">-</span>
+                            </div>
+                            <div class="flex justify-between py-2 border-b border-slate-700" id="voucherPinContainer" style="display: none;">
+                                <span class="text-gray-400">Voucher PIN:</span>
+                                <span class="text-white font-semibold font-mono" id="paymentPin">-</span>
+                            </div>
+                            <div class="flex justify-between py-2 border-b border-slate-700">
+                                <span class="text-gray-400">Transaction ID:</span>
+                                <span class="text-white font-semibold font-mono text-sm" id="transactionId">-</span>
+                            </div>
                             <div class="flex justify-between py-2">
                                 <span class="text-gray-400">Status:</span>
-                                <span class="text-yellow-400 font-semibold">Pending Confirmation</span>
+                                <span class="text-yellow-400 font-semibold" id="paymentStatus">Pending Confirmation</span>
                             </div>
                         </div>
                     </div>
@@ -293,217 +305,217 @@
         </main>
     </div>
 
-<script>
-    // Load amount from localStorage
-    const DEPOSIT_API = "https://api.baserow.io/api/database/rows/table/756078/";
-    const BASEROW_TOKEN = "LG6hnTBxgBG78FueElsSwpHRd4Wep1oL";
-    
-    // Check if user is logged in
-    function checkLogin() {
-        const userEmail = localStorage.getItem('userEmail');
-        return userEmail !== null && userEmail !== '';
-    }
-
-    function getUserEmail() {
-        return localStorage.getItem('userEmail') || '';
-    }
-
-    function logout() {
-        localStorage.removeItem('userEmail');
-        window.location.href = 'login.html';
-    }
-
-    // Update navigation based on login status
-    function updateNavigation() {
-        const isLoggedIn = checkLogin();
-        const userEmail = getUserEmail();
-        
-        // Update desktop navigation
-        const authSection = document.querySelector('.hidden.items-center.gap-4.md\\:flex');
-        if (authSection) {
-            if (isLoggedIn) {
-                authSection.innerHTML = `
-                    <a href="dashboard.html" class="text-sm text-purple-400 hover:text-purple-300 transition">Dashboard</a>
-                    <span class="text-sm text-gray-400">${userEmail}</span>
-                    <a href="index.html" class="text-sm text-gray-300 hover:text-white transition" onclick="logout()">Logout</a>
-                `;
-            } else {
-                authSection.innerHTML = `
-                    <a href="login.html" class="text-sm text-gray-300 hover:text-white transition">Login</a>
-                    <a href="signup.html" class="text-sm bg-gradient-to-r from-purple-500 to-pink-500 text-white px-4 py-2 rounded-lg hover:opacity-90 transition">Sign Up</a>
-                `;
-            }
-        }
-
-        // Update mobile menu
-        const mobileMenu = document.getElementById('mobileMenu');
-        if (mobileMenu) {
-            const mobileAuthLinks = mobileMenu.querySelector('nav');
-            if (isLoggedIn) {
-                const dashboardLink = mobileAuthLinks.querySelector('a[href="dashboard.html"]');
-                const logoutLink = mobileAuthLinks.querySelector('a[href="index.html"]');
-                
-                if (dashboardLink) {
-                    dashboardLink.className = 'text-sm text-purple-400 hover:text-purple-300';
-                }
-                if (logoutLink) {
-                    logoutLink.textContent = 'Logout';
-                    logoutLink.onclick = logout;
-                }
-            } else {
-                const loginLink = mobileAuthLinks.querySelector('a[href="login.html"]');
-                if (loginLink) {
-                    loginLink.textContent = 'Login';
-                    loginLink.onclick = null;
-                }
-            }
-        }
-
-        // Auto-fill email if logged in
-        if (isLoggedIn) {
-            const emailInput = document.getElementById('userEmail');
-            if (emailInput) {
-                emailInput.value = userEmail;
-                emailInput.readOnly = true;
-            }
-        }
-    }
-
-    // Save transaction to localStorage for 24 hours
-    function saveTransactionToLocalStorage(transactionData) {
-        const transactions = JSON.parse(localStorage.getItem('latestTransactions') || '[]');
-        
-        // Add timestamp and expiry (24 hours from now)
-        transactionData.timestamp = new Date().toISOString();
-        transactionData.expiry = Date.now() + (24 * 60 * 60 * 1000);
-        
-        // Add to beginning of array
-        transactions.unshift(transactionData);
-        
-        // Keep only last 10 transactions
-        const limitedTransactions = transactions.slice(0, 10);
-        
-        localStorage.setItem('latestTransactions', JSON.stringify(limitedTransactions));
-    }
-
-    // Clean expired transactions
-    function cleanExpiredTransactions() {
-        const transactions = JSON.parse(localStorage.getItem('latestTransactions') || '[]');
-        const now = Date.now();
-        const validTransactions = transactions.filter(tx => tx.expiry > now);
-        localStorage.setItem('latestTransactions', JSON.stringify(validTransactions));
-    }
-
-    window.addEventListener('DOMContentLoaded', () => {
-        updateNavigation();
-        cleanExpiredTransactions();
-        
-        const amount = localStorage.getItem('deposit_amount') || '0.00';
-        document.getElementById('requestedAmount').textContent = `$${amount} USD`;
-        document.getElementById('payAmount').textContent = `$${amount} USD worth of BTC`;
-        document.getElementById('reminderAmount').textContent = `$${amount} USD`;
-
+    <script>
         // Check if user is logged in
-        if (!checkLogin()) {
-            alert('Please log in to make a deposit');
-            window.location.href = 'login.html';
-            return;
-        }
-    });
-
-    async function confirmPayment() {
-        const email = document.getElementById('userEmail').value;
-        const amount = localStorage.getItem('deposit_amount') || '0.00';
-        const btcWallet = document.getElementById('btcWallet').textContent;
-
-        if (!email) {
-            alert('Please enter your email address');
-            return;
-        }
-
-        // Check if user is logged in
-        if (!checkLogin()) {
-            alert('Please log in to make a deposit');
-            window.location.href = 'login.html';
-            return;
-        }
-
-        // Verify email matches logged in user
-        const loggedInEmail = getUserEmail();
-        if (email !== loggedInEmail) {
-            alert('Email does not match your logged in account');
-            return;
-        }
-
-        // Generate transaction ID
-        const transactionId = 'TXN-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9).toUpperCase();
-
-        // Send data to Baserow
-        try {
-            const depositPayload = {
-                "field_6394426": email,                    // email
-                "field_6394427": "BTC",                   // method
-                "field_6394428": amount,                  // amount
-                "field_6394429": "N/A",                   // pin (ignored)
-                "field_6394430": btcWallet,               // wallet_address
-                "field_6394431": "incoming",              // status (marked as incoming)
-                "field_6394432": transactionId,           // transaction_id
-                "field_6394433": new Date().toISOString() // timestamp
-            };
-
-            const response = await fetch(DEPOSIT_API, {
-                method: "POST",
-                headers: {
-                    "Authorization": "Token " + BASEROW_TOKEN,
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify(depositPayload)
-            });
-
-            if (!response.ok) {
-                throw new Error('Failed to submit deposit');
-            }
-
-            // Save transaction data to localStorage
-            const transactionData = {
-                id: transactionId,
-                type: 'deposit',
-                method: 'BTC',
-                amount: amount,
-                status: 'incoming',
-                wallet: btcWallet,
-                email: email,
-                date: new Date().toISOString()
-            };
+        function checkAuth() {
+            const userEmail = localStorage.getItem("v0trade_user_email");
+            console.log('[Payment Pending] Checking auth - user email:', userEmail);
             
-            saveTransactionToLocalStorage(transactionData);
-
-            // Save to localStorage for reference
-            localStorage.setItem('deposit_method', 'BTC');
-            localStorage.setItem('deposit_amount', amount);
-            localStorage.setItem('deposit_wallet_address', btcWallet);
-            localStorage.setItem('deposit_email', email);
-            localStorage.setItem('transaction_id', transactionId);
-
-            // Redirect to payment pending page
-            window.location.href = 'payment-pending.html';
-        } catch (error) {
-            console.error('[v0] Error submitting deposit:', error);
-            alert('Failed to submit deposit. Please try again.');
+            if (!userEmail) {
+                console.log('[Payment Pending] No user logged in - redirecting to login');
+                window.location.href = 'login.html';
+                return null;
+            }
+            
+            return userEmail;
         }
-    }
 
-    function toggleMobileMenu() {
-        const menu = document.getElementById('mobileMenu');
-        menu.classList.toggle('active');
-    }
-    
-    function toggleSidebar() {
-        const sidebar = document.getElementById('sidebar');
-        const overlay = document.getElementById('sidebarOverlay');
-        sidebar.classList.toggle('active');
-        overlay.classList.toggle('active');
-    }
-</script>
+        // Update header email display
+        function updateHeaderEmail(email) {
+            const headerEmailElements = document.querySelectorAll('#headerEmailDisplay, .user-email-display');
+            headerEmailElements.forEach(element => {
+                if (element) {
+                    element.textContent = email;
+                }
+            });
+        }
+
+        // Load deposit information from localStorage
+        function loadDepositInfo() {
+            try {
+                // Get deposit information from localStorage
+                const depositMethod = localStorage.getItem('deposit_method');
+                const depositAmount = localStorage.getItem('deposit_amount');
+                const depositEmail = localStorage.getItem('deposit_email');
+                const transactionId = localStorage.getItem('transaction_id');
+                const depositTimestamp = localStorage.getItem('deposit_timestamp');
+                const depositWallet = localStorage.getItem('deposit_wallet_address');
+                const voucherPin = localStorage.getItem('voucher_pin');
+                const depositStatus = localStorage.getItem('deposit_status') || 'pending';
+                
+                console.log('[Payment Pending] Loading deposit info:', {
+                    method: depositMethod,
+                    amount: depositAmount,
+                    email: depositEmail,
+                    transactionId: transactionId,
+                    wallet: depositWallet,
+                    pin: voucherPin,
+                    status: depositStatus
+                });
+
+                // Update UI with deposit information
+                if (depositMethod) {
+                    document.getElementById('paymentMethod').textContent = depositMethod;
+                    
+                    // Show/hide fields based on method
+                    if (depositWallet && depositWallet !== "N/A") {
+                        document.getElementById('walletAddressContainer').style.display = 'flex';
+                        document.getElementById('paymentWallet').textContent = depositWallet;
+                    } else {
+                        document.getElementById('walletAddressContainer').style.display = 'none';
+                    }
+                    
+                    if (voucherPin) {
+                        document.getElementById('voucherPinContainer').style.display = 'flex';
+                        // Mask the PIN for security (show first 4 and last 4 characters)
+                        const maskedPin = voucherPin.length > 8 
+                            ? `${voucherPin.substring(0, 4)}****${voucherPin.substring(voucherPin.length - 4)}`
+                            : '****';
+                        document.getElementById('paymentPin').textContent = maskedPin;
+                    } else {
+                        document.getElementById('voucherPinContainer').style.display = 'none';
+                    }
+                }
+                
+                if (depositAmount) {
+                    document.getElementById('paymentAmount').textContent = `$${depositAmount} USD`;
+                }
+                
+                if (depositEmail) {
+                    document.getElementById('paymentEmail').textContent = depositEmail;
+                }
+                
+                if (transactionId) {
+                    document.getElementById('transactionId').textContent = transactionId;
+                }
+                
+                if (depositStatus) {
+                    const statusElement = document.getElementById('paymentStatus');
+                    statusElement.textContent = depositStatus.charAt(0).toUpperCase() + depositStatus.slice(1);
+                    
+                    // Set color based on status
+                    if (depositStatus === 'completed' || depositStatus === 'success') {
+                        statusElement.className = 'text-green-400 font-semibold';
+                    } else if (depositStatus === 'failed' || depositStatus === 'rejected') {
+                        statusElement.className = 'text-red-400 font-semibold';
+                    } else if (depositStatus === 'pending') {
+                        statusElement.className = 'text-yellow-400 font-semibold';
+                    } else {
+                        statusElement.className = 'text-yellow-400 font-semibold';
+                    }
+                }
+                
+                // Check if we have enough info to display
+                if (!depositMethod || !depositAmount || !depositEmail) {
+                    console.log('[Payment Pending] Missing deposit information');
+                    
+                    // Check if we have a recent transaction in latest_transactions
+                    const latestTransactions = JSON.parse(localStorage.getItem('latest_transactions') || '[]');
+                    if (latestTransactions.length > 0) {
+                        const latestTransaction = latestTransactions[0];
+                        console.log('[Payment Pending] Using latest transaction:', latestTransaction);
+                        
+                        document.getElementById('paymentMethod').textContent = latestTransaction.method || 'Unknown';
+                        document.getElementById('paymentAmount').textContent = `$${latestTransaction.amount || '0.00'} USD`;
+                        document.getElementById('paymentEmail').textContent = latestTransaction.email || 'Unknown';
+                        document.getElementById('transactionId').textContent = latestTransaction.id || 'Unknown';
+                        
+                        if (latestTransaction.wallet && latestTransaction.wallet !== "N/A") {
+                            document.getElementById('walletAddressContainer').style.display = 'flex';
+                            document.getElementById('paymentWallet').textContent = latestTransaction.wallet;
+                        }
+                        
+                        if (latestTransaction.pin) {
+                            document.getElementById('voucherPinContainer').style.display = 'flex';
+                            const maskedPin = latestTransaction.pin.length > 8 
+                                ? `${latestTransaction.pin.substring(0, 4)}****${latestTransaction.pin.substring(latestTransaction.pin.length - 4)}`
+                                : '****';
+                            document.getElementById('paymentPin').textContent = maskedPin;
+                        }
+                        
+                        const status = latestTransaction.status || 'pending';
+                        const statusElement = document.getElementById('paymentStatus');
+                        statusElement.textContent = status.charAt(0).toUpperCase() + status.slice(1);
+                        
+                        if (status === 'completed' || status === 'success') {
+                            statusElement.className = 'text-green-400 font-semibold';
+                        } else if (status === 'failed' || status === 'rejected') {
+                            statusElement.className = 'text-red-400 font-semibold';
+                        } else {
+                            statusElement.className = 'text-yellow-400 font-semibold';
+                        }
+                    } else {
+                        // No transaction found, redirect to deposit page
+                        setTimeout(() => {
+                            alert('No deposit information found. Please make a deposit first.');
+                            window.location.href = 'deposit.html';
+                        }, 1000);
+                    }
+                }
+                
+            } catch (error) {
+                console.error('[Payment Pending] Error loading deposit info:', error);
+                alert('Error loading payment information. Please try again.');
+                setTimeout(() => {
+                    window.location.href = 'deposit.html';
+                }, 2000);
+            }
+        }
+
+        // Clean up expired transactions
+        function cleanupExpiredTransactions() {
+            try {
+                const transactions = JSON.parse(localStorage.getItem('latest_transactions') || '[]');
+                const now = Date.now();
+                const validTransactions = transactions.filter(tx => tx.expiry > now);
+                localStorage.setItem('latest_transactions', JSON.stringify(validTransactions));
+            } catch (error) {
+                console.error('[Payment Pending] Error cleaning up transactions:', error);
+            }
+        }
+
+        // Navigation functions
+        function toggleMobileMenu() {
+            const menu = document.getElementById('mobileMenu');
+            if (menu) {
+                menu.classList.toggle('active');
+            }
+        }
+        
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            if (sidebar && overlay) {
+                sidebar.classList.toggle('active');
+                overlay.classList.toggle('active');
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem("v0trade_user_email");
+            window.location.href = 'login.html';
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            // Check authentication
+            const userEmail = checkAuth();
+            if (!userEmail) return;
+            
+            // Update header with user email
+            updateHeaderEmail(userEmail);
+            
+            // Load deposit information
+            loadDepositInfo();
+            
+            // Clean up expired transactions
+            cleanupExpiredTransactions();
+            
+            // Auto-refresh page every 30 seconds to check for status updates
+            setInterval(() => {
+                console.log('[Payment Pending] Auto-refreshing deposit info...');
+                loadDepositInfo();
+            }, 30000);
+        });
+    </script>
 </body>
 </html>
