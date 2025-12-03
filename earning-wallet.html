@@ -165,32 +165,9 @@
         .badge-investment { background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: white; }
         .badge-referral { background: linear-gradient(135deg, #10b981, #047857); color: white; }
         .badge-withdrawal { background: linear-gradient(135deg, #ef4444, #dc2626); color: white; }
-        
-        /* Loading overlay */
-        .loading-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(15, 23, 42, 0.9);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 9999;
-            backdrop-filter: blur(5px);
-        }
     </style>
 </head>
 <body class="bg-slate-950">
-    
-    <!-- Loading overlay -->
-    <div id="loadingOverlay" class="loading-overlay">
-        <div class="text-center">
-            <div class="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500 mb-4"></div>
-            <p class="text-white text-lg">Loading wallet data...</p>
-        </div>
-    </div>
     
     <!-- Hamburger toggle button for mobile -->
     <button onclick="toggleSidebar()" class="sidebar-toggle fixed left-4 top-20 z-50 bg-purple-500 hover:bg-purple-600 text-white p-2 rounded-lg shadow-lg transition">
@@ -476,7 +453,7 @@
                             <div class="text-3xl text-green-400">📅</div>
                         </div>
                         <div class="text-sm text-gray-400">
-                            <span class="text-green-400">+0%</span> from last week
+                            <span class="text-green-400" id="dailyChange">+0%</span> from last week
                         </div>
                     </div>
 
@@ -489,7 +466,7 @@
                             <div class="text-3xl text-cyan-400">🚀</div>
                         </div>
                         <div class="text-sm text-gray-400">
-                            <span class="text-cyan-400">Steady growth</span> this week
+                            <span class="text-cyan-400" id="weeklyStatus">Steady growth</span> this week
                         </div>
                     </div>
 
@@ -520,35 +497,19 @@
                     </div>
                 </div>
 
-                <!-- Earning Transactions History -->
-                <div class="chart-container p-6">
-                    <h3 class="text-lg font-semibold text-white mb-4">Earning Transactions</h3>
-                    <div class="overflow-x-auto">
-                        <table class="w-full">
-                            <thead>
-                                <tr class="border-b border-gray-700">
-                                    <th class="text-left py-3 px-4 text-sm font-medium text-gray-400">Date</th>
-                                    <th class="text-left py-3 px-4 text-sm font-medium text-gray-400">Type</th>
-                                    <th class="text-left py-3 px-4 text-sm font-medium text-gray-400">Source</th>
-                                    <th class="text-left py-3 px-4 text-sm font-medium text-gray-400">Amount</th>
-                                    <th class="text-left py-3 px-4 text-sm font-medium text-gray-400">Status</th>
-                                    <th class="text-left py-3 px-4 text-sm font-medium text-gray-400">Balance</th>
-                                </tr>
-                            </thead>
-                            <tbody id="earningTransactionsList">
-                                <tr>
-                                    <td colspan="6" class="text-center py-12">
-                                        <div class="flex flex-col items-center justify-center">
-                                            <svg class="animate-spin h-8 w-8 text-purple-500 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                            </svg>
-                                            <p class="text-gray-500">Loading earning transactions...</p>
-                                        </div>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
+                <!-- Data Status Indicator -->
+                <div class="chart-container p-4 mb-8">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <div id="dataStatusIndicator" class="w-3 h-3 rounded-full bg-yellow-500 animate-pulse"></div>
+                            <div>
+                                <p class="text-sm text-white font-medium">Data Status</p>
+                                <p class="text-xs text-gray-400" id="lastUpdateTime">Last updated: Loading...</p>
+                            </div>
+                        </div>
+                        <div class="text-sm text-gray-400">
+                            <span id="autoUpdateCountdown">Auto-refresh in 24:00:00</span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -559,7 +520,7 @@
         // Constants
         const API_TOKEN = "LG6hnTBxgBG78FueElsSwpHRd4Wep1oL";
         const WALLET_TABLE = 756077;
-        const TRANSACTIONS_DATA_KEY = "v0trade_transactions_data";
+        const AUTO_REFRESH_INTERVAL = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
         
         // Chart instances
         let earningsChart = null;
@@ -572,12 +533,12 @@
             miningEarnings: 0,
             investmentEarnings: 0,
             referralEarnings: 0,
-            totalCommissions: 0,
-            walletId: null
+            lastUpdate: null
         };
         
-        // Global chart instances tracking
-        let chartInstances = [];
+        // Auto-refresh countdown
+        let autoRefreshTimer = null;
+        let lastRefreshTime = null;
         
         window.addEventListener('DOMContentLoaded', function() {
             const userEmail = localStorage.getItem("v0trade_user_email");
@@ -596,15 +557,29 @@
             
             // Load wallet data from Baserow
             loadWalletData(userEmail);
+            
+            // Setup auto-refresh countdown
+            setupAutoRefreshCountdown();
         });
 
         async function loadWalletData(email) {
             try {
-                showLoading(true);
+                console.log("Loading wallet data for:", email);
                 
-                // First, get the user's row ID by searching for their email
-                const searchUrl = `https://api.baserow.io/api/database/rows/table/${WALLET_TABLE}/?user_field_names=true&size=1&search=${encodeURIComponent(email)}`;
-                
+                // First, find the row ID for this user
+                const searchFilters = encodeURIComponent(JSON.stringify({
+                    filter_type: "AND",
+                    filters: [
+                        {
+                            type: "equal",
+                            field: "email",
+                            value: email
+                        }
+                    ]
+                }));
+
+                const searchUrl = `https://api.baserow.io/api/database/rows/table/${WALLET_TABLE}/?user_field_names=true&filters=${searchFilters}`;
+
                 const searchRes = await fetch(searchUrl, {
                     headers: { Authorization: `Token ${API_TOKEN}` }
                 });
@@ -615,14 +590,16 @@
                 if (!searchData.results || searchData.results.length === 0) {
                     console.warn("No wallet data found for:", email);
                     updateUIWithEmptyData();
-                    showLoading(false);
+                    updateDataStatus('error', 'No wallet data found');
                     return;
                 }
 
-                const userRow = searchData.results[0];
-                const rowId = userRow.id;
+                const row = searchData.results[0];
+                const rowId = row.id;
                 
-                // Now fetch the specific row with all data
+                console.log("Found row ID:", rowId);
+                
+                // Now fetch the specific row using row ID
                 const rowUrl = `https://api.baserow.io/api/database/rows/table/${WALLET_TABLE}/${rowId}/?user_field_names=true`;
                 
                 const rowRes = await fetch(rowUrl, {
@@ -630,90 +607,120 @@
                 });
 
                 const wallet = await rowRes.json();
-                console.log("Wallet data loaded:", wallet);
+                console.log("Wallet row data:", wallet);
                 
-                // Extract earning data using the correct field IDs
-                walletData.walletId = rowId;
+                // Extract earning data using correct field names
                 walletData.totalEarningBalance = parseFloat(wallet["All Earning Wallet"]) || 0;
                 walletData.miningEarnings = parseFloat(wallet["Miner Earning"]) || 0;
                 walletData.investmentEarnings = parseFloat(wallet["Investment Earning"]) || 0;
                 walletData.referralEarnings = parseFloat(wallet["Total Ref. Commissions"]) || 0;
-                walletData.totalCommissions = walletData.referralEarnings;
+                walletData.lastUpdate = new Date().toISOString();
+                
+                console.log("Extracted wallet data:", walletData);
                 
                 // Update UI
                 updateWalletUI();
                 
-                // Destroy any existing charts first
-                destroyAllCharts();
-                
                 // Initialize charts with wallet data
                 initializeCharts();
                 
-                // Generate sample transactions based on wallet data
-                generateSampleTransactions();
+                // Update data status
+                updateDataStatus('success', 'Data loaded successfully');
                 
-                showLoading(false);
+                // Reset auto-refresh timer
+                resetAutoRefreshCountdown();
                 
             } catch (err) {
                 console.error("Error loading wallet data:", err);
                 updateUIWithEmptyData();
-                showLoading(false);
+                updateDataStatus('error', 'Failed to load data: ' + err.message);
             }
-        }
-        
-        function destroyAllCharts() {
-            // Destroy all existing chart instances
-            if (earningsChart) {
-                earningsChart.destroy();
-                earningsChart = null;
-            }
-            if (distributionChart) {
-                distributionChart.destroy();
-                distributionChart = null;
-            }
-            if (candlestickChart) {
-                candlestickChart.destroy();
-                candlestickChart = null;
-            }
-            
-            // Clear all chart canvases
-            const canvases = document.querySelectorAll('canvas');
-            canvases.forEach(canvas => {
-                const context = canvas.getContext('2d');
-                context.clearRect(0, 0, canvas.width, canvas.height);
-            });
         }
         
         function updateWalletUI() {
-            // Format money
-            const formatMoney = (amount) => `$${(amount || 0).toFixed(2)}`;
-            
-            // Update balance displays
-            document.getElementById('totalEarningBalance').textContent = formatMoney(walletData.totalEarningBalance);
-            document.getElementById('miningEarnings').textContent = formatMoney(walletData.miningEarnings);
-            document.getElementById('investmentEarnings').textContent = formatMoney(walletData.investmentEarnings);
-            document.getElementById('referralEarnings').textContent = formatMoney(walletData.referralEarnings);
-            
-            // Calculate percentages
-            const total = walletData.totalEarningBalance;
-            if (total > 0) {
-                const miningPercent = Math.round((walletData.miningEarnings / total) * 100);
-                const investmentPercent = Math.round((walletData.investmentEarnings / total) * 100);
-                const referralPercent = Math.round((walletData.referralEarnings / total) * 100);
+            try {
+                // Format money
+                const formatMoney = (amount) => {
+                    if (isNaN(amount)) return '$0.00';
+                    return `$${amount.toFixed(2)}`;
+                };
                 
-                document.getElementById('miningPercentage').textContent = `${miningPercent}%`;
-                document.getElementById('investmentPercentage').textContent = `${investmentPercent}%`;
-                document.getElementById('referralPercentage').textContent = `${referralPercent}%`;
+                // Update balance displays
+                document.getElementById('totalEarningBalance').textContent = formatMoney(walletData.totalEarningBalance);
+                document.getElementById('miningEarnings').textContent = formatMoney(walletData.miningEarnings);
+                document.getElementById('investmentEarnings').textContent = formatMoney(walletData.investmentEarnings);
+                document.getElementById('referralEarnings').textContent = formatMoney(walletData.referralEarnings);
+                
+                // Calculate percentages
+                const total = walletData.totalEarningBalance;
+                if (total > 0) {
+                    const miningPercent = Math.round((walletData.miningEarnings / total) * 100);
+                    const investmentPercent = Math.round((walletData.investmentEarnings / total) * 100);
+                    const referralPercent = Math.round((walletData.referralEarnings / total) * 100);
+                    
+                    document.getElementById('miningPercentage').textContent = `${miningPercent}%`;
+                    document.getElementById('investmentPercentage').textContent = `${investmentPercent}%`;
+                    document.getElementById('referralPercentage').textContent = `${referralPercent}%`;
+                } else {
+                    document.getElementById('miningPercentage').textContent = '0%';
+                    document.getElementById('investmentPercentage').textContent = '0%';
+                    document.getElementById('referralPercentage').textContent = '0%';
+                }
+                
+                // Calculate statistics
+                const dailyAverage = total / 30; // Assuming 30 days
+                const weeklyGrowth = calculateWeeklyGrowth();
+                const monthlyProjection = dailyAverage * 30;
+                
+                document.getElementById('dailyAverage').textContent = formatMoney(dailyAverage);
+                document.getElementById('weeklyGrowth').textContent = `${weeklyGrowth}%`;
+                document.getElementById('monthlyProjection').textContent = formatMoney(monthlyProjection);
+                
+                // Update trend indicators
+                updateTrendIndicators(weeklyGrowth);
+                
+            } catch (err) {
+                console.error("Error updating wallet UI:", err);
             }
+        }
+        
+        function calculateWeeklyGrowth() {
+            // Simulate growth based on current earnings
+            const total = walletData.totalEarningBalance;
+            if (total <= 0) return 0;
             
-            // Calculate statistics
-            const dailyAverage = total / 30; // Assuming 30 days
-            const weeklyGrowth = 12.5; // Sample growth percentage
-            const monthlyProjection = dailyAverage * 30;
+            // Higher growth for higher balances (simulated)
+            if (total > 10000) return 5.5 + (Math.random() * 3);
+            if (total > 5000) return 4.0 + (Math.random() * 2);
+            if (total > 1000) return 3.0 + (Math.random() * 1.5);
+            return 2.0 + (Math.random() * 1);
+        }
+        
+        function updateTrendIndicators(weeklyGrowth) {
+            const dailyChangeElement = document.getElementById('dailyChange');
+            const weeklyStatusElement = document.getElementById('weeklyStatus');
             
-            document.getElementById('dailyAverage').textContent = formatMoney(dailyAverage);
-            document.getElementById('weeklyGrowth').textContent = `${weeklyGrowth}%`;
-            document.getElementById('monthlyProjection').textContent = formatMoney(monthlyProjection);
+            if (weeklyGrowth > 8) {
+                dailyChangeElement.textContent = `+${(weeklyGrowth / 7).toFixed(1)}%`;
+                dailyChangeElement.className = "text-green-400";
+                weeklyStatusElement.textContent = "Rapid growth";
+                weeklyStatusElement.className = "text-green-400";
+            } else if (weeklyGrowth > 4) {
+                dailyChangeElement.textContent = `+${(weeklyGrowth / 7).toFixed(1)}%`;
+                dailyChangeElement.className = "text-cyan-400";
+                weeklyStatusElement.textContent = "Good growth";
+                weeklyStatusElement.className = "text-cyan-400";
+            } else if (weeklyGrowth > 0) {
+                dailyChangeElement.textContent = `+${(weeklyGrowth / 7).toFixed(1)}%`;
+                dailyChangeElement.className = "text-blue-400";
+                weeklyStatusElement.textContent = "Steady growth";
+                weeklyStatusElement.className = "text-blue-400";
+            } else {
+                dailyChangeElement.textContent = "0%";
+                dailyChangeElement.className = "text-gray-400";
+                weeklyStatusElement.textContent = "No growth";
+                weeklyStatusElement.className = "text-gray-400";
+            }
         }
         
         function updateUIWithEmptyData() {
@@ -729,17 +736,18 @@
             document.getElementById('dailyAverage').textContent = '$0.00';
             document.getElementById('weeklyGrowth').textContent = '0%';
             document.getElementById('monthlyProjection').textContent = '$0.00';
+            
+            document.getElementById('dailyChange').textContent = '+0%';
+            document.getElementById('weeklyStatus').textContent = 'No data';
         }
         
         function initializeCharts() {
-            // Clear any existing chart data
-            destroyAllCharts();
+            // Destroy existing charts if they exist
+            destroyCharts();
             
             // 1. Earnings Growth Line Chart
-            const earningsCanvas = document.getElementById('earningsChart');
-            if (earningsCanvas) {
-                const earningsCtx = earningsCanvas.getContext('2d');
-                
+            const earningsCtx = document.getElementById('earningsChart');
+            if (earningsCtx) {
                 // Generate earnings growth data for last 30 days
                 const dates = [];
                 const earningsData = [];
@@ -802,10 +810,8 @@
             }
             
             // 2. Earnings Distribution Pie Chart
-            const distributionCanvas = document.getElementById('distributionChart');
-            if (distributionCanvas) {
-                const distributionCtx = distributionCanvas.getContext('2d');
-                
+            const distributionCtx = document.getElementById('distributionChart');
+            if (distributionCtx) {
                 const distributionLabels = ['Mining', 'Investments', 'Referrals'];
                 const distributionData = [
                     walletData.miningEarnings,
@@ -854,10 +860,8 @@
             }
             
             // 3. Candlestick Chart for Daily Earnings
-            const candlestickCanvas = document.getElementById('candlestickChart');
-            if (candlestickCanvas) {
-                const candlestickCtx = candlestickCanvas.getContext('2d');
-                
+            const candlestickCtx = document.getElementById('candlestickChart');
+            if (candlestickCtx) {
                 // Generate candlestick data for last 7 days
                 const candlestickLabels = [];
                 const candlestickData = [];
@@ -889,15 +893,17 @@
                 }
                 
                 candlestickChart = new Chart(candlestickCtx, {
-                    type: 'bar',
+                    type: 'candlestick',
                     data: {
                         labels: candlestickLabels,
                         datasets: [{
                             label: 'Daily Earnings Performance',
-                            data: candlestickData.map(d => d.c),
-                            backgroundColor: candlestickData.map(d => d.c >= d.o ? 'rgba(16, 185, 129, 0.7)' : 'rgba(239, 68, 68, 0.7)'),
-                            borderColor: candlestickData.map(d => d.c >= d.o ? '#10b981' : '#ef4444'),
-                            borderWidth: 1
+                            data: candlestickData,
+                            color: {
+                                up: '#10b981',
+                                down: '#ef4444',
+                                unchanged: '#6b7280'
+                            }
                         }]
                     },
                     options: {
@@ -925,19 +931,6 @@
                         plugins: {
                             legend: {
                                 labels: { color: '#9ca3af' }
-                            },
-                            tooltip: {
-                                callbacks: {
-                                    label: function(context) {
-                                        const data = candlestickData[context.dataIndex];
-                                        return [
-                                            `Open: $${data.o.toFixed(2)}`,
-                                            `High: $${data.h.toFixed(2)}`,
-                                            `Low: $${data.l.toFixed(2)}`,
-                                            `Close: $${data.c.toFixed(2)}`
-                                        ];
-                                    }
-                                }
                             }
                         }
                     }
@@ -945,127 +938,19 @@
             }
         }
         
-        function generateSampleTransactions() {
-            const transactions = [];
-            const now = new Date();
-            const types = ['mining', 'investment', 'referral'];
-            const sources = ['BTC Mining', 'Crypto Investment', 'Stock Investment', 'ETF Returns', 'Referral Bonus'];
-            const statuses = ['Completed', 'Pending', 'Processing'];
-            
-            // Generate sample transactions for the last 30 days
-            for (let i = 30; i >= 0; i--) {
-                const date = new Date(now);
-                date.setDate(date.getDate() - i);
-                
-                const type = types[Math.floor(Math.random() * types.length)];
-                const source = sources[Math.floor(Math.random() * sources.length)];
-                const status = statuses[Math.floor(Math.random() * statuses.length)];
-                
-                // Generate amount based on type
-                let amount = 0;
-                let badgeClass = '';
-                
-                switch(type) {
-                    case 'mining':
-                        amount = walletData.miningEarnings > 0 ? 
-                            (Math.random() * walletData.miningEarnings / 30) : 
-                            (Math.random() * 100 + 50);
-                        badgeClass = 'badge-mining';
-                        break;
-                    case 'investment':
-                        amount = walletData.investmentEarnings > 0 ? 
-                            (Math.random() * walletData.investmentEarnings / 30) : 
-                            (Math.random() * 150 + 75);
-                        badgeClass = 'badge-investment';
-                        break;
-                    case 'referral':
-                        amount = walletData.referralEarnings > 0 ? 
-                            (Math.random() * walletData.referralEarnings / 30) : 
-                            (Math.random() * 50 + 25);
-                        badgeClass = 'badge-referral';
-                        break;
-                }
-                
-                transactions.push({
-                    date: date.toISOString(),
-                    type: type,
-                    source: source,
-                    amount: amount.toFixed(2),
-                    status: status,
-                    badgeClass: badgeClass
-                });
+        function destroyCharts() {
+            if (earningsChart) {
+                earningsChart.destroy();
+                earningsChart = null;
             }
-            
-            // Sort by date (newest first) and display
-            transactions.sort((a, b) => new Date(b.date) - new Date(a.date));
-            displayEarningTransactions(transactions);
-        }
-        
-        function displayEarningTransactions(transactions) {
-            const container = document.getElementById('earningTransactionsList');
-            
-            if (!transactions || transactions.length === 0) {
-                container.innerHTML = `
-                    <tr>
-                        <td colspan="6" class="text-center py-12">
-                            <div class="text-4xl mb-4">💰</div>
-                            <p class="text-gray-500 mb-2">No earning transactions yet</p>
-                            <p class="text-sm text-gray-400">Start earning through mining, investments, or referrals</p>
-                        </td>
-                    </tr>
-                `;
-                return;
+            if (distributionChart) {
+                distributionChart.destroy();
+                distributionChart = null;
             }
-            
-            container.innerHTML = '';
-            
-            // Display first 15 transactions
-            transactions.slice(0, 15).forEach(transaction => {
-                const row = document.createElement('tr');
-                row.className = 'border-b border-gray-800 hover:bg-gray-800/50';
-                
-                const date = new Date(transaction.date);
-                const formattedDate = date.toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'short',
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                });
-                
-                const amount = parseFloat(transaction.amount) || 0;
-                
-                // Determine status color
-                let statusColor = 'text-green-400';
-                let statusBg = 'bg-green-400/10';
-                if (transaction.status === 'Pending') {
-                    statusColor = 'text-yellow-400';
-                    statusBg = 'bg-yellow-400/10';
-                } else if (transaction.status === 'Processing') {
-                    statusColor = 'text-blue-400';
-                    statusBg = 'bg-blue-400/10';
-                }
-                
-                // Calculate running balance (simplified)
-                const runningBalance = walletData.totalEarningBalance * (0.7 + Math.random() * 0.3);
-                
-                row.innerHTML = `
-                    <td class="py-3 px-4 text-sm text-gray-300">${formattedDate}</td>
-                    <td class="py-3 px-4">
-                        <span class="${transaction.badgeClass} earning-badge text-xs">
-                            ${transaction.type.toUpperCase()}
-                        </span>
-                    </td>
-                    <td class="py-3 px-4 text-sm text-white font-medium">${transaction.source}</td>
-                    <td class="py-3 px-4 text-sm text-green-400 font-semibold">+$${amount.toFixed(2)}</td>
-                    <td class="py-3 px-4 text-sm">
-                        <span class="px-2 py-1 rounded-full text-xs ${statusBg} ${statusColor}">${transaction.status}</span>
-                    </td>
-                    <td class="py-3 px-4 text-sm text-gray-300">$${runningBalance.toFixed(2)}</td>
-                `;
-                
-                container.appendChild(row);
-            });
+            if (candlestickChart) {
+                candlestickChart.destroy();
+                candlestickChart = null;
+            }
         }
         
         function refreshWalletData() {
@@ -1083,11 +968,13 @@
             `;
             refreshBtn.disabled = true;
             
+            updateDataStatus('loading', 'Refreshing data...');
+            
             setTimeout(() => {
                 loadWalletData(userEmail);
                 
                 // Show success indicator
-                refreshBtn.innerHTML = '✓ Refreshed';
+                refreshBtn.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Refreshed';
                 refreshBtn.style.background = 'linear-gradient(135deg, #10b981, #059669)';
                 
                 setTimeout(() => {
@@ -1095,14 +982,66 @@
                     refreshBtn.style.background = '';
                     refreshBtn.disabled = false;
                 }, 2000);
-            }, 1500);
+            }, 1000);
         }
         
-        function showLoading(show) {
-            const overlay = document.getElementById('loadingOverlay');
-            if (overlay) {
-                overlay.style.display = show ? 'flex' : 'none';
+        function updateDataStatus(status, message) {
+            const indicator = document.getElementById('dataStatusIndicator');
+            const lastUpdate = document.getElementById('lastUpdateTime');
+            
+            if (status === 'success') {
+                indicator.className = 'w-3 h-3 rounded-full bg-green-500';
+                lastUpdate.textContent = `Last updated: ${new Date().toLocaleTimeString()}`;
+            } else if (status === 'loading') {
+                indicator.className = 'w-3 h-3 rounded-full bg-yellow-500 animate-pulse';
+                lastUpdate.textContent = message;
+            } else if (status === 'error') {
+                indicator.className = 'w-3 h-3 rounded-full bg-red-500';
+                lastUpdate.textContent = message;
             }
+        }
+        
+        function setupAutoRefreshCountdown() {
+            // Initial countdown setup
+            updateAutoRefreshCountdown();
+            
+            // Update countdown every second
+            setInterval(updateAutoRefreshCountdown, 1000);
+        }
+        
+        function updateAutoRefreshCountdown() {
+            if (!lastRefreshTime) {
+                lastRefreshTime = Date.now();
+            }
+            
+            const now = Date.now();
+            const timeSinceLastRefresh = now - lastRefreshTime;
+            const timeUntilNextRefresh = AUTO_REFRESH_INTERVAL - timeSinceLastRefresh;
+            
+            if (timeUntilNextRefresh <= 0) {
+                // Auto-refresh time reached
+                const userEmail = localStorage.getItem("v0trade_user_email");
+                if (userEmail) {
+                    console.log("Auto-refreshing wallet data...");
+                    loadWalletData(userEmail);
+                    lastRefreshTime = now;
+                }
+            } else {
+                // Update countdown display
+                const hours = Math.floor(timeUntilNextRefresh / (1000 * 60 * 60));
+                const minutes = Math.floor((timeUntilNextRefresh % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((timeUntilNextRefresh % (1000 * 60)) / 1000);
+                
+                const countdownElement = document.getElementById('autoUpdateCountdown');
+                if (countdownElement) {
+                    countdownElement.textContent = `Auto-refresh in ${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                }
+            }
+        }
+        
+        function resetAutoRefreshCountdown() {
+            lastRefreshTime = Date.now();
+            updateAutoRefreshCountdown();
         }
         
         function toggleMobileMenu() {
@@ -1121,28 +1060,15 @@
         window.addEventListener('focus', () => {
             const userEmail = localStorage.getItem("v0trade_user_email");
             if (userEmail) {
+                console.log("Page focused, refreshing data...");
                 loadWalletData(userEmail);
             }
         });
         
-        // Auto-update charts for real-time feel
-        setInterval(() => {
-            if (earningsChart) {
-                // Update earnings chart with new data point
-                const dataset = earningsChart.data.datasets[0];
-                const lastValue = dataset.data[dataset.data.length - 1];
-                const newValue = lastValue * (0.995 + Math.random() * 0.01); // -0.5% to +0.5% change
-                dataset.data.push(newValue);
-                dataset.data.shift();
-                
-                // Update labels
-                const now = new Date();
-                earningsChart.data.labels.push(now.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
-                earningsChart.data.labels.shift();
-                
-                earningsChart.update('none');
-            }
-        }, 30000);
+        // Clean up charts on page unload
+        window.addEventListener('beforeunload', () => {
+            destroyCharts();
+        });
     </script>
 
 </body>
