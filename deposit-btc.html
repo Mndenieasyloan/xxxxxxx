@@ -57,6 +57,35 @@
             opacity: 1;
         }
         
+        .file-upload-container {
+            border: 2px dashed rgba(168, 85, 247, 0.3);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            text-align: center;
+            transition: all 0.3s;
+            cursor: pointer;
+            background: rgba(15, 23, 42, 0.5);
+            margin-top: 1rem;
+        }
+        .file-upload-container:hover {
+            border-color: rgba(168, 85, 247, 0.5);
+            background: rgba(15, 23, 42, 0.7);
+        }
+        .file-upload-container.dragover {
+            border-color: rgba(168, 85, 247, 0.8);
+            background: rgba(168, 85, 247, 0.1);
+        }
+        .upload-preview {
+            max-width: 200px;
+            max-height: 200px;
+            border-radius: 0.5rem;
+            margin: 1rem auto;
+            display: none;
+        }
+        .upload-preview.show {
+            display: block;
+        }
+        
         .error-message {
             display: none;
             color: rgb(239 68 68);
@@ -67,7 +96,6 @@
             display: block;
         }
         
-        /* Updated mobile sidebar behavior - hidden by default with toggle */
         @media (max-width: 768px) {
             .sidebar {
                 position: fixed;
@@ -112,17 +140,14 @@
 </head>
 <body class="bg-slate-950">
     
-    <!-- Added hamburger toggle button for mobile sidebar -->
     <button onclick="toggleSidebar()" class="sidebar-toggle fixed left-4 top-20 z-50 bg-purple-500 hover:bg-purple-600 text-white p-2 rounded-lg shadow-lg transition">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
         </svg>
     </button>
     
-    <!-- Added overlay for mobile sidebar -->
     <div id="sidebarOverlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
     
-    <!-- Added same header navigation as index.html -->
     <header class="sticky top-0 z-50 border-b border-purple-500/20 bg-slate-950/80 backdrop-blur-md">
         <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div class="flex items-center justify-between py-4">
@@ -170,7 +195,7 @@
 
                 <div class="hidden items-center gap-4 md:flex">
                     <a href="dashboard.html" class="text-sm text-purple-400 hover:text-purple-300 transition">Dashboard</a>
-                    <span class="text-sm text-gray-400">user@email.com</span>
+                    <span class="text-sm text-gray-400" id="headerEmailDisplay"></span>
                     <a href="index.html" class="text-sm text-gray-300 hover:text-white transition">Logout</a>
                 </div>
 
@@ -201,7 +226,6 @@
     </header>
 
     <div class="flex min-h-screen">
-        <!-- Updated sidebar with mobile toggle behavior -->
         <aside id="sidebar" class="sidebar w-64 bg-slate-900/50 border-r border-purple-500/20 p-4 backdrop-blur-sm">
             <div class="space-y-1 mb-6">
                 <a href="deposit.html" class="sidebar-link active">
@@ -272,7 +296,6 @@
 
         <main class="flex-1 p-4 md:p-8 bg-gradient-to-br from-slate-950 via-slate-950 to-slate-950">
             <div class="max-w-4xl mx-auto">
-                <!-- Updated page title and description to match specification -->
                 <div class="mb-8">
                     <h1 class="text-3xl md:text-4xl font-bold text-white mb-2">Deposit Funds</h1>
                     <p class="text-gray-400">Select a payment method and enter your deposit amount.</p>
@@ -361,6 +384,58 @@
                             <p id="amountError" class="error-message">Please enter an amount between $1 and $200,000</p>
                         </div>
 
+                        <!-- Email Input -->
+                        <div class="mb-6">
+                            <label for="userEmail" class="text-sm font-semibold text-gray-300 mb-2 block">Your V0 Trade Account Email</label>
+                            <input 
+                                type="email" 
+                                id="userEmail" 
+                                class="w-full bg-slate-950/50 border border-purple-500/30 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-purple-500 transition"
+                                placeholder="Enter your email"
+                                required
+                                oninput="validateAndCalculate()"
+                            >
+                            <p id="emailError" class="error-message">Please enter a valid email address</p>
+                        </div>
+
+                        <!-- Proof of Payment Upload Section -->
+                        <div class="mb-6">
+                            <label class="text-sm font-semibold text-gray-300 mb-2 block">
+                                Proof of Payment <span class="text-red-400">*</span>
+                            </label>
+                            <p class="text-gray-400 text-sm mb-4">Upload a screenshot or photo of your transaction confirmation (required for processing).</p>
+                            
+                            <div 
+                                id="fileUploadContainer" 
+                                class="file-upload-container"
+                                onclick="document.getElementById('proofFile').click()"
+                                ondrop="handleDrop(event)"
+                                ondragover="handleDragOver(event)"
+                                ondragleave="handleDragLeave(event)"
+                            >
+                                <input 
+                                    type="file" 
+                                    id="proofFile" 
+                                    accept="image/*,.pdf,.png,.jpg,.jpeg,.gif" 
+                                    class="hidden"
+                                    onchange="handleFileSelect(event)"
+                                    required
+                                >
+                                <div class="text-center">
+                                    <div class="text-4xl mb-3">📎</div>
+                                    <p class="text-gray-300 font-medium mb-1">Click to upload or drag and drop</p>
+                                    <p class="text-gray-400 text-sm">PNG, JPG, GIF, PDF (Max 5MB)</p>
+                                    <p class="text-purple-400 text-xs mt-2" id="fileName"></p>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-4 text-center">
+                                <img id="imagePreview" class="upload-preview mx-auto" alt="Image Preview">
+                            </div>
+                            
+                            <p class="text-red-400 text-xs mt-2 hidden" id="fileError">Please upload a proof of payment image</p>
+                        </div>
+
                         <!-- Automatic Calculation Panel -->
                         <div class="bg-gradient-to-br from-slate-800/60 to-purple-900/20 rounded-lg border border-purple-500/30 p-6 mb-6">
                             <h4 class="text-lg font-semibold text-white mb-4">Transaction Summary</h4>
@@ -400,8 +475,31 @@
     </div>
 
     <script>
-        let selectedMethod = '';
+        const DEPOSIT_API = "https://api.baserow.io/api/database/rows/table/756078/";
+        const FILE_UPLOAD_API = "https://api.baserow.io/api/user-files/upload-file/";
+        const BASEROW_TOKEN = "LG6hnTBxgBG78FueElsSwpHRd4Wep1oL";
         
+        let selectedMethod = '';
+        let proofFile = null;
+        let currentUserEmail = '';
+
+        // Check authentication on load
+        function checkAuth() {
+            const userEmail = localStorage.getItem("v0trade_user_email");
+            if (userEmail) {
+                currentUserEmail = userEmail;
+                document.getElementById('headerEmailDisplay').textContent = userEmail;
+                
+                // Auto-fill email input
+                const emailInput = document.getElementById('userEmail');
+                if (emailInput) {
+                    emailInput.value = userEmail;
+                    emailInput.readOnly = true;
+                    emailInput.classList.add('bg-gray-100', 'cursor-not-allowed');
+                }
+            }
+        }
+
         function toggleMobileMenu() {
             const menu = document.getElementById('mobileMenu');
             menu.classList.toggle('active');
@@ -414,82 +512,298 @@
             overlay.classList.toggle('active');
         }
         
-        /* Updated payment selection to show amount section and highlight selected method */
         function selectPayment(method, event) {
             selectedMethod = method;
             
-            // Remove selected class from all payment methods
             document.querySelectorAll('.payment-method').forEach(el => {
                 el.classList.remove('selected');
             });
             
-            // Add selected class to clicked method
             event.currentTarget.classList.add('selected');
             
-            // Show amount section with animation
             const amountSection = document.getElementById('amountSection');
             amountSection.classList.add('visible');
             
-            // Scroll to amount section on mobile
             setTimeout(() => {
                 amountSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             }, 100);
             
-            // Validate button state
             validateAndCalculate();
         }
 
-        /* Added validation and real-time calculation */
+        // File upload handling
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (file) {
+                validateAndSetFile(file);
+            }
+        }
+
+        function handleDrop(event) {
+            event.preventDefault();
+            event.stopPropagation();
+            
+            const container = document.getElementById('fileUploadContainer');
+            container.classList.remove('dragover');
+            
+            const file = event.dataTransfer.files[0];
+            if (file) {
+                validateAndSetFile(file);
+            }
+        }
+
+        function handleDragOver(event) {
+            event.preventDefault();
+            event.stopPropagation();
+            const container = document.getElementById('fileUploadContainer');
+            container.classList.add('dragover');
+        }
+
+        function handleDragLeave(event) {
+            event.preventDefault();
+            event.stopPropagation();
+            const container = document.getElementById('fileUploadContainer');
+            container.classList.remove('dragover');
+        }
+
+        function validateAndSetFile(file) {
+            const maxSize = 5 * 1024 * 1024;
+            if (file.size > maxSize) {
+                alert('File is too large. Maximum size is 5MB.');
+                return;
+            }
+
+            const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'application/pdf'];
+            if (!validTypes.includes(file.type)) {
+                alert('Please upload a valid image or PDF file.');
+                return;
+            }
+
+            proofFile = file;
+            document.getElementById('fileName').textContent = file.name;
+            document.getElementById('fileError').classList.add('hidden');
+
+            if (file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const preview = document.getElementById('imagePreview');
+                    preview.src = e.target.result;
+                    preview.classList.add('show');
+                };
+                reader.readAsDataURL(file);
+            } else {
+                document.getElementById('imagePreview').classList.remove('show');
+            }
+            
+            validateAndCalculate();
+        }
+
+        // Upload file to Baserow
+        async function uploadFileToBaserow(file) {
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const response = await fetch(FILE_UPLOAD_API, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Token ' + BASEROW_TOKEN
+                    },
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    throw new Error(`File upload failed: ${response.status}`);
+                }
+
+                const result = await response.json();
+                console.log('[Deposit] File uploaded successfully:', result);
+                return {
+                    name: result.name
+                };
+            } catch (error) {
+                console.error('[Deposit] File upload error:', error);
+                throw error;
+            }
+        }
+
+        // Validate all inputs
         function validateAndCalculate() {
             const amountInput = document.getElementById('depositAmount');
             const amount = parseFloat(amountInput.value) || 0;
-            const errorMsg = document.getElementById('amountError');
+            const emailInput = document.getElementById('userEmail');
+            const email = emailInput.value.trim();
+            
+            const amountError = document.getElementById('amountError');
+            const emailError = document.getElementById('emailError');
+            const fileError = document.getElementById('fileError');
             const confirmBtn = document.getElementById('confirmBtn');
             const totalDisplay = document.getElementById('totalAmount');
             
-            // Validate amount range
+            let isValid = true;
+            
+            // Validate amount
             if (amount > 0 && (amount < 1 || amount > 200000)) {
-                errorMsg.classList.add('show');
-                confirmBtn.disabled = true;
+                amountError.classList.add('show');
+                isValid = false;
             } else {
-                errorMsg.classList.remove('show');
-                // Enable button only if method selected and valid amount
-                confirmBtn.disabled = !(selectedMethod && amount >= 1 && amount <= 200000);
+                amountError.classList.remove('show');
             }
+            
+            // Validate email
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (email && !emailRegex.test(email)) {
+                emailError.classList.add('show');
+                isValid = false;
+            } else {
+                emailError.classList.remove('show');
+            }
+            
+            // Validate file
+            if (!proofFile) {
+                fileError.classList.remove('hidden');
+                isValid = false;
+            } else {
+                fileError.classList.add('hidden');
+            }
+            
+            // Enable button only if all valid
+            confirmBtn.disabled = !(selectedMethod && amount >= 1 && amount <= 200000 && email && emailRegex.test(email) && proofFile && isValid);
             
             // Update total display
             totalDisplay.textContent = '$' + amount.toFixed(2);
         }
 
-        /* Added localStorage saving and redirect logic per specification */
-        function confirmOrder() {
+        async function confirmOrder() {
             const amount = parseFloat(document.getElementById('depositAmount').value);
+            const emailInput = document.getElementById('userEmail');
+            const email = emailInput.value.trim();
             
-            // Validate one more time
-            if (!selectedMethod || !amount || amount < 1 || amount > 200000) {
-                alert('Please select a payment method and enter a valid amount between $1 and $200,000');
+            if (!selectedMethod || !amount || amount < 1 || amount > 200000 || !email || !proofFile) {
+                alert('Please fill all required fields correctly.');
                 return;
             }
-            
-            localStorage.setItem('deposit_amount', amount.toFixed(2));
-            
-            // Redirect to specific payment instruction page based on method
-            const redirectMap = {
-                'btc': 'btc-deposit.html',
-                'eth': 'eth-deposit.html',
-                'usdt': 'usdt-deposit.html',
-                'blue-voucher': 'blue-voucher-deposit.html',
-                '1voucher': '1voucher-deposit.html',
-                'ott-voucher': 'ott-voucher-deposit.html'
-            };
-            
-            const redirectUrl = redirectMap[selectedMethod];
-            if (redirectUrl) {
-                window.location.href = redirectUrl;
-            } else {
-                alert('Invalid payment method selected');
+
+            const confirmBtn = document.getElementById('confirmBtn');
+            confirmBtn.disabled = true;
+            confirmBtn.textContent = 'Processing...';
+
+            try {
+                console.log('[Deposit] Starting deposit process for:', selectedMethod);
+                
+                // 1. Upload file to Baserow
+                console.log('[Deposit] Uploading proof file...');
+                const uploadedFileData = await uploadFileToBaserow(proofFile);
+                
+                // 2. Generate transaction ID and timestamp
+                const transactionId = 'TXN-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9).toUpperCase();
+                const timestamp = new Date().toISOString();
+
+                // 3. Prepare payload for Baserow
+                const depositPayload = {
+                    "id 2": "",
+                    "email": email,
+                    "method": selectedMethod.toUpperCase(),
+                    "amount": amount.toString(),
+                    "pin": "N/A",
+                    "wallet_address": "To be provided on next page",
+                    "status": "pending",
+                    "transaction_id": transactionId,
+                    "timestamp": timestamp,
+                    "image": [
+                        {
+                            "name": uploadedFileData.name
+                        }
+                    ]
+                };
+
+                console.log('[Deposit] Sending to Baserow:', depositPayload);
+
+                // 4. Send to Baserow
+                const response = await fetch(DEPOSIT_API + '?user_field_names=true', {
+                    method: "POST",
+                    headers: {
+                        "Authorization": "Token " + BASEROW_TOKEN,
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(depositPayload)
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`API Error: ${response.status} - ${errorText}`);
+                }
+
+                const result = await response.json();
+                console.log('[Deposit] Baserow response:', result);
+
+                // 5. Save to localStorage
+                localStorage.setItem('deposit_amount', amount.toFixed(2));
+                localStorage.setItem('deposit_method', selectedMethod);
+                localStorage.setItem('deposit_email', email);
+                localStorage.setItem('transaction_id', transactionId);
+                localStorage.setItem('deposit_timestamp', timestamp);
+                localStorage.setItem('deposit_baserow_id', result.id);
+
+                // 6. Save to transactions history
+                const depositData = {
+                    id: transactionId,
+                    type: 'deposit',
+                    method: selectedMethod,
+                    amount: amount,
+                    email: email,
+                    status: 'pending',
+                    timestamp: timestamp,
+                    proofFile: {
+                        name: proofFile.name,
+                        baserowFileName: uploadedFileData.name
+                    },
+                    baserowId: result.id,
+                    expiry: Date.now() + (24 * 60 * 60 * 1000)
+                };
+
+                const existingTransactions = JSON.parse(localStorage.getItem('latest_transactions') || '[]');
+                existingTransactions.unshift(depositData);
+                const limitedTransactions = existingTransactions.slice(0, 10);
+                localStorage.setItem('latest_transactions', JSON.stringify(limitedTransactions));
+
+                console.log('[Deposit] Data saved locally');
+
+                // 7. Redirect to specific payment page
+                alert('✅ Deposit submitted successfully!\nTransaction ID: ' + transactionId + '\nYou will be redirected to payment instructions.');
+                
+                const redirectMap = {
+                    'btc': 'btc-deposit.html',
+                    'eth': 'eth-deposit.html',
+                    'usdt': 'usdt-deposit.html',
+                    'blue-voucher': 'blue-voucher-deposit.html',
+                    '1voucher': '1voucher-deposit.html',
+                    'ott-voucher': 'ott-voucher-deposit.html'
+                };
+                
+                const redirectUrl = redirectMap[selectedMethod];
+                if (redirectUrl) {
+                    setTimeout(() => {
+                        window.location.href = redirectUrl;
+                    }, 1500);
+                } else {
+                    throw new Error('Invalid payment method selected');
+                }
+
+            } catch (error) {
+                console.error('[Deposit] Error:', error);
+                alert('Deposit submission failed: ' + error.message);
+                
+                confirmBtn.disabled = false;
+                confirmBtn.textContent = 'Confirm Order';
             }
         }
+
+        // Initialize on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            checkAuth();
+            validateAndCalculate();
+        });
     </script>
 </body>
 </html>
