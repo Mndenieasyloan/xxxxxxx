@@ -352,31 +352,7 @@
                         <p id="totalHashrate" class="text-2xl font-bold text-white">0 TH/s</p>
                     </div>
                 </div>
-
-                <!-- Charts Section -->
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-                    <!-- Candlestick Chart -->
-                    <div class="lg:col-span-2 tracking-card">
-                        <h3 class="text-lg font-semibold text-white mb-4">Mining Performance</h3>
-                        <div id="candlestickChart" class="candle-chart"></div>
-                    </div>
-                    
-                    <!-- Pie Chart -->
-                    <div class="tracking-card">
-                        <h3 class="text-lg font-semibold text-white mb-4">Plan Distribution</h3>
-                        <div class="relative">
-                            <canvas id="planDistributionChart"></canvas>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Line Chart for Returns -->
-                <div class="tracking-card mb-8">
-                    <h3 class="text-lg font-semibold text-white mb-4">Daily Returns Projection</h3>
-                    <canvas id="returnsChart"></canvas>
-                </div>
-
-                <!-- Active Mining Plans -->
+<!-- Active Mining Plans -->
                 <div id="activeMiningPlans" class="space-y-6 mb-8">
                     <!-- Plans will be loaded here -->
                 </div>
@@ -412,6 +388,30 @@
                             </tbody>
                         </table>
                     </div>
+                <!-- Charts Section -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+                    <!-- Candlestick Chart -->
+                    <div class="lg:col-span-2 tracking-card">
+                        <h3 class="text-lg font-semibold text-white mb-4">Mining Performance</h3>
+                        <div id="candlestickChart" class="candle-chart"></div>
+                    </div>
+                    
+                    <!-- Pie Chart -->
+                    <div class="tracking-card">
+                        <h3 class="text-lg font-semibold text-white mb-4">Plan Distribution</h3>
+                        <div class="relative">
+                            <canvas id="planDistributionChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Line Chart for Returns -->
+                <div class="tracking-card mb-8">
+                    <h3 class="text-lg font-semibold text-white mb-4">Daily Returns Projection</h3>
+                    <canvas id="returnsChart"></canvas>
+                </div>
+
+                
                 </div>
             </div>
         </main>
