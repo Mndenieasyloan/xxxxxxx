@@ -373,318 +373,369 @@
     </div>
 
     <script>
-        const DEPOSIT_API = "https://api.baserow.io/api/database/rows/table/756078/";
-        const FILE_UPLOAD_API = "https://api.baserow.io/api/user-files/upload-file/";
-        const BASEROW_TOKEN = "LG6hnTBxgBG78FueElsSwpHRd4Wep1oL";
-        
-        let currentUserEmail = '';
-        let proofFile = null;
+    const DEPOSIT_API = "https://api.baserow.io/api/database/rows/table/756078/";
+    const FILE_UPLOAD_API = "https://api.baserow.io/api/user-files/upload-file/";
+    const BASEROW_TOKEN = "LG6hnTBxgBG78FueElsSwpHRd4Wep1oL";
+    
+    let currentUserEmail = '';
+    let proofFile = null;
+    let uploadedFileData = null;
 
-        // Check if user is logged in
-        function checkAuth() {
-            const userEmail = localStorage.getItem("v0trade_user_email");
-            console.log('[USDT Deposit] Checking auth - user email:', userEmail);
+    // Check if user is logged in
+    function checkAuth() {
+        const userEmail = localStorage.getItem("v0trade_user_email");
+        console.log('[USDT Deposit] Checking auth - user email:', userEmail);
+        
+        if (!userEmail) {
+            console.log('[USDT Deposit] No user logged in - allowing access');
+            return null;
+        }
+        
+        return userEmail;
+    }
+
+    // Update header email display
+    function updateHeaderEmail(email) {
+        const headerEmailElements = document.querySelectorAll('#headerEmailDisplay, .user-email-display');
+        headerEmailElements.forEach(element => {
+            if (element) {
+                element.textContent = email;
+            }
+        });
+    }
+
+    // Auto-fill email if user is logged in
+    function autoFillUserEmail() {
+        if (currentUserEmail) {
+            const emailInput = document.getElementById('userEmail');
+            if (emailInput) {
+                emailInput.value = currentUserEmail;
+                emailInput.readOnly = true;
+                emailInput.classList.add('bg-gray-100', 'cursor-not-allowed');
+            }
+        }
+    }
+
+    // File upload handling
+    function handleFileSelect(event) {
+        const file = event.target.files[0];
+        if (file) {
+            validateAndSetFile(file);
+        }
+    }
+
+    function handleDrop(event) {
+        event.preventDefault();
+        event.stopPropagation();
+        
+        const container = document.getElementById('fileUploadContainer');
+        container.classList.remove('dragover');
+        
+        const file = event.dataTransfer.files[0];
+        if (file) {
+            validateAndSetFile(file);
+        }
+    }
+
+    function handleDragOver(event) {
+        event.preventDefault();
+        event.stopPropagation();
+        const container = document.getElementById('fileUploadContainer');
+        container.classList.add('dragover');
+    }
+
+    function handleDragLeave(event) {
+        event.preventDefault();
+        event.stopPropagation();
+        const container = document.getElementById('fileUploadContainer');
+        container.classList.remove('dragover');
+    }
+
+    function validateAndSetFile(file) {
+        // Check file size (5MB max)
+        const maxSize = 5 * 1024 * 1024;
+        if (file.size > maxSize) {
+            alert('File is too large. Maximum size is 5MB.');
+            return;
+        }
+
+        // Check file type
+        const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'application/pdf'];
+        if (!validTypes.includes(file.type)) {
+            alert('Please upload a valid image or PDF file.');
+            return;
+        }
+
+        proofFile = file;
+        document.getElementById('fileName').textContent = file.name;
+        document.getElementById('fileError').classList.add('hidden');
+
+        // Show preview for images
+        if (file.type.startsWith('image/')) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const preview = document.getElementById('imagePreview');
+                preview.src = e.target.result;
+                preview.classList.add('show');
+            };
+            reader.readAsDataURL(file);
+        } else {
+            document.getElementById('imagePreview').classList.remove('show');
+        }
+    }
+
+    // Upload file to Baserow
+    async function uploadFileToBaserow(file) {
+        console.log('[USDT Deposit] Starting file upload...');
+        
+        const formData = new FormData();
+        formData.append('file', file);
+
+        try {
+            const response = await fetch(FILE_UPLOAD_API, {
+                method: 'POST',
+                headers: {
+                    'Authorization': 'Token ' + BASEROW_TOKEN
+                },
+                body: formData
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('[USDT Deposit] File upload failed:', errorText);
+                throw new Error(`File upload failed: ${response.status}`);
+            }
+
+            const result = await response.json();
+            console.log('[USDT Deposit] File uploaded successfully:', result);
+            return result;
+        } catch (error) {
+            console.error('[USDT Deposit] File upload error:', error);
+            throw error;
+        }
+    }
+
+    // Send deposit data to Baserow
+    async function sendDepositToBaserow(depositData) {
+        console.log('[USDT Deposit] Sending deposit data to Baserow:', depositData);
+        
+        try {
+            const response = await fetch(DEPOSIT_API + '?user_field_names=true', {
+                method: "POST",
+                headers: {
+                    "Authorization": "Token " + BASEROW_TOKEN,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(depositData)
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('[USDT Deposit] Baserow API error:', errorText);
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const result = await response.json();
+            console.log('[USDT Deposit] Baserow response successful:', result);
+            return result;
+        } catch (error) {
+            console.error('[USDT Deposit] Error sending to Baserow:', error);
+            throw error;
+        }
+    }
+
+    async function confirmPayment() {
+        const emailInput = document.getElementById('userEmail');
+        const email = emailInput.value.trim();
+        const amount = localStorage.getItem('deposit_amount') || '0.00';
+        const usdtWallet = document.getElementById('usdtWallet').textContent;
+
+        // Validate required fields
+        if (!email) {
+            alert('Please enter your email address');
+            return;
+        }
+
+        // Validate email format
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            alert('Please enter a valid email address');
+            return;
+        }
+
+        // Validate proof file
+        if (!proofFile) {
+            document.getElementById('fileError').classList.remove('hidden');
+            alert('Please upload proof of payment screenshot');
+            return;
+        }
+
+        // Disable button and show loading
+        const confirmBtn = document.getElementById('confirmBtn');
+        confirmBtn.disabled = true;
+        confirmBtn.textContent = 'Processing...';
+
+        try {
+            console.log('[USDT Deposit] Starting deposit process...');
+            console.log('[USDT Deposit] Amount:', amount);
+            console.log('[USDT Deposit] Email:', email);
+            console.log('[USDT Deposit] Wallet:', usdtWallet);
             
-            if (!userEmail) {
-                console.log('[USDT Deposit] No user logged in - allowing access');
-                // Don't redirect, just show the page without pre-filled email
-                return null;
+            // 1. Upload file to Baserow first
+            console.log('[USDT Deposit] Uploading proof file...');
+            uploadedFileData = await uploadFileToBaserow(proofFile);
+            console.log('[USDT Deposit] File uploaded data:', uploadedFileData);
+            
+            // 2. Generate transaction ID
+            const transactionId = 'TXN-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9).toUpperCase();
+            
+            // 3. Get current timestamp
+            const timestamp = new Date().toISOString();
+
+            // 4. Prepare COMPLETE deposit data for Baserow
+            const depositPayload = {
+                field_6394426: email,                    // email field
+                field_6394427: 'USDT',                   // method field
+                field_6394428: amount.toString(),        // amount field (ensure string)
+                field_6394429: 'N/A',                    // pin field
+                field_6394430: usdtWallet,               // wallet_address field
+                field_6394431: 'pending',                // status field
+                field_6394432: transactionId,            // transaction_id field
+                field_6394433: timestamp,                // timestamp field
+                field_6445160: [uploadedFileData]        // image field with uploaded file object
+            };
+
+            console.log('[USDT Deposit] Complete payload for Baserow:', JSON.stringify(depositPayload, null, 2));
+
+            // 5. Send ALL deposit data to Baserow
+            const baserowResponse = await sendDepositToBaserow(depositPayload);
+            
+            console.log('[USDT Deposit] Baserow created row:', baserowResponse);
+
+            // 6. Save ALL data to localStorage as backup
+            const depositData = {
+                id: transactionId,
+                type: 'deposit',
+                method: 'USDT',
+                amount: amount,
+                email: email,
+                wallet: usdtWallet,
+                status: 'pending',
+                timestamp: timestamp,
+                proofFile: {
+                    name: proofFile.name,
+                    size: proofFile.size,
+                    type: proofFile.type,
+                    lastModified: proofFile.lastModified,
+                    baserowReference: uploadedFileData
+                },
+                baserowId: baserowResponse.id,
+                expiry: Date.now() + (24 * 60 * 60 * 1000)
+            };
+
+            // Save to latest_transactions array
+            const existingTransactions = JSON.parse(localStorage.getItem('latest_transactions') || '[]');
+            existingTransactions.unshift(depositData);
+            const limitedTransactions = existingTransactions.slice(0, 10);
+            localStorage.setItem('latest_transactions', JSON.stringify(limitedTransactions));
+            
+            // Save individual deposit details
+            localStorage.setItem('deposit_method', 'USDT');
+            localStorage.setItem('deposit_amount', amount);
+            localStorage.setItem('deposit_wallet_address', usdtWallet);
+            localStorage.setItem('deposit_email', email);
+            localStorage.setItem('transaction_id', transactionId);
+            localStorage.setItem('deposit_timestamp', timestamp);
+            localStorage.setItem('deposit_status', 'pending');
+            localStorage.setItem('deposit_baserow_id', baserowResponse.id);
+            localStorage.setItem('deposit_proof_file', JSON.stringify(depositData.proofFile));
+
+            console.log('[USDT Deposit] Complete deposit data saved locally:', depositData);
+
+            // 7. Show success message and redirect
+            alert('Deposit submitted successfully! You will be redirected to the payment pending page.');
+            
+            // Redirect to payment pending page
+            setTimeout(() => {
+                window.location.href = 'payment-pending.html';
+            }, 1000);
+
+        } catch (error) {
+            console.error('[USDT Deposit] Error processing deposit:', error);
+            
+            // More detailed error message
+            let errorMessage = 'Failed to process deposit. ';
+            if (error.message.includes('401')) {
+                errorMessage += 'Authentication error. Please check your API token.';
+            } else if (error.message.includes('400')) {
+                errorMessage += 'Bad request. Please check the data format.';
+            } else if (error.message.includes('404')) {
+                errorMessage += 'API endpoint not found.';
+            } else if (error.message.includes('500')) {
+                errorMessage += 'Server error. Please try again later.';
+            } else {
+                errorMessage += 'Please check your connection and try again.';
             }
             
-            return userEmail;
+            alert(errorMessage + '\n\nError details: ' + error.message);
+            
+            // Re-enable button
+            confirmBtn.disabled = false;
+            confirmBtn.textContent = 'Confirm Payment';
+        }
+    }
+
+    // Navigation functions
+    function toggleMobileMenu() {
+        const menu = document.getElementById('mobileMenu');
+        if (menu) {
+            menu.classList.toggle('active');
+        }
+    }
+    
+    function toggleSidebar() {
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('sidebarOverlay');
+        if (sidebar && overlay) {
+            sidebar.classList.toggle('active');
+            overlay.classList.toggle('active');
+        }
+    }
+
+    // Clean up expired transactions (runs on page load)
+    function cleanupExpiredTransactions() {
+        try {
+            const transactions = JSON.parse(localStorage.getItem('latest_transactions') || '[]');
+            const now = Date.now();
+            const validTransactions = transactions.filter(tx => tx.expiry > now);
+            localStorage.setItem('latest_transactions', JSON.stringify(validTransactions));
+        } catch (error) {
+            console.error('[USDT Deposit] Error cleaning up transactions:', error);
+        }
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+        // Check authentication
+        const userEmail = checkAuth();
+        currentUserEmail = userEmail || '';
+        
+        // Update header with user email if logged in
+        if (currentUserEmail) {
+            updateHeaderEmail(currentUserEmail);
         }
 
-        // Update header email display
-        function updateHeaderEmail(email) {
-            const headerEmailElements = document.querySelectorAll('#headerEmailDisplay, .user-email-display');
-            headerEmailElements.forEach(element => {
-                if (element) {
-                    element.textContent = email;
-                }
-            });
-        }
+        // Load amount from localStorage
+        const amount = localStorage.getItem('deposit_amount') || '0.00';
+        document.getElementById('requestedAmount').textContent = `$${amount} USD`;
+        document.getElementById('payAmount').textContent = `$${amount} USD worth of USDT`;
+        document.getElementById('reminderAmount').textContent = `$${amount} USD`;
 
         // Auto-fill email if user is logged in
-        function autoFillUserEmail() {
-            if (currentUserEmail) {
-                const emailInput = document.getElementById('userEmail');
-                if (emailInput) {
-                    emailInput.value = currentUserEmail;
-                    emailInput.readOnly = true;
-                    emailInput.classList.add('bg-gray-100', 'cursor-not-allowed');
-                }
-            }
-        }
+        autoFillUserEmail();
 
-        // File upload handling
-        function handleFileSelect(event) {
-            const file = event.target.files[0];
-            if (file) {
-                validateAndSetFile(file);
-            }
-        }
-
-        function handleDrop(event) {
-            event.preventDefault();
-            event.stopPropagation();
-            
-            const container = document.getElementById('fileUploadContainer');
-            container.classList.remove('dragover');
-            
-            const file = event.dataTransfer.files[0];
-            if (file) {
-                validateAndSetFile(file);
-            }
-        }
-
-        function handleDragOver(event) {
-            event.preventDefault();
-            event.stopPropagation();
-            const container = document.getElementById('fileUploadContainer');
-            container.classList.add('dragover');
-        }
-
-        function handleDragLeave(event) {
-            event.preventDefault();
-            event.stopPropagation();
-            const container = document.getElementById('fileUploadContainer');
-            container.classList.remove('dragover');
-        }
-
-        function validateAndSetFile(file) {
-            // Check file size (5MB max)
-            const maxSize = 5 * 1024 * 1024; // 5MB in bytes
-            if (file.size > maxSize) {
-                alert('File is too large. Maximum size is 5MB.');
-                return;
-            }
-
-            // Check file type
-            const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'application/pdf'];
-            if (!validTypes.includes(file.type)) {
-                alert('Please upload a valid image or PDF file.');
-                return;
-            }
-
-            proofFile = file;
-            document.getElementById('fileName').textContent = file.name;
-            document.getElementById('fileError').classList.add('hidden');
-
-            // Show preview for images
-            if (file.type.startsWith('image/')) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const preview = document.getElementById('imagePreview');
-                    preview.src = e.target.result;
-                    preview.classList.add('show');
-                };
-                reader.readAsDataURL(file);
-            } else {
-                document.getElementById('imagePreview').classList.remove('show');
-            }
-        }
-
-        // Upload file to Baserow
-        async function uploadFileToBaserow(file) {
-            const formData = new FormData();
-            formData.append('file', file);
-
-            try {
-                const response = await fetch(FILE_UPLOAD_API, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': 'Token ' + BASEROW_TOKEN
-                    },
-                    body: formData
-                });
-
-                if (!response.ok) {
-                    throw new Error(`File upload failed: ${response.status}`);
-                }
-
-                const result = await response.json();
-                console.log('[USDT Deposit] File uploaded:', result);
-                return result;
-            } catch (error) {
-                console.error('[USDT Deposit] File upload error:', error);
-                throw error;
-            }
-        }
-
-        async function confirmPayment() {
-            const emailInput = document.getElementById('userEmail');
-            const email = emailInput.value.trim();
-            const amount = localStorage.getItem('deposit_amount') || '0.00';
-            const usdtWallet = document.getElementById('usdtWallet').textContent;
-
-            // Validate required fields
-            if (!email) {
-                alert('Please enter your email address');
-                return;
-            }
-
-            // Validate email format
-            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            if (!emailRegex.test(email)) {
-                alert('Please enter a valid email address');
-                return;
-            }
-
-            // Validate proof file
-            if (!proofFile) {
-                document.getElementById('fileError').classList.remove('hidden');
-                alert('Please upload proof of payment screenshot');
-                return;
-            }
-
-            // Disable button and show loading
-            const confirmBtn = document.getElementById('confirmBtn');
-            confirmBtn.disabled = true;
-            confirmBtn.textContent = 'Processing...';
-
-            try {
-                // 1. Upload file to Baserow
-                const fileUploadResult = await uploadFileToBaserow(proofFile);
-                
-                // 2. Generate transaction ID
-                const transactionId = 'TXN-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9).toUpperCase();
-                
-                // 3. Get current timestamp
-                const timestamp = new Date().toISOString();
-
-                // 4. Send deposit data to Baserow with file reference
-                const depositPayload = {
-                    field_6394426: email,                    // email
-                    field_6394427: 'USDT',                   // method
-                    field_6394428: amount,                   // amount
-                    field_6394429: 'N/A',                    // pin (ignored as requested)
-                    field_6394430: usdtWallet,               // wallet_address
-                    field_6394431: 'incoming',               // status (marked as incoming)
-                    field_6394432: transactionId,            // transaction_id
-                    field_6394433: timestamp,                // timestamp
-                    field_6445160: [fileUploadResult]        // image field with uploaded file object
-                };
-
-                console.log('[USDT Deposit] Sending to Baserow:', depositPayload);
-
-                const response = await fetch(DEPOSIT_API + '?user_field_names=true', {
-                    method: "POST",
-                    headers: {
-                        "Authorization": "Token " + BASEROW_TOKEN,
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify(depositPayload)
-                });
-
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-
-                const result = await response.json();
-                console.log('[USDT Deposit] Baserow response:', result);
-
-                // 5. Save ALL data to localStorage
-                const depositData = {
-                    id: transactionId,
-                    type: 'deposit',
-                    method: 'USDT',
-                    amount: amount,
-                    email: email,
-                    wallet: usdtWallet,
-                    status: 'pending',
-                    timestamp: timestamp,
-                    proofFile: {
-                        name: proofFile.name,
-                        size: proofFile.size,
-                        type: proofFile.type,
-                        lastModified: proofFile.lastModified,
-                        baserowReference: fileUploadResult
-                    },
-                    expiry: Date.now() + (24 * 60 * 60 * 1000) // 24 hours from now
-                };
-
-                // Save to latest_transactions array
-                const existingTransactions = JSON.parse(localStorage.getItem('latest_transactions') || '[]');
-                existingTransactions.unshift(depositData);
-                const limitedTransactions = existingTransactions.slice(0, 10);
-                localStorage.setItem('latest_transactions', JSON.stringify(limitedTransactions));
-                
-                // Save individual deposit details
-                localStorage.setItem('deposit_method', 'USDT');
-                localStorage.setItem('deposit_amount', amount);
-                localStorage.setItem('deposit_wallet_address', usdtWallet);
-                localStorage.setItem('deposit_email', email);
-                localStorage.setItem('transaction_id', transactionId);
-                localStorage.setItem('deposit_timestamp', timestamp);
-                localStorage.setItem('deposit_proof_file', JSON.stringify(depositData.proofFile));
-
-                console.log('[USDT Deposit] Complete deposit data saved locally:', depositData);
-
-                // 6. Redirect to payment pending page
-                window.location.href = 'payment-pending.html';
-
-            } catch (error) {
-                console.error('[USDT Deposit] Error processing deposit:', error);
-                alert('Failed to process deposit. Please check your connection and try again.');
-                
-                // Re-enable button
-                confirmBtn.disabled = false;
-                confirmBtn.textContent = 'Confirm Payment';
-            }
-        }
-
-        // Navigation functions
-        function toggleMobileMenu() {
-            const menu = document.getElementById('mobileMenu');
-            if (menu) {
-                menu.classList.toggle('active');
-            }
-        }
-        
-        function toggleSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            const overlay = document.getElementById('sidebarOverlay');
-            if (sidebar && overlay) {
-                sidebar.classList.toggle('active');
-                overlay.classList.toggle('active');
-            }
-        }
-
-        // Clean up expired transactions (runs on page load)
-        function cleanupExpiredTransactions() {
-            try {
-                const transactions = JSON.parse(localStorage.getItem('latest_transactions') || '[]');
-                const now = Date.now();
-                const validTransactions = transactions.filter(tx => tx.expiry > now);
-                localStorage.setItem('latest_transactions', JSON.stringify(validTransactions));
-            } catch (error) {
-                console.error('[USDT Deposit] Error cleaning up transactions:', error);
-            }
-        }
-
-        window.addEventListener('DOMContentLoaded', () => {
-            // Check authentication
-            const userEmail = checkAuth();
-            currentUserEmail = userEmail || '';
-            
-            // Update header with user email if logged in
-            if (currentUserEmail) {
-                updateHeaderEmail(currentUserEmail);
-            }
-
-            // Load amount from localStorage
-            const amount = localStorage.getItem('deposit_amount') || '0.00';
-            document.getElementById('requestedAmount').textContent = `$${amount} USD`;
-            document.getElementById('payAmount').textContent = `$${amount} USD worth of USDT`;
-            document.getElementById('reminderAmount').textContent = `$${amount} USD`;
-
-            // Auto-fill email if user is logged in
-            autoFillUserEmail();
-
-            // Run cleanup on page load
-            cleanupExpiredTransactions();
-        });
-    </script>
-
+        // Run cleanup on page load
+        cleanupExpiredTransactions();
+    });
+</script>
 </body>
 </html>
