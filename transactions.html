@@ -27,9 +27,22 @@
         .dropdown { position: relative; display: inline-block; }
         .dropdown-content { display: none; position: absolute; background-color: rgb(15 23 42 / 0.95); min-width: 12rem; border: 1px solid rgb(168 85 247 / 0.2); border-radius: 0.5rem; padding: 0.5rem; z-index: 1000; backdrop-filter: blur(10px); }
         .dropdown:hover .dropdown-content { display: block; }
+        
+        /* Status badge styles */
+        .status-completed { background-color: #d1fae5; color: #065f46; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; }
+        .status-pending { background-color: #fef3c7; color: #92400e; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; }
+        .status-failed { background-color: #fee2e2; color: #991b1b; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; }
+        .status-processing { background-color: #dbeafe; color: #1e40af; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; }
+        
+        /* Type colors */
+        .type-deposit { color: #059669; }
+        .type-withdrawal { color: #dc2626; }
+        .type-earning { color: #7c3aed; }
+        .type-commission { color: #d97706; }
+        .type-investment { color: #2563eb; }
     </style>
 </head>
-<body class="bg-gray-50">
+<body class="bg-gray-50" onload="loadTransactions()">
     
     <!-- Added mobile sidebar toggle button -->
     <button onclick="toggleSidebar()" class="sidebar-toggle fixed left-4 top-20 z-50 bg-orange-500 hover:bg-orange-600 text-white p-2 rounded-lg shadow-lg transition">
@@ -88,7 +101,7 @@
 
                 <div class="hidden items-center gap-4 md:flex">
                     <a href="dashboard.html" class="text-sm text-purple-400 hover:text-purple-300 transition">Dashboard</a>
-                    <span class="text-sm text-gray-400">user@email.com</span>
+                    <span class="text-sm text-gray-400" id="headerEmailDisplay">user@email.com</span>
                     <a href="index.html" class="text-sm text-gray-300 hover:text-white transition">Logout</a>
                 </div>
 
@@ -141,46 +154,700 @@
 
         <main class="flex-1 p-4 md:p-8">
             <div class="max-w-6xl">
-                <h1 class="text-3xl font-bold text-gray-900 mb-8">All Transactions</h1>
+                <div class="flex justify-between items-center mb-8">
+                    <div>
+                        <h1 class="text-3xl font-bold text-gray-900">All Transactions</h1>
+                        <p class="text-gray-500 mt-2" id="transactionCount">Loading transactions...</p>
+                    </div>
+                    <div class="flex gap-3">
+                        <button onclick="refreshTransactions()" class="flex items-center gap-2 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                            </svg>
+                            Refresh
+                        </button>
+                        <button onclick="exportTransactions()" class="flex items-center gap-2 px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg transition">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                            </svg>
+                            Export
+                        </button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                    <div class="bg-white rounded-xl border border-gray-200 p-4">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-500">Total Amount</p>
+                                <p id="totalAmount" class="text-2xl font-bold text-gray-900">$0.00</p>
+                            </div>
+                            <div class="text-green-500 bg-green-50 p-2 rounded-lg">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-xl border border-gray-200 p-4">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-500">Deposits</p>
+                                <p id="totalDeposits" class="text-2xl font-bold text-green-600">$0.00</p>
+                            </div>
+                            <div class="text-green-500 bg-green-50 p-2 rounded-lg">
+                                <span class="text-lg">📥</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-xl border border-gray-200 p-4">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-500">Withdrawals</p>
+                                <p id="totalWithdrawals" class="text-2xl font-bold text-red-600">$0.00</p>
+                            </div>
+                            <div class="text-red-500 bg-red-50 p-2 rounded-lg">
+                                <span class="text-lg">📤</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-xl border border-gray-200 p-4">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-500">Earnings</p>
+                                <p id="totalEarnings" class="text-2xl font-bold text-purple-600">$0.00</p>
+                            </div>
+                            <div class="text-purple-500 bg-purple-50 p-2 rounded-lg">
+                                <span class="text-lg">💰</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
                 <div class="bg-white rounded-xl border border-gray-200 p-6 mb-6">
-                    <div class="flex gap-4 mb-6">
-                        <input type="text" placeholder="Search transactions..." class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500">
-                        <select class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500">
-                            <option>All Types</option>
-                            <option>Deposit</option>
-                            <option>Withdrawal</option>
-                            <option>Earnings</option>
-                            <option>Commissions</option>
-                        </select>
+                    <div class="flex flex-col md:flex-row md:items-center gap-4 mb-6">
+                        <div class="flex-1">
+                            <input type="text" id="searchInput" placeholder="Search transactions by ID, type, or method..." 
+                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                                   onkeyup="filterTransactions()">
+                        </div>
+                        <div class="flex gap-2">
+                            <select id="typeFilter" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500" onchange="filterTransactions()">
+                                <option value="all">All Types</option>
+                                <option value="deposit">Deposit</option>
+                                <option value="withdrawal">Withdrawal</option>
+                                <option value="earning">Earnings</option>
+                                <option value="commission">Commissions</option>
+                                <option value="investment">Investment</option>
+                            </select>
+                            <select id="statusFilter" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500" onchange="filterTransactions()">
+                                <option value="all">All Status</option>
+                                <option value="completed">Completed</option>
+                                <option value="pending">Pending</option>
+                                <option value="processing">Processing</option>
+                                <option value="failed">Failed</option>
+                            </select>
+                        </div>
                     </div>
 
-                    <div class="overflow-x-auto">
-                        <table class="w-full">
-                            <thead class="bg-gray-50">
-                                <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Amount</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Wallet</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td colspan="6" class="px-6 py-12 text-center text-gray-500">No transactions found</td>
-                                </tr>
-                            </tbody>
-                        </table>
+                    <div id="loadingState" class="text-center py-12">
+                        <div class="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-orange-500 mb-4"></div>
+                        <p class="text-gray-600">Loading transactions...</p>
+                    </div>
+
+                    <div id="contentState" class="hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer" onclick="sortTable('date')">
+                                            Date <span id="dateSortIcon" class="ml-1">↓</span>
+                                        </th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer" onclick="sortTable('type')">
+                                            Type <span id="typeSortIcon" class="ml-1"></span>
+                                        </th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer" onclick="sortTable('amount')">
+                                            Amount <span id="amountSortIcon" class="ml-1"></span>
+                                        </th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Method</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer" onclick="sortTable('status')">
+                                            Status <span id="statusSortIcon" class="ml-1"></span>
+                                        </th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="transactionsTableBody">
+                                    <!-- Transactions will be loaded here -->
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <div id="noTransactionsMessage" class="hidden text-center py-12">
+                            <div class="text-gray-500">
+                                <svg class="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                                <p class="text-lg font-medium mb-2">No transactions found</p>
+                                <p class="text-sm mb-4">Your transactions will appear here once you make deposits, withdrawals, or earn commissions</p>
+                                <div class="flex gap-3 justify-center">
+                                    <a href="deposit.html" class="inline-flex items-center px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition">
+                                        Make Deposit
+                                    </a>
+                                    <a href="withdraw.html" class="inline-flex items-center px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition">
+                                        Make Withdrawal
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="errorState" class="hidden bg-red-50 border border-red-200 rounded-lg p-8 text-center">
+                        <svg class="w-16 h-16 mx-auto mb-4 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <h3 class="text-lg font-medium text-gray-900 mb-2">Unable to load transactions</h3>
+                        <p class="text-gray-600 mb-4" id="errorMessage">There was an error fetching your transaction history.</p>
+                        <button onclick="loadTransactions()" class="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition">
+                            Try Again
+                        </button>
                     </div>
                 </div>
             </div>
         </main>
     </div>
 
-    <!-- Added mobile menu and sidebar toggle scripts -->
     <script>
+        // Baserow API Configuration (same as dashboard)
+        const API_TOKEN = "LG6hnTBxgBG78FueElsSwpHRd4Wep1oL";
+        const TRANSACTIONS_TABLE = 756081;
+        const TRANSACTIONS_SYNC_INTERVAL = 24 * 60 * 60 * 1000; // 24 hours
+        
+        // Local storage keys
+        const LAST_TRANSACTION_SYNC_KEY = "v0trade_last_transaction_sync";
+        const TRANSACTIONS_DATA_KEY = "v0trade_transactions_data";
+        
+        // State variables
+        let allTransactions = [];
+        let filteredTransactions = [];
+        let currentSort = { field: 'date', direction: 'desc' };
+        
+        // Load user email and transactions
+        function loadTransactions() {
+            const userEmail = localStorage.getItem("v0trade_user_email");
+            
+            if (!userEmail) {
+                window.location.href = "login.html";
+                return;
+            }
+            
+            document.getElementById("headerEmailDisplay").textContent = userEmail;
+            
+            // Show loading state
+            document.getElementById("loadingState").classList.remove("hidden");
+            document.getElementById("contentState").classList.add("hidden");
+            document.getElementById("errorState").classList.add("hidden");
+            
+            // Try to load from Baserow
+            fetchTransactionsFromBaserow(userEmail);
+        }
+        
+        // Fetch transactions from Baserow
+        async function fetchTransactionsFromBaserow(email, forceRefresh = false) {
+            try {
+                const now = Date.now();
+                const lastSync = localStorage.getItem(`${LAST_TRANSACTION_SYNC_KEY}_${email}`);
+                const cachedData = localStorage.getItem(`${TRANSACTIONS_DATA_KEY}_${email}`);
+                
+                // Check if we should use cached data or fetch new
+                if (!forceRefresh && cachedData && lastSync) {
+                    const timeSinceLastSync = now - parseInt(lastSync);
+                    
+                    if (timeSinceLastSync < TRANSACTIONS_SYNC_INTERVAL) {
+                        // Use cached data
+                        allTransactions = JSON.parse(cachedData);
+                        processAndDisplayTransactions();
+                        return;
+                    }
+                }
+                
+                // Fetch ALL transactions from Baserow
+                const url = `https://api.baserow.io/api/database/rows/table/${TRANSACTIONS_TABLE}/?user_field_names=true&size=200`;
+                
+                console.log("Fetching transactions from Baserow...");
+                
+                const res = await fetch(url, {
+                    headers: { Authorization: `Token ${API_TOKEN}` }
+                });
+                
+                if (!res.ok) {
+                    throw new Error(`API Error: ${res.status}`);
+                }
+                
+                const data = await res.json();
+                
+                if (!data.results || data.results.length === 0) {
+                    console.log("No transactions found in Baserow table");
+                    // Try to use cached data if available
+                    if (cachedData) {
+                        allTransactions = JSON.parse(cachedData);
+                    } else {
+                        allTransactions = [];
+                    }
+                } else {
+                    // Filter transactions by user email
+                    const userTransactions = data.results.filter(row => {
+                        const rowEmail = row["email"] || row["field_6394448"] || "";
+                        return rowEmail.toLowerCase() === email.toLowerCase();
+                    });
+                    
+                    console.log(`Found ${userTransactions.length} transactions for user ${email}`);
+                    
+                    // Process transactions data
+                    allTransactions = userTransactions.map(row => {
+                        const transaction = {
+                            id: row.id,
+                            email: row["email"] || row["field_6394448"] || "",
+                            amount: row["amount"] || row["field_6394449"] || "0.00",
+                            type: row["type"] || row["field_6394450"] || "",
+                            method: row["method"] || row["field_6394451"] || "",
+                            status: row["status"] || row["field_6394452"] || "",
+                            date: row["date"] || row["field_6394453"] || new Date().toISOString(),
+                            timestamp: 0
+                        };
+                        
+                        // Parse date to timestamp for sorting
+                        try {
+                            transaction.timestamp = new Date(transaction.date).getTime();
+                            if (isNaN(transaction.timestamp)) {
+                                transaction.timestamp = now;
+                            }
+                        } catch (e) {
+                            transaction.timestamp = now;
+                        }
+                        
+                        return transaction;
+                    });
+                    
+                    // Get existing cached transactions
+                    let combinedTransactions = [];
+                    if (cachedData && !forceRefresh) {
+                        const cachedTransactions = JSON.parse(cachedData);
+                        combinedTransactions = [...cachedTransactions];
+                    }
+                    
+                    // Add new transactions from Baserow
+                    allTransactions.forEach(newTransaction => {
+                        // Check if transaction already exists in cache
+                        const exists = combinedTransactions.some(t => t.id === newTransaction.id);
+                        if (!exists) {
+                            combinedTransactions.push(newTransaction);
+                        }
+                    });
+                    
+                    // Filter out transactions older than 90 days (extended for full view)
+                    const ninetyDaysAgo = now - (90 * 24 * 60 * 60 * 1000);
+                    allTransactions = combinedTransactions.filter(t => t.timestamp > ninetyDaysAgo);
+                    
+                    // Sort by date (newest first)
+                    allTransactions.sort((a, b) => b.timestamp - a.timestamp);
+                    
+                    // Save to localStorage
+                    localStorage.setItem(`${TRANSACTIONS_DATA_KEY}_${email}`, JSON.stringify(allTransactions));
+                    localStorage.setItem(`${LAST_TRANSACTION_SYNC_KEY}_${email}`, now.toString());
+                }
+                
+                processAndDisplayTransactions();
+                
+            } catch (err) {
+                console.error("TRANSACTIONS LOAD ERROR:", err);
+                
+                // Try to show cached data if available
+                const userEmail = localStorage.getItem("v0trade_user_email");
+                const cachedData = localStorage.getItem(`${TRANSACTIONS_DATA_KEY}_${userEmail}`);
+                
+                if (cachedData) {
+                    allTransactions = JSON.parse(cachedData);
+                    processAndDisplayTransactions();
+                } else {
+                    showError("Failed to load transactions. Please check your connection and try again.");
+                }
+            }
+        }
+        
+        // Process and display transactions
+        function processAndDisplayTransactions() {
+            // Hide loading state
+            document.getElementById("loadingState").classList.add("hidden");
+            
+            if (allTransactions.length === 0) {
+                document.getElementById("contentState").classList.remove("hidden");
+                document.getElementById("noTransactionsMessage").classList.remove("hidden");
+                updateStats([]);
+                return;
+            }
+            
+            document.getElementById("contentState").classList.remove("hidden");
+            document.getElementById("noTransactionsMessage").classList.add("hidden");
+            
+            // Initial filter (show all)
+            filteredTransactions = [...allTransactions];
+            
+            // Sort transactions
+            sortTransactions();
+            
+            // Update statistics
+            updateStats(allTransactions);
+            
+            // Display transactions
+            displayTransactions();
+        }
+        
+        // Display transactions in the table
+        function displayTransactions() {
+            const tableBody = document.getElementById("transactionsTableBody");
+            const transactionCount = document.getElementById("transactionCount");
+            
+            // Update count
+            transactionCount.textContent = `Showing ${filteredTransactions.length} of ${allTransactions.length} transactions`;
+            
+            if (filteredTransactions.length === 0) {
+                tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="px-6 py-12 text-center text-gray-500">
+                            No transactions match your filters. Try changing your search criteria.
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            let html = '';
+            filteredTransactions.forEach(transaction => {
+                // Format date
+                let formattedDate = 'Unknown date';
+                try {
+                    const date = new Date(transaction.date);
+                    if (!isNaN(date.getTime())) {
+                        formattedDate = date.toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        });
+                    } else {
+                        formattedDate = transaction.date || 'Unknown date';
+                    }
+                } catch (e) {
+                    formattedDate = transaction.date || 'Unknown date';
+                }
+                
+                // Format amount
+                const amount = parseFloat(transaction.amount) || 0;
+                const formattedAmount = `$${Math.abs(amount).toFixed(2)}`;
+                
+                // Determine amount color based on type
+                const type = transaction.type?.toLowerCase() || '';
+                let amountClass = 'type-investment';
+                if (type.includes('deposit')) {
+                    amountClass = 'type-deposit';
+                } else if (type.includes('withdrawal') || type.includes('withdraw')) {
+                    amountClass = 'type-withdrawal';
+                } else if (type.includes('earning') || type.includes('commission')) {
+                    amountClass = 'type-commission';
+                } else if (type.includes('investment')) {
+                    amountClass = 'type-investment';
+                }
+                
+                // Get status class
+                let statusClass = 'status-pending';
+                const status = transaction.status?.toLowerCase() || '';
+                if (status.includes('complete') || status.includes('success')) {
+                    statusClass = 'status-completed';
+                } else if (status.includes('fail') || status.includes('error')) {
+                    statusClass = 'status-failed';
+                } else if (status.includes('process')) {
+                    statusClass = 'status-processing';
+                }
+                
+                // Get transaction type icon and formatted text
+                let typeIcon = '💳';
+                if (type.includes('deposit')) {
+                    typeIcon = '📥';
+                } else if (type.includes('withdrawal') || type.includes('withdraw')) {
+                    typeIcon = '📤';
+                } else if (type.includes('earning')) {
+                    typeIcon = '💰';
+                } else if (type.includes('commission')) {
+                    typeIcon = '🎁';
+                } else if (type.includes('investment')) {
+                    typeIcon = '📈';
+                }
+                
+                // Format type text
+                let typeText = transaction.type || 'Transaction';
+                if (typeText) {
+                    typeText = typeText.charAt(0).toUpperCase() + typeText.slice(1).toLowerCase();
+                }
+                
+                // Format method
+                let methodText = transaction.method || 'N/A';
+                if (methodText) {
+                    methodText = methodText.charAt(0).toUpperCase() + methodText.slice(1).toLowerCase();
+                }
+                
+                // Format status text
+                let statusText = transaction.status || 'Pending';
+                if (statusText) {
+                    statusText = statusText.charAt(0).toUpperCase() + statusText.slice(1).toLowerCase();
+                }
+                
+                html += `
+                    <tr class="border-b border-gray-100 hover:bg-gray-50">
+                        <td class="px-6 py-4 text-sm text-gray-700 whitespace-nowrap">${formattedDate}</td>
+                        <td class="px-6 py-4 text-sm">
+                            <div class="flex items-center gap-2">
+                                <span class="text-lg">${typeIcon}</span>
+                                <span class="font-medium">${typeText}</span>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 text-sm font-semibold ${amountClass}">${formattedAmount}</td>
+                        <td class="px-6 py-4 text-sm text-gray-700">${methodText}</td>
+                        <td class="px-6 py-4 text-sm">
+                            <span class="${statusClass}">${statusText}</span>
+                        </td>
+                        <td class="px-6 py-4 text-sm text-gray-500 font-mono">${transaction.id}</td>
+                    </tr>
+                `;
+            });
+            
+            tableBody.innerHTML = html;
+        }
+        
+        // Update statistics
+        function updateStats(transactions) {
+            let totalAmount = 0;
+            let totalDeposits = 0;
+            let totalWithdrawals = 0;
+            let totalEarnings = 0;
+            
+            transactions.forEach(transaction => {
+                const amount = parseFloat(transaction.amount) || 0;
+                const type = transaction.type?.toLowerCase() || '';
+                
+                totalAmount += Math.abs(amount);
+                
+                if (type.includes('deposit')) {
+                    totalDeposits += amount;
+                } else if (type.includes('withdrawal') || type.includes('withdraw')) {
+                    totalWithdrawals += Math.abs(amount);
+                } else if (type.includes('earning') || type.includes('commission') || type.includes('investment')) {
+                    totalEarnings += amount;
+                }
+            });
+            
+            document.getElementById("totalAmount").textContent = `$${totalAmount.toFixed(2)}`;
+            document.getElementById("totalDeposits").textContent = `$${totalDeposits.toFixed(2)}`;
+            document.getElementById("totalWithdrawals").textContent = `$${totalWithdrawals.toFixed(2)}`;
+            document.getElementById("totalEarnings").textContent = `$${totalEarnings.toFixed(2)}`;
+        }
+        
+        // Filter transactions based on search and filters
+        function filterTransactions() {
+            const searchInput = document.getElementById("searchInput").value.toLowerCase();
+            const typeFilter = document.getElementById("typeFilter").value;
+            const statusFilter = document.getElementById("statusFilter").value;
+            
+            filteredTransactions = allTransactions.filter(transaction => {
+                // Search filter
+                const matchesSearch = !searchInput || 
+                    (transaction.id && transaction.id.toString().toLowerCase().includes(searchInput)) ||
+                    (transaction.type && transaction.type.toLowerCase().includes(searchInput)) ||
+                    (transaction.method && transaction.method.toLowerCase().includes(searchInput)) ||
+                    (transaction.amount && transaction.amount.toString().toLowerCase().includes(searchInput));
+                
+                // Type filter
+                const transactionType = transaction.type?.toLowerCase() || '';
+                let matchesType = true;
+                if (typeFilter !== 'all') {
+                    if (typeFilter === 'deposit') {
+                        matchesType = transactionType.includes('deposit');
+                    } else if (typeFilter === 'withdrawal') {
+                        matchesType = transactionType.includes('withdrawal') || transactionType.includes('withdraw');
+                    } else if (typeFilter === 'earning') {
+                        matchesType = transactionType.includes('earning');
+                    } else if (typeFilter === 'commission') {
+                        matchesType = transactionType.includes('commission');
+                    } else if (typeFilter === 'investment') {
+                        matchesType = transactionType.includes('investment');
+                    }
+                }
+                
+                // Status filter
+                const transactionStatus = transaction.status?.toLowerCase() || '';
+                let matchesStatus = true;
+                if (statusFilter !== 'all') {
+                    if (statusFilter === 'completed') {
+                        matchesStatus = transactionStatus.includes('complete') || transactionStatus.includes('success');
+                    } else if (statusFilter === 'pending') {
+                        matchesStatus = transactionStatus.includes('pending');
+                    } else if (statusFilter === 'processing') {
+                        matchesStatus = transactionStatus.includes('process');
+                    } else if (statusFilter === 'failed') {
+                        matchesStatus = transactionStatus.includes('fail') || transactionStatus.includes('error');
+                    }
+                }
+                
+                return matchesSearch && matchesType && matchesStatus;
+            });
+            
+            // Re-sort filtered transactions
+            sortTransactions();
+            displayTransactions();
+        }
+        
+        // Sort table by field
+        function sortTable(field) {
+            if (currentSort.field === field) {
+                // Toggle direction
+                currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+            } else {
+                // New field, default to descending
+                currentSort.field = field;
+                currentSort.direction = 'desc';
+            }
+            
+            // Update sort icons
+            updateSortIcons();
+            
+            // Sort transactions
+            sortTransactions();
+            displayTransactions();
+        }
+        
+        // Update sort icons
+        function updateSortIcons() {
+            // Reset all icons
+            ['date', 'type', 'amount', 'status'].forEach(field => {
+                document.getElementById(`${field}SortIcon`).textContent = '';
+            });
+            
+            // Set current sort icon
+            const icon = currentSort.direction === 'asc' ? '↑' : '↓';
+            document.getElementById(`${currentSort.field}SortIcon`).textContent = icon;
+        }
+        
+        // Sort transactions based on current sort settings
+        function sortTransactions() {
+            filteredTransactions.sort((a, b) => {
+                let aValue, bValue;
+                
+                switch(currentSort.field) {
+                    case 'date':
+                        aValue = a.timestamp;
+                        bValue = b.timestamp;
+                        break;
+                    case 'type':
+                        aValue = a.type?.toLowerCase() || '';
+                        bValue = b.type?.toLowerCase() || '';
+                        break;
+                    case 'amount':
+                        aValue = parseFloat(a.amount) || 0;
+                        bValue = parseFloat(b.amount) || 0;
+                        break;
+                    case 'status':
+                        aValue = a.status?.toLowerCase() || '';
+                        bValue = b.status?.toLowerCase() || '';
+                        break;
+                    default:
+                        aValue = a.timestamp;
+                        bValue = b.timestamp;
+                }
+                
+                if (currentSort.direction === 'asc') {
+                    return aValue > bValue ? 1 : -1;
+                } else {
+                    return aValue < bValue ? 1 : -1;
+                }
+            });
+        }
+        
+        // Refresh transactions
+        function refreshTransactions() {
+            const userEmail = localStorage.getItem("v0trade_user_email");
+            if (!userEmail) return;
+            
+            // Show loading state
+            document.getElementById("loadingState").classList.remove("hidden");
+            document.getElementById("contentState").classList.add("hidden");
+            document.getElementById("errorState").classList.add("hidden");
+            
+            // Force refresh from Baserow
+            fetchTransactionsFromBaserow(userEmail, true);
+            
+            // Show temporary success indicator
+            setTimeout(() => {
+                const refreshBtn = document.querySelector('button[onclick="refreshTransactions()"]');
+                const originalText = refreshBtn.innerHTML;
+                refreshBtn.innerHTML = `
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                    </svg>
+                    Refreshed
+                `;
+                refreshBtn.classList.remove('bg-orange-500', 'hover:bg-orange-600');
+                refreshBtn.classList.add('bg-green-500', 'hover:bg-green-600');
+                
+                setTimeout(() => {
+                    refreshBtn.innerHTML = originalText;
+                    refreshBtn.classList.remove('bg-green-500', 'hover:bg-green-600');
+                    refreshBtn.classList.add('bg-orange-500', 'hover:bg-orange-600');
+                }, 2000);
+            }, 1000);
+        }
+        
+        // Export transactions to CSV
+        function exportTransactions() {
+            if (filteredTransactions.length === 0) {
+                alert("No transactions to export.");
+                return;
+            }
+            
+            // Create CSV content
+            let csv = "Date,Type,Amount,Method,Status,ID\n";
+            
+            filteredTransactions.forEach(transaction => {
+                const date = new Date(transaction.date).toLocaleDateString();
+                const type = transaction.type || '';
+                const amount = parseFloat(transaction.amount) || 0;
+                const method = transaction.method || '';
+                const status = transaction.status || '';
+                const id = transaction.id;
+                
+                csv += `"${date}","${type}","${amount}","${method}","${status}","${id}"\n`;
+            });
+            
+            // Create download link
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `v0trade-transactions-${new Date().toISOString().split('T')[0]}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+        }
+        
+        // Show error message
+        function showError(message) {
+            document.getElementById("loadingState").classList.add("hidden");
+            document.getElementById("contentState").classList.add("hidden");
+            document.getElementById("errorState").classList.remove("hidden");
+            document.getElementById("errorMessage").textContent = message;
+        }
+        
+        // Mobile menu and sidebar functions
         function toggleMobileMenu() {
             const menu = document.getElementById('mobileMenu');
             menu.classList.toggle('active');
