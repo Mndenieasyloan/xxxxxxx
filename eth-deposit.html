@@ -65,6 +65,36 @@
         .dropdown { position: relative; display: inline-block; }
         .dropdown-content { display: none; position: absolute; background-color: rgb(15 23 42 / 0.95); min-width: 12rem; border: 1px solid rgb(168 85 247 / 0.2); border-radius: 0.5rem; padding: 0.5rem; z-index: 1000; backdrop-filter: blur(10px); }
         .dropdown:hover .dropdown-content { display: block; }
+        
+        /* Image preview styling */
+        .image-preview-container {
+            display: none;
+            margin-top: 1rem;
+            text-align: center;
+        }
+        .image-preview {
+            max-width: 300px;
+            max-height: 300px;
+            border-radius: 0.5rem;
+            border: 2px dashed rgb(168 85 247 / 0.3);
+        }
+        .upload-area {
+            border: 2px dashed rgb(168 85 247 / 0.3);
+            border-radius: 0.5rem;
+            padding: 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: rgb(168 85 247 / 0.05);
+        }
+        .upload-area:hover {
+            border-color: rgb(168 85 247);
+            background: rgb(168 85 247 / 0.1);
+        }
+        .upload-area.dragover {
+            border-color: rgb(168 85 247);
+            background: rgb(168 85 247 / 0.15);
+        }
     </style>
 </head>
 <body class="bg-slate-950">
@@ -285,19 +315,64 @@
                         >
                     </div>
 
+                    <!-- Image Upload Section -->
+                    <div class="mb-6">
+                        <label class="text-sm font-semibold text-gray-300 mb-2 block">Upload Transaction Screenshot (Optional)</label>
+                        <p class="text-gray-400 text-sm mb-4">Upload a screenshot of your transaction for verification purposes.</p>
+                        
+                        <div id="uploadArea" class="upload-area">
+                            <div class="flex flex-col items-center justify-center gap-2">
+                                <svg class="w-12 h-12 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                                </svg>
+                                <p class="text-gray-300">Click to upload or drag and drop</p>
+                                <p class="text-gray-400 text-xs">PNG, JPG, GIF up to 5MB</p>
+                                <input 
+                                    type="file" 
+                                    id="transactionImage" 
+                                    accept=".png,.jpg,.jpeg,.gif"
+                                    class="hidden"
+                                >
+                            </div>
+                        </div>
+                        
+                        <div id="imagePreviewContainer" class="image-preview-container">
+                            <img id="imagePreview" class="image-preview mx-auto mb-2" alt="Preview">
+                            <button 
+                                type="button" 
+                                onclick="removeImage()"
+                                class="text-sm text-red-400 hover:text-red-300 transition"
+                            >
+                                Remove Image
+                            </button>
+                        </div>
+                        
+                        <div id="imageError" class="text-red-400 text-sm mt-2 hidden"></div>
+                    </div>
+
                     <div class="bg-slate-950/50 border border-purple-500/20 rounded-lg p-4 mb-6">
                         <p class="text-white font-semibold mb-2">Instructions</p>
                         <ol class="list-decimal list-inside space-y-2 text-gray-400 text-sm">
                             <li>Send the ETH amount to the address above.</li>
+                            <li>Take a screenshot of your transaction confirmation.</li>
+                            <li>Upload the screenshot (optional but recommended).</li>
                             <li>After sending, click Confirm Payment.</li>
                         </ol>
                     </div>
 
                     <button 
                         onclick="confirmPayment()"
-                        class="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold py-3 px-6 rounded-lg transition transform hover:scale-105"
+                        id="confirmButton"
+                        class="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold py-3 px-6 rounded-lg transition transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                     >
-                        Confirm Payment
+                        <span id="buttonText">Confirm Payment</span>
+                        <span id="buttonLoading" class="hidden">
+                            <svg class="animate-spin h-5 w-5 text-white inline-block ml-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            Processing...
+                        </span>
                     </button>
                 </div>
             </div>
@@ -306,9 +381,11 @@
 
     <script>
         const DEPOSIT_API = "https://api.baserow.io/api/database/rows/table/756078/";
+        const FILE_UPLOAD_API = "https://api.baserow.io/api/user-files/upload-file/";
         const BASEROW_TOKEN = "LG6hnTBxgBG78FueElsSwpHRd4Wep1oL";
         
         let currentUserEmail = '';
+        let selectedImageFile = null;
 
         // Check if user is logged in
         function checkAuth() {
@@ -346,6 +423,130 @@
             }
         }
 
+        // Initialize image upload functionality
+        function initImageUpload() {
+            const uploadArea = document.getElementById('uploadArea');
+            const fileInput = document.getElementById('transactionImage');
+            const previewContainer = document.getElementById('imagePreviewContainer');
+            const preview = document.getElementById('imagePreview');
+            const imageError = document.getElementById('imageError');
+
+            // Click on upload area to trigger file input
+            uploadArea.addEventListener('click', () => {
+                fileInput.click();
+            });
+
+            // Handle file input change
+            fileInput.addEventListener('change', (e) => {
+                if (e.target.files.length > 0) {
+                    handleImageSelection(e.target.files[0]);
+                }
+            });
+
+            // Drag and drop functionality
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                uploadArea.addEventListener(eventName, preventDefaults, false);
+            });
+
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+
+            ['dragenter', 'dragover'].forEach(eventName => {
+                uploadArea.addEventListener(eventName, highlight, false);
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                uploadArea.addEventListener(eventName, unhighlight, false);
+            });
+
+            function highlight() {
+                uploadArea.classList.add('dragover');
+            }
+
+            function unhighlight() {
+                uploadArea.classList.remove('dragover');
+            }
+
+            uploadArea.addEventListener('drop', handleDrop, false);
+
+            function handleDrop(e) {
+                const dt = e.dataTransfer;
+                const files = dt.files;
+
+                if (files.length > 0) {
+                    handleImageSelection(files[0]);
+                }
+            }
+
+            function handleImageSelection(file) {
+                // Reset error
+                imageError.classList.add('hidden');
+                imageError.textContent = '';
+
+                // Validate file type
+                const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+                if (!validTypes.includes(file.type)) {
+                    imageError.textContent = 'Please upload a valid image file (PNG, JPG, GIF)';
+                    imageError.classList.remove('hidden');
+                    return;
+                }
+
+                // Validate file size (5MB)
+                if (file.size > 5 * 1024 * 1024) {
+                    imageError.textContent = 'File size must be less than 5MB';
+                    imageError.classList.remove('hidden');
+                    return;
+                }
+
+                selectedImageFile = file;
+
+                // Show preview
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    preview.src = e.target.result;
+                    previewContainer.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function removeImage() {
+            selectedImageFile = null;
+            document.getElementById('imagePreviewContainer').style.display = 'none';
+            document.getElementById('transactionImage').value = '';
+        }
+
+        // Upload image to Baserow
+        async function uploadImageToBaserow(file) {
+            if (!file) return null;
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const response = await fetch(FILE_UPLOAD_API, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Token ' + BASEROW_TOKEN,
+                    },
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const result = await response.json();
+                console.log('[ETH Deposit] Image upload response:', result);
+                return result;
+            } catch (error) {
+                console.error('[ETH Deposit] Error uploading image:', error);
+                return null;
+            }
+        }
+
         window.addEventListener('DOMContentLoaded', () => {
             // Check authentication
             const userEmail = checkAuth();
@@ -364,6 +565,9 @@
 
             // Auto-fill email if user is logged in
             autoFillUserEmail();
+
+            // Initialize image upload
+            initImageUpload();
         });
 
         async function confirmPayment() {
@@ -371,6 +575,9 @@
             const email = emailInput.value.trim();
             const amount = localStorage.getItem('deposit_amount') || '0.00';
             const ethWallet = document.getElementById('ethWallet').textContent;
+            const confirmButton = document.getElementById('confirmButton');
+            const buttonText = document.getElementById('buttonText');
+            const buttonLoading = document.getElementById('buttonLoading');
 
             if (!email) {
                 alert('Please enter your email address');
@@ -384,27 +591,47 @@
                 return;
             }
 
-            // Generate transaction ID
-            const transactionId = 'TXN-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9).toUpperCase();
-            
-            // Get current timestamp
-            const timestamp = new Date().toISOString();
+            // Disable button and show loading
+            confirmButton.disabled = true;
+            buttonText.classList.add('hidden');
+            buttonLoading.classList.remove('hidden');
 
-            // Send data to Baserow
             try {
+                // Upload image if selected
+                let imageData = null;
+                if (selectedImageFile) {
+                    imageData = await uploadImageToBaserow(selectedImageFile);
+                }
+
+                // Generate transaction ID
+                const transactionId = 'TXN-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9).toUpperCase();
+                
+                // Get current timestamp
+                const timestamp = new Date().toISOString();
+
+                // Prepare deposit payload
                 const depositPayload = {
-                    field_6394426: email,                    // email
-                    field_6394427: 'ETH',                    // method
-                    field_6394428: amount,                   // amount
-                    field_6394429: 'N/A',                    // pin (ignored as requested)
-                    field_6394430: ethWallet,                // wallet_address
-                    field_6394431: 'incoming',               // status (marked as incoming)
-                    field_6394432: transactionId,            // transaction_id
-                    field_6394433: timestamp                 // timestamp
+                    "id 2": "",  // Empty as per your requirement
+                    "email": email,
+                    "method": "ETH",
+                    "amount": amount,
+                    "pin": "N/A",  // Set to "N/A" as requested
+                    "wallet_address": ethWallet,
+                    "status": "incoming",
+                    "transaction_id": transactionId,
+                    "timestamp": timestamp,
                 };
+
+                // Add image data if available
+                if (imageData && imageData.name) {
+                    depositPayload.image = [{
+                        name: imageData.name
+                    }];
+                }
 
                 console.log('[ETH Deposit] Sending to Baserow:', depositPayload);
 
+                // Send data to Baserow
                 const response = await fetch(DEPOSIT_API + '?user_field_names=true', {
                     method: "POST",
                     headers: {
@@ -461,6 +688,12 @@
 
             } catch (error) {
                 console.error('[ETH Deposit] Error submitting deposit:', error);
+                
+                // Re-enable button
+                confirmButton.disabled = false;
+                buttonText.classList.remove('hidden');
+                buttonLoading.classList.add('hidden');
+                
                 alert('Failed to submit deposit. Please check your connection and try again.');
             }
         }
