@@ -5,8 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mining Tracks - V0 Trade</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js for charts -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+    <!-- TradingView Lightweight Charts -->
+    <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
     <style>
         .sidebar-link {
             display: flex;
@@ -69,97 +71,75 @@
         .dropdown-content { display: none; position: absolute; background-color: rgb(15 23 42 / 0.95); min-width: 12rem; border: 1px solid rgb(168 85 247 / 0.2); border-radius: 0.5rem; padding: 0.5rem; z-index: 1000; backdrop-filter: blur(10px); }
         .dropdown:hover .dropdown-content { display: block; }
         
-        /* Mining plan cards */
-        .plan-card {
-            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(168, 85, 247, 0.1));
-            border: 1px solid rgba(168, 85, 247, 0.2);
+        .mining-plan-card {
+            background: linear-gradient(135deg, rgba(168, 85, 247, 0.1), rgba(236, 72, 153, 0.1));
+            border: 1px solid rgba(168, 85, 247, 0.3);
             border-radius: 1rem;
             padding: 1.5rem;
             transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
         }
         
-        .plan-card:hover {
+        .mining-plan-card:hover {
             transform: translateY(-5px);
-            border-color: rgba(168, 85, 247, 0.4);
-            box-shadow: 0 10px 25px rgba(168, 85, 247, 0.2);
-        }
-        
-        .plan-badge {
-            position: absolute;
-            top: 1rem;
-            right: 1rem;
-            padding: 0.25rem 0.75rem;
-            border-radius: 9999px;
-            font-size: 0.75rem;
-            font-weight: 600;
-        }
-        
-        .badge-micro { background-color: rgba(59, 130, 246, 0.2); color: #3b82f6; }
-        .badge-gold { background-color: rgba(245, 158, 11, 0.2); color: #f59e0b; }
-        .badge-silver { background-color: rgba(156, 163, 175, 0.2); color: #9ca3af; }
-        .badge-diamond { background-color: rgba(6, 182, 212, 0.2); color: #06b6d4; }
-        
-        /* Progress bar */
-        .progress-container {
-            height: 8px;
-            background-color: rgba(255, 255, 255, 0.1);
-            border-radius: 4px;
-            overflow: hidden;
-            margin: 1rem 0;
+            box-shadow: 0 20px 40px rgba(168, 85, 247, 0.2);
+            border-color: rgba(168, 85, 247, 0.5);
         }
         
         .progress-bar {
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
             height: 100%;
+            background: linear-gradient(90deg, #a855f7, #ec4899);
             border-radius: 4px;
             transition: width 1s ease-in-out;
         }
         
-        .progress-micro { background: linear-gradient(90deg, #3b82f6, #60a5fa); }
-        .progress-gold { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
-        .progress-silver { background: linear-gradient(90deg, #9ca3af, #d1d5db); }
-        .progress-diamond { background: linear-gradient(90deg, #06b6d4, #22d3ee); }
+        .plan-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
         
-        /* Chart containers */
+        .badge-micro { background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: white; }
+        .badge-gold { background: linear-gradient(135deg, #f59e0b, #d97706); color: white; }
+        .badge-silver { background: linear-gradient(135deg, #9ca3af, #6b7280); color: white; }
+        .badge-diamond { background: linear-gradient(135deg, #06b6d4, #0e7490); color: white; }
+        
         .chart-container {
-            background: rgba(15, 23, 42, 0.5);
+            background: rgba(15, 23, 42, 0.7);
+            border: 1px solid rgba(168, 85, 247, 0.2);
+            border-radius: 1rem;
+            padding: 1rem;
+            backdrop-filter: blur(10px);
+        }
+        
+        .tracking-card {
+            background: rgba(15, 23, 42, 0.7);
             border: 1px solid rgba(168, 85, 247, 0.2);
             border-radius: 1rem;
             padding: 1.5rem;
             backdrop-filter: blur(10px);
         }
         
-        /* Animations */
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
+        .candle-chart {
+            height: 300px;
+            width: 100%;
         }
         
-        .pulse-animation {
-            animation: pulse 2s infinite;
-        }
-        
-        @keyframes slideIn {
-            from { transform: translateY(20px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
-        }
-        
-        .slide-in {
-            animation: slideIn 0.5s ease-out forwards;
-        }
-        
-        /* Transaction status */
-        .status-active { background-color: rgba(34, 197, 94, 0.2); color: #22c55e; }
-        .status-completed { background-color: rgba(59, 130, 246, 0.2); color: #3b82f6; }
-        .status-pending { background-color: rgba(245, 158, 11, 0.2); color: #f59e0b; }
-        
-        .status-chip {
-            display: inline-block;
-            padding: 0.25rem 0.75rem;
-            border-radius: 9999px;
-            font-size: 0.75rem;
-            font-weight: 600;
+        .stats-card {
+            background: linear-gradient(135deg, rgba(168, 85, 247, 0.1), rgba(236, 72, 153, 0.05));
+            border: 1px solid rgba(168, 85, 247, 0.2);
+            border-radius: 1rem;
+            padding: 1.5rem;
         }
     </style>
 </head>
@@ -323,13 +303,14 @@
         </aside>
 
         <main class="flex-1 p-4 md:p-8 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
-            <div class="max-w-6xl mx-auto">
-                <div class="flex flex-col md:flex-row md:items-center justify-between mb-8">
+            <div class="max-w-7xl">
+                <!-- Header with refresh button -->
+                <div class="flex flex-col md:flex-row md:items-center justify-between mb-6 md:mb-8 gap-4">
                     <div>
-                        <h1 class="text-2xl md:text-3xl font-bold text-white mb-2">Mining Tracks</h1>
-                        <p class="text-gray-400">Track your active mining plans and earnings in real-time</p>
+                        <h1 class="text-2xl md:text-3xl font-bold text-white">Mining Tracks</h1>
+                        <p class="text-gray-400 mt-2">Track your active Bitcoin mining plans and returns</p>
                     </div>
-                    <button onclick="refreshMiningData()" class="mt-4 md:mt-0 flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white rounded-lg text-sm font-medium transition">
+                    <button onclick="refreshMiningData()" class="flex items-center gap-2 px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg font-medium transition w-full md:w-auto justify-center">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                         </svg>
@@ -337,91 +318,72 @@
                     </button>
                 </div>
 
-                <!-- Summary Cards -->
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-                    <div class="bg-slate-800/50 backdrop-blur-sm rounded-xl border border-purple-500/20 p-6">
-                        <div class="flex items-center justify-between mb-4">
-                            <div>
-                                <p class="text-sm text-gray-400 mb-1">Active Plans</p>
-                                <p id="activePlansCount" class="text-2xl font-bold text-white">0</p>
-                            </div>
-                            <div class="text-3xl">⛏️</div>
+                <!-- Summary Stats -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+                    <div class="stats-card">
+                        <div class="flex items-center justify-between mb-2">
+                            <p class="text-sm text-gray-400">Active Plans</p>
+                            <span class="text-2xl">⛏️</span>
                         </div>
-                        <p class="text-sm text-gray-400">Total mining plans</p>
+                        <p id="activePlansCount" class="text-2xl font-bold text-white">0</p>
                     </div>
-
-                    <div class="bg-slate-800/50 backdrop-blur-sm rounded-xl border border-purple-500/20 p-6">
-                        <div class="flex items-center justify-between mb-4">
-                            <div>
-                                <p class="text-sm text-gray-400 mb-1">Total Investment</p>
-                                <p id="totalInvestment" class="text-2xl font-bold text-white">$0</p>
-                            </div>
-                            <div class="text-3xl">💰</div>
+                    
+                    <div class="stats-card">
+                        <div class="flex items-center justify-between mb-2">
+                            <p class="text-sm text-gray-400">Total Investment</p>
+                            <span class="text-2xl">💰</span>
                         </div>
-                        <p class="text-sm text-gray-400">In mining plans</p>
+                        <p id="totalInvestment" class="text-2xl font-bold text-white">$0</p>
                     </div>
-
-                    <div class="bg-slate-800/50 backdrop-blur-sm rounded-xl border border-purple-500/20 p-6">
-                        <div class="flex items-center justify-between mb-4">
-                            <div>
-                                <p class="text-sm text-gray-400 mb-1">Estimated Returns</p>
-                                <p id="estimatedReturns" class="text-2xl font-bold text-white">$0</p>
-                            </div>
-                            <div class="text-3xl">📈</div>
+                    
+                    <div class="stats-card">
+                        <div class="flex items-center justify-between mb-2">
+                            <p class="text-sm text-gray-400">Estimated Returns</p>
+                            <span class="text-2xl">📈</span>
                         </div>
-                        <p class="text-sm text-gray-400">Projected earnings</p>
+                        <p id="estimatedReturns" class="text-2xl font-bold text-white">$0</p>
                     </div>
-
-                    <div class="bg-slate-800/50 backdrop-blur-sm rounded-xl border border-purple-500/20 p-6">
-                        <div class="flex items-center justify-between mb-4">
-                            <div>
-                                <p class="text-sm text-gray-400 mb-1">Days Active</p>
-                                <p id="daysActive" class="text-2xl font-bold text-white">0</p>
-                            </div>
-                            <div class="text-3xl">📅</div>
+                    
+                    <div class="stats-card">
+                        <div class="flex items-center justify-between mb-2">
+                            <p class="text-sm text-gray-400">Mining Hashrate</p>
+                            <span class="text-2xl">⚡</span>
                         </div>
-                        <p class="text-sm text-gray-400">Mining duration</p>
+                        <p id="totalHashrate" class="text-2xl font-bold text-white">0 TH/s</p>
                     </div>
                 </div>
 
                 <!-- Charts Section -->
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-                    <!-- Pie Chart: Mining Plan Distribution -->
-                    <div class="chart-container slide-in">
-                        <h3 class="text-lg font-semibold text-white mb-4">Mining Plan Distribution</h3>
-                        <div class="h-64">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+                    <!-- Candlestick Chart -->
+                    <div class="lg:col-span-2 tracking-card">
+                        <h3 class="text-lg font-semibold text-white mb-4">Mining Performance</h3>
+                        <div id="candlestickChart" class="candle-chart"></div>
+                    </div>
+                    
+                    <!-- Pie Chart -->
+                    <div class="tracking-card">
+                        <h3 class="text-lg font-semibold text-white mb-4">Plan Distribution</h3>
+                        <div class="relative">
                             <canvas id="planDistributionChart"></canvas>
                         </div>
                     </div>
+                </div>
 
-                    <!-- Line Chart: Earnings Trend -->
-                    <div class="chart-container slide-in">
-                        <h3 class="text-lg font-semibold text-white mb-4">Daily Earnings Trend</h3>
-                        <div class="h-64">
-                            <canvas id="earningsTrendChart"></canvas>
-                        </div>
-                    </div>
-
-                    <!-- Candlestick Chart: Performance -->
-                    <div class="chart-container slide-in lg:col-span-2">
-                        <h3 class="text-lg font-semibold text-white mb-4">Mining Performance Analytics</h3>
-                        <div class="h-80">
-                            <canvas id="performanceChart"></canvas>
-                        </div>
-                    </div>
+                <!-- Line Chart for Returns -->
+                <div class="tracking-card mb-8">
+                    <h3 class="text-lg font-semibold text-white mb-4">Daily Returns Projection</h3>
+                    <canvas id="returnsChart"></canvas>
                 </div>
 
                 <!-- Active Mining Plans -->
-                <div id="activeMiningPlans" class="mb-8">
-                    <h2 class="text-xl font-bold text-white mb-6">Active Mining Plans</h2>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6" id="miningPlansContainer">
-                        <!-- Mining plans will be loaded here -->
-                    </div>
+                <div id="activeMiningPlans" class="space-y-6 mb-8">
+                    <!-- Plans will be loaded here -->
                 </div>
 
-                <!-- No Mining Plans Message -->
-                <div id="noMiningPlansMessage" class="bg-slate-900/80 backdrop-blur-sm rounded-xl border border-purple-500/20 p-8 text-center mb-8">
-                    <div class="text-6xl mb-4 pulse-animation">⛏️</div>
+                <!-- No Plans Message -->
+                <div id="noPlansMessage" class="bg-slate-900/80 backdrop-blur-sm rounded-xl border border-purple-500/20 p-8 text-center mb-8">
+                    <div class="text-6xl mb-4">⛏️</div>
                     <h2 class="text-2xl font-semibold text-white mb-4">No Active Mining Plans</h2>
                     <p class="text-gray-400 mb-6">Start mining Bitcoin today with our AI-powered cloud mining platform</p>
                     <a href="btc-miner.html" class="inline-block bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white px-8 py-3 rounded-lg font-semibold transition">
@@ -429,27 +391,26 @@
                     </a>
                 </div>
 
-                <!-- Mining Transactions History -->
-                <div class="chart-container slide-in">
-                    <h3 class="text-lg font-semibold text-white mb-4">Mining Transactions History</h3>
+                <!-- Plan Details Table -->
+                <div class="tracking-card">
+                    <h3 class="text-lg font-semibold text-white mb-4">Mining Plan Details</h3>
                     <div class="overflow-x-auto">
                         <table class="w-full">
                             <thead>
-                                <tr class="border-b border-gray-700">
+                                <tr class="border-b border-purple-500/20">
                                     <th class="text-left py-3 px-4 text-sm font-medium text-gray-400">Plan</th>
                                     <th class="text-left py-3 px-4 text-sm font-medium text-gray-400">Investment</th>
-                                    <th class="text-left py-3 px-4 text-sm font-medium text-gray-400">Start Date</th>
-                                    <th class="text-left py-3 px-4 text-sm font-medium text-gray-400">Status</th>
+                                    <th class="text-left py-3 px-4 text-sm font-medium text-gray-400">Duration</th>
+                                    <th class="text-left py-3 px-4 text-sm font-medium text-gray-400">Hashrate</th>
+                                    <th class="text-left py-3 px-4 text-sm font-medium text-gray-400">Daily Return</th>
                                     <th class="text-left py-3 px-4 text-sm font-medium text-gray-400">Progress</th>
+                                    <th class="text-left py-3 px-4 text-sm font-medium text-gray-400">Status</th>
                                 </tr>
                             </thead>
-                            <tbody id="miningTransactionsTable">
-                                <!-- Transactions will be loaded here -->
+                            <tbody id="planDetailsTable">
+                                <!-- Plan details will be loaded here -->
                             </tbody>
                         </table>
-                    </div>
-                    <div id="noTransactionsMessage" class="text-center py-8">
-                        <p class="text-gray-500">No mining transactions found</p>
                     </div>
                 </div>
             </div>
@@ -457,61 +418,54 @@
     </div>
 
     <script>
-        // Constants for localStorage keys (must match dashboard)
+        // Constants
         const TRANSACTIONS_DATA_KEY = "v0trade_transactions_data";
         
-        // Mining plans configuration
+        // Mining plan configurations
         const MINING_PLANS = {
-            'Micro Plan btc miner': {
+            'micro plan btc miner': {
                 name: 'Micro Plan',
                 investment: 600,
-                duration: 3,
+                duration: 3, // days
                 hashrate: '130 TH/s',
-                dailyReturn: 36,
-                maintenance: 0,
-                color: '#3b82f6',
+                dailyReturn: 36, // percentage
                 badgeClass: 'badge-micro',
-                progressClass: 'progress-micro'
+                color: '#3b82f6'
             },
-            'Gold plan btc miner': {
+            'gold plan btc miner': {
                 name: 'Gold Plan',
                 investment: 1850,
                 duration: 6,
                 hashrate: '720 TH/s',
                 dailyReturn: 48,
-                maintenance: 0,
-                color: '#f59e0b',
                 badgeClass: 'badge-gold',
-                progressClass: 'progress-gold'
+                color: '#f59e0b'
             },
-            'Silver Plan btc miner': {
+            'silver plan btc miner': {
                 name: 'Silver Plan',
                 investment: 2450,
                 duration: 13,
                 hashrate: '2,114 TH/s',
                 dailyReturn: 40,
-                maintenance: 0,
-                color: '#9ca3af',
                 badgeClass: 'badge-silver',
-                progressClass: 'progress-silver'
+                color: '#9ca3af'
             },
-            'Diamond Plan btc miner': {
+            'diamond plan btc miner': {
                 name: 'Diamond Plan',
                 investment: 2200,
                 duration: 7,
                 hashrate: '3,288 TH/s',
                 dailyReturn: 80,
-                maintenance: 0,
-                color: '#06b6d4',
                 badgeClass: 'badge-diamond',
-                progressClass: 'progress-diamond'
+                color: '#06b6d4'
             }
         };
-
-        // Chart instances
-        let planDistributionChart = null;
-        let earningsTrendChart = null;
-        let performanceChart = null;
+        
+        let charts = {
+            candlestick: null,
+            distribution: null,
+            returns: null
+        };
 
         window.addEventListener('DOMContentLoaded', function() {
             const userEmail = localStorage.getItem("v0trade_user_email");
@@ -527,8 +481,11 @@
             if (emailDisplay) {
                 emailDisplay.textContent = userEmail;
             }
-
+            
+            // Load mining data
             loadMiningData(userEmail);
+            
+            // Initialize charts
             initializeCharts();
         });
 
@@ -538,8 +495,8 @@
                 const cachedData = localStorage.getItem(`${TRANSACTIONS_DATA_KEY}_${email}`);
                 
                 if (!cachedData) {
-                    showNoMiningPlans();
-                    updateSummaryStats([]);
+                    showNoPlansMessage();
+                    updateSummaryStats([], {});
                     return;
                 }
                 
@@ -547,430 +504,445 @@
                 
                 // Filter to get only mining plan transactions
                 const miningTransactions = allTransactions.filter(transaction => {
-                    const method = transaction.method?.toLowerCase() || '';
-                    return Object.keys(MINING_PLANS).some(plan => 
-                        method.includes(plan.toLowerCase())
-                    );
+                    const type = transaction.type?.toLowerCase() || '';
+                    return type.includes('micro plan btc miner') ||
+                           type.includes('gold plan btc miner') ||
+                           type.includes('silver plan btc miner') ||
+                           type.includes('diamond plan btc miner');
                 });
                 
                 console.log("Mining transactions found:", miningTransactions);
                 
                 if (miningTransactions.length === 0) {
-                    showNoMiningPlans();
-                    updateSummaryStats([]);
+                    showNoPlansMessage();
+                    updateSummaryStats([], {});
                     return;
                 }
                 
-                // Process mining transactions
-                const miningPlans = processMiningPlans(miningTransactions);
+                // Group transactions by plan type and calculate stats
+                const miningStats = processMiningTransactions(miningTransactions);
                 
-                // Display mining plans
-                displayMiningPlans(miningPlans);
-                
-                // Update summary statistics
-                updateSummaryStats(miningPlans);
-                
-                // Update charts
-                updateCharts(miningPlans);
-                
-                // Display transactions table
-                displayMiningTransactions(miningTransactions);
+                // Update UI with mining data
+                updateMiningPlansDisplay(miningStats);
+                updateSummaryStats(miningTransactions, miningStats);
+                updatePlanDetailsTable(miningStats);
+                updateCharts(miningStats);
                 
             } catch (err) {
                 console.error("Error loading mining data:", err);
-                showNoMiningPlans();
+                showNoPlansMessage();
             }
         }
         
-        function processMiningPlans(transactions) {
-            const plans = {};
+        function processMiningTransactions(transactions) {
+            const planStats = {};
+            const now = new Date();
             
             transactions.forEach(transaction => {
-                const method = transaction.method || '';
-                const planKey = Object.keys(MINING_PLANS).find(plan => 
-                    method.toLowerCase().includes(plan.toLowerCase())
-                );
+                const type = transaction.type?.toLowerCase() || '';
+                const amount = parseFloat(transaction.amount) || 0;
+                const transactionDate = new Date(transaction.date);
                 
-                if (planKey && MINING_PLANS[planKey]) {
-                    const plan = MINING_PLANS[planKey];
-                    const amount = parseFloat(transaction.amount) || 0;
-                    const transactionDate = new Date(transaction.date);
-                    
-                    if (!plans[planKey]) {
-                        plans[planKey] = {
-                            ...plan,
-                            totalInvestment: 0,
-                            transactionCount: 0,
-                            transactions: [],
-                            startDate: transactionDate
-                        };
-                    }
-                    
-                    plans[planKey].totalInvestment += amount;
-                    plans[planKey].transactionCount++;
-                    plans[planKey].transactions.push({
-                        id: transaction.id,
-                        amount: amount,
-                        date: transactionDate,
-                        status: transaction.status || 'active'
-                    });
-                    
-                    // Update earliest start date
-                    if (transactionDate < plans[planKey].startDate) {
-                        plans[planKey].startDate = transactionDate;
+                // Find matching plan
+                let planKey = null;
+                for (const key in MINING_PLANS) {
+                    if (type.includes(key)) {
+                        planKey = key;
+                        break;
                     }
                 }
+                
+                if (!planKey) return;
+                
+                if (!planStats[planKey]) {
+                    planStats[planKey] = {
+                        count: 0,
+                        totalInvestment: 0,
+                        transactions: [],
+                        planInfo: MINING_PLANS[planKey]
+                    };
+                }
+                
+                planStats[planKey].count++;
+                planStats[planKey].totalInvestment += amount;
+                planStats[planKey].transactions.push({
+                    ...transaction,
+                    transactionDate: transactionDate
+                });
             });
             
-            return Object.values(plans);
+            return planStats;
         }
         
-        function displayMiningPlans(plans) {
-            const container = document.getElementById('miningPlansContainer');
-            const noPlansDiv = document.getElementById('noMiningPlansMessage');
-            const activePlansDiv = document.getElementById('activeMiningPlans');
+        function updateMiningPlansDisplay(planStats) {
+            const container = document.getElementById('activeMiningPlans');
+            const noPlansDiv = document.getElementById('noPlansMessage');
             
-            if (plans.length === 0) {
-                activePlansDiv.style.display = 'none';
-                noPlansDiv.style.display = 'block';
+            if (Object.keys(planStats).length === 0) {
+                showNoPlansMessage();
                 return;
             }
             
-            activePlansDiv.style.display = 'block';
-            noPlansDiv.style.display = 'none';
-            
+            // Hide no plans message
+            noPlansDiv.classList.add('hidden');
             container.innerHTML = '';
             
-            plans.forEach((plan, index) => {
-                const daysSinceStart = Math.floor((new Date() - plan.startDate) / (1000 * 60 * 60 * 24));
-                const progressPercentage = Math.min(100, (daysSinceStart / plan.duration) * 100);
-                const isCompleted = daysSinceStart >= plan.duration;
-                const estimatedReturns = (plan.totalInvestment * (plan.dailyReturn / 100) * plan.duration).toFixed(2);
+            // Create plan cards
+            for (const [planKey, stats] of Object.entries(planStats)) {
+                const plan = stats.planInfo;
+                const now = new Date();
+                const latestTransaction = stats.transactions[0]?.transactionDate || now;
+                const endDate = new Date(latestTransaction);
+                endDate.setDate(endDate.getDate() + plan.duration);
                 
-                const planCard = document.createElement('div');
-                planCard.className = 'plan-card slide-in';
-                planCard.style.animationDelay = `${index * 0.1}s`;
+                // Calculate progress
+                const totalTime = plan.duration * 24 * 60 * 60 * 1000; // in milliseconds
+                const elapsedTime = now - latestTransaction;
+                const progress = Math.min(Math.max((elapsedTime / totalTime) * 100, 0), 100);
                 
-                planCard.innerHTML = `
-                    <span class="plan-badge ${plan.badgeClass}">${plan.name}</span>
-                    
-                    <div class="mb-4">
-                        <h3 class="text-xl font-bold text-white mb-2">${plan.name}</h3>
-                        <p class="text-gray-400 text-sm">${plan.hashrate} | ${plan.duration} Days</p>
-                    </div>
-                    
-                    <div class="space-y-3 mb-4">
-                        <div class="flex justify-between">
-                            <span class="text-gray-400">Investment:</span>
-                            <span class="text-white font-semibold">$${plan.totalInvestment.toFixed(2)}</span>
+                // Calculate estimated returns
+                const dailyReturnAmount = (plan.investment * plan.dailyReturn) / 100;
+                const totalReturn = dailyReturnAmount * plan.duration * stats.count;
+                
+                const card = document.createElement('div');
+                card.className = 'mining-plan-card';
+                
+                card.innerHTML = `
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div class="flex-1">
+                            <div class="flex items-center gap-3 mb-3">
+                                <span class="${plan.badgeClass} plan-badge">${plan.name}</span>
+                                <span class="text-sm text-gray-400">${stats.count} Active</span>
+                            </div>
+                            
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                                <div>
+                                    <p class="text-sm text-gray-400">Investment</p>
+                                    <p class="text-lg font-bold text-white">$${plan.investment.toLocaleString()}</p>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-gray-400">Hashrate</p>
+                                    <p class="text-lg font-bold text-white">${plan.hashrate}</p>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-gray-400">Daily Return</p>
+                                    <p class="text-lg font-bold text-green-400">${plan.dailyReturn}%</p>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-gray-400">Est. Total</p>
+                                    <p class="text-lg font-bold text-amber-400">$${totalReturn.toLocaleString()}</p>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-2">
+                                <div class="flex justify-between text-sm text-gray-400 mb-1">
+                                    <span>Progress</span>
+                                    <span>${progress.toFixed(1)}%</span>
+                                </div>
+                                <div class="progress-bar">
+                                    <div class="progress-fill" style="width: ${progress}%"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="flex justify-between text-sm text-gray-400">
+                                <span>Started: ${latestTransaction.toLocaleDateString()}</span>
+                                <span>Ends: ${endDate.toLocaleDateString()}</span>
+                            </div>
                         </div>
-                        <div class="flex justify-between">
-                            <span class="text-gray-400">Daily Return:</span>
-                            <span class="text-green-400 font-semibold">${plan.dailyReturn}%</span>
+                        
+                        <div class="flex flex-col items-center">
+                            <div class="text-5xl mb-2">⛏️</div>
+                            <span class="text-sm font-medium text-white">${Math.round(progress)}% Complete</span>
                         </div>
-                        <div class="flex justify-between">
-                            <span class="text-gray-400">Est. Returns:</span>
-                            <span class="text-yellow-400 font-semibold">$${estimatedReturns}</span>
-                        </div>
-                    </div>
-                    
-                    <div class="mb-4">
-                        <div class="flex justify-between text-sm mb-1">
-                            <span class="text-gray-400">Progress</span>
-                            <span class="text-white">${Math.round(progressPercentage)}%</span>
-                        </div>
-                        <div class="progress-container">
-                            <div class="progress-bar ${plan.progressClass}" style="width: ${progressPercentage}%"></div>
-                        </div>
-                        <div class="flex justify-between text-xs text-gray-400 mt-1">
-                            <span>Day ${daysSinceStart}</span>
-                            <span>of ${plan.duration}</span>
-                        </div>
-                    </div>
-                    
-                    <div class="flex justify-between items-center">
-                        <span class="status-chip ${isCompleted ? 'status-completed' : 'status-active'}">
-                            ${isCompleted ? 'Completed' : 'Active'}
-                        </span>
-                        <button onclick="viewPlanDetails('${plan.name}')" class="text-sm bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-lg transition">
-                            Details
-                        </button>
                     </div>
                 `;
                 
-                container.appendChild(planCard);
-            });
+                container.appendChild(card);
+            }
         }
         
-        function updateSummaryStats(plans) {
+        function updateSummaryStats(transactions, planStats) {
             let totalInvestment = 0;
+            let totalHashrate = 0;
             let totalEstimatedReturns = 0;
-            let totalDaysActive = 0;
+            let activePlansCount = 0;
             
-            plans.forEach(plan => {
-                totalInvestment += plan.totalInvestment;
-                const planReturns = plan.totalInvestment * (plan.dailyReturn / 100) * plan.duration;
-                totalEstimatedReturns += planReturns;
+            for (const [planKey, stats] of Object.entries(planStats)) {
+                activePlansCount += stats.count;
+                totalInvestment += stats.totalInvestment;
+                totalEstimatedReturns += (stats.planInfo.investment * stats.planInfo.dailyReturn / 100) * stats.planInfo.duration * stats.count;
                 
-                const daysSinceStart = Math.floor((new Date() - plan.startDate) / (1000 * 60 * 60 * 24));
-                totalDaysActive += Math.min(daysSinceStart, plan.duration);
-            });
+                // Parse hashrate number
+                const hashrateStr = stats.planInfo.hashrate.replace(/[^0-9]/g, '');
+                totalHashrate += parseInt(hashrateStr) * stats.count;
+            }
             
-            document.getElementById('activePlansCount').textContent = plans.length;
-            document.getElementById('totalInvestment').textContent = `$${totalInvestment.toFixed(2)}`;
-            document.getElementById('estimatedReturns').textContent = `$${totalEstimatedReturns.toFixed(2)}`;
-            document.getElementById('daysActive').textContent = totalDaysActive;
+            document.getElementById('activePlansCount').textContent = activePlansCount;
+            document.getElementById('totalInvestment').textContent = `$${totalInvestment.toLocaleString()}`;
+            document.getElementById('estimatedReturns').textContent = `$${totalEstimatedReturns.toLocaleString()}`;
+            document.getElementById('totalHashrate').textContent = `${totalHashrate.toLocaleString()} TH/s`;
+        }
+        
+        function updatePlanDetailsTable(planStats) {
+            const tableBody = document.getElementById('planDetailsTable');
+            tableBody.innerHTML = '';
+            
+            for (const [planKey, stats] of Object.entries(planStats)) {
+                const plan = stats.planInfo;
+                const now = new Date();
+                const latestTransaction = stats.transactions[0]?.transactionDate || now;
+                const endDate = new Date(latestTransaction);
+                endDate.setDate(endDate.getDate() + plan.duration);
+                
+                const totalTime = plan.duration * 24 * 60 * 60 * 1000;
+                const elapsedTime = now - latestTransaction;
+                const progress = Math.min(Math.max((elapsedTime / totalTime) * 100, 0), 100);
+                
+                const row = document.createElement('tr');
+                row.className = 'border-b border-purple-500/10 hover:bg-purple-500/5';
+                
+                row.innerHTML = `
+                    <td class="py-3 px-4">
+                        <span class="${plan.badgeClass} plan-badge">${plan.name}</span>
+                    </td>
+                    <td class="py-3 px-4 text-white font-medium">$${plan.investment.toLocaleString()}</td>
+                    <td class="py-3 px-4 text-gray-300">${plan.duration} Days</td>
+                    <td class="py-3 px-4 text-gray-300">${plan.hashrate}</td>
+                    <td class="py-3 px-4 text-green-400 font-medium">${plan.dailyReturn}%</td>
+                    <td class="py-3 px-4">
+                        <div class="flex items-center gap-2">
+                            <div class="progress-bar flex-1">
+                                <div class="progress-fill" style="width: ${progress}%"></div>
+                            </div>
+                            <span class="text-sm text-gray-400">${Math.round(progress)}%</span>
+                        </div>
+                    </td>
+                    <td class="py-3 px-4">
+                        <span class="inline-flex items-center gap-1 text-green-400">
+                            <span class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
+                            Active
+                        </span>
+                    </td>
+                `;
+                
+                tableBody.appendChild(row);
+            }
         }
         
         function initializeCharts() {
-            // Initialize charts with empty data
-            const chartOptions = {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        labels: {
-                            color: '#d1d5db',
-                            font: {
-                                size: 12
-                            }
-                        }
-                    },
-                    tooltip: {
-                        backgroundColor: 'rgba(15, 23, 42, 0.9)',
-                        titleColor: '#d1d5db',
-                        bodyColor: '#d1d5db',
-                        borderColor: '#a855f7',
-                        borderWidth: 1
-                    }
-                },
-                scales: {
-                    y: {
-                        grid: {
-                            color: 'rgba(255, 255, 255, 0.1)'
-                        },
-                        ticks: {
-                            color: '#9ca3af'
-                        }
-                    },
-                    x: {
-                        grid: {
-                            color: 'rgba(255, 255, 255, 0.1)'
-                        },
-                        ticks: {
-                            color: '#9ca3af'
-                        }
-                    }
-                }
-            };
-            
-            // Plan Distribution Pie Chart
-            const planCtx = document.getElementById('planDistributionChart').getContext('2d');
-            planDistributionChart = new Chart(planCtx, {
+            // Initialize distribution pie chart
+            const distCtx = document.getElementById('planDistributionChart').getContext('2d');
+            charts.distribution = new Chart(distCtx, {
                 type: 'doughnut',
                 data: {
                     labels: [],
                     datasets: [{
                         data: [],
                         backgroundColor: [],
-                        borderColor: 'rgba(15, 23, 42, 0.8)',
-                        borderWidth: 2
+                        borderWidth: 0
                     }]
                 },
                 options: {
-                    ...chartOptions,
+                    responsive: true,
+                    maintainAspectRatio: true,
                     plugins: {
-                        ...chartOptions.plugins,
-                        datalabels: {
-                            color: '#ffffff',
-                            formatter: (value, ctx) => {
-                                return ctx.chart.data.labels[ctx.dataIndex];
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                color: '#94a3b8',
+                                padding: 20,
+                                font: {
+                                    size: 12
+                                }
+                            }
+                        }
+                    },
+                    animation: {
+                        animateScale: true,
+                        animateRotate: true
+                    }
+                }
+            });
+            
+            // Initialize returns line chart
+            const returnsCtx = document.getElementById('returnsChart').getContext('2d');
+            charts.returns = new Chart(returnsCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Daily Returns',
+                        data: [],
+                        borderColor: '#a855f7',
+                        backgroundColor: 'rgba(168, 85, 247, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4,
+                        pointBackgroundColor: '#ec4899',
+                        pointBorderColor: '#ffffff',
+                        pointBorderWidth: 2,
+                        pointRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    animation: {
+                        duration: 2000,
+                        easing: 'easeInOutQuart'
+                    },
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: '#94a3b8'
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                color: 'rgba(168, 85, 247, 0.1)'
+                            },
+                            ticks: {
+                                color: '#94a3b8'
+                            }
+                        },
+                        y: {
+                            grid: {
+                                color: 'rgba(168, 85, 247, 0.1)'
+                            },
+                            ticks: {
+                                color: '#94a3b8'
                             }
                         }
                     }
                 }
             });
-            
-            // Earnings Trend Line Chart
-            const earningsCtx = document.getElementById('earningsTrendChart').getContext('2d');
-            earningsTrendChart = new Chart(earningsCtx, {
-                type: 'line',
-                data: {
-                    labels: [],
-                    datasets: [{
-                        label: 'Daily Earnings',
-                        data: [],
-                        borderColor: '#06b6d4',
-                        backgroundColor: 'rgba(6, 182, 212, 0.1)',
-                        borderWidth: 2,
-                        fill: true,
-                        tension: 0.4
-                    }]
-                },
-                options: chartOptions
-            });
-            
-            // Performance Bar Chart
-            const performanceCtx = document.getElementById('performanceChart').getContext('2d');
-            performanceChart = new Chart(performanceCtx, {
-                type: 'bar',
-                data: {
-                    labels: [],
-                    datasets: [
-                        {
-                            label: 'Investment',
-                            data: [],
-                            backgroundColor: 'rgba(168, 85, 247, 0.7)',
-                            borderColor: 'rgba(168, 85, 247, 1)',
-                            borderWidth: 1
-                        },
-                        {
-                            label: 'Returns',
-                            data: [],
-                            backgroundColor: 'rgba(34, 197, 94, 0.7)',
-                            borderColor: 'rgba(34, 197, 94, 1)',
-                            borderWidth: 1
-                        }
-                    ]
-                },
-                options: {
-                    ...chartOptions,
-                    scales: {
-                        ...chartOptions.scales,
-                        x: {
-                            ...chartOptions.scales.x,
-                            stacked: true
-                        },
-                        y: {
-                            ...chartOptions.scales.y,
-                            stacked: false,
-                            beginAtZero: true
-                        }
-                    }
-                }
-            });
         }
         
-        function updateCharts(plans) {
-            if (plans.length === 0) return;
+        function updateCharts(planStats) {
+            // Update distribution chart
+            const planNames = [];
+            const planCounts = [];
+            const planColors = [];
             
-            // Update Plan Distribution Chart
-            const planLabels = plans.map(p => p.name);
-            const planInvestments = plans.map(p => p.totalInvestment);
-            const planColors = plans.map(p => p.color);
+            for (const [planKey, stats] of Object.entries(planStats)) {
+                planNames.push(stats.planInfo.name);
+                planCounts.push(stats.count);
+                planColors.push(stats.planInfo.color);
+            }
             
-            planDistributionChart.data.labels = planLabels;
-            planDistributionChart.data.datasets[0].data = planInvestments;
-            planDistributionChart.data.datasets[0].backgroundColor = planColors;
-            planDistributionChart.update();
+            charts.distribution.data.labels = planNames;
+            charts.distribution.data.datasets[0].data = planCounts;
+            charts.distribution.data.datasets[0].backgroundColor = planColors;
+            charts.distribution.update();
             
-            // Update Earnings Trend Chart
-            const days = 7;
-            const earningsData = [];
-            const dates = [];
+            // Update returns chart with projected data
+            const days = [];
+            const returns = [];
             
-            for (let i = days - 1; i >= 0; i--) {
-                const date = new Date();
-                date.setDate(date.getDate() - i);
-                dates.push(date.toLocaleDateString('en-US', { weekday: 'short' }));
-                
-                let dailyEarnings = 0;
-                plans.forEach(plan => {
-                    const daysSinceStart = Math.floor((date - plan.startDate) / (1000 * 60 * 60 * 24));
-                    if (daysSinceStart >= 0 && daysSinceStart < plan.duration) {
-                        dailyEarnings += plan.totalInvestment * (plan.dailyReturn / 100);
-                    }
+            // Generate 30 days of projected returns
+            let totalDailyReturn = 0;
+            for (const [planKey, stats] of Object.entries(planStats)) {
+                const plan = stats.planInfo;
+                totalDailyReturn += (plan.investment * plan.dailyReturn / 100) * stats.count;
+            }
+            
+            for (let i = 1; i <= 30; i++) {
+                days.push(`Day ${i}`);
+                returns.push(totalDailyReturn * i);
+            }
+            
+            charts.returns.data.labels = days;
+            charts.returns.data.datasets[0].data = returns;
+            charts.returns.update();
+            
+            // Create candlestick chart if not exists
+            if (!charts.candlestick) {
+                const candlestickElement = document.getElementById('candlestickChart');
+                charts.candlestick = LightweightCharts.createChart(candlestickElement, {
+                    width: candlestickElement.clientWidth,
+                    height: 300,
+                    layout: {
+                        background: { color: 'transparent' },
+                        textColor: '#94a3b8',
+                    },
+                    grid: {
+                        vertLines: { color: 'rgba(168, 85, 247, 0.1)' },
+                        horzLines: { color: 'rgba(168, 85, 247, 0.1)' },
+                    },
                 });
-                earningsData.push(dailyEarnings);
+                
+                const candlestickSeries = charts.candlestick.addCandlestickSeries({
+                    upColor: '#10b981',
+                    downColor: '#ef4444',
+                    borderVisible: false,
+                    wickUpColor: '#10b981',
+                    wickDownColor: '#ef4444',
+                });
+                
+                // Generate sample candlestick data
+                const now = new Date();
+                const candlestickData = [];
+                let currentPrice = 60000; // Starting BTC price
+                
+                for (let i = 0; i < 20; i++) {
+                    const date = new Date(now);
+                    date.setDate(date.getDate() - (20 - i));
+                    
+                    const open = currentPrice;
+                    const change = (Math.random() - 0.5) * 2000;
+                    const close = open + change;
+                    const high = Math.max(open, close) + Math.random() * 1000;
+                    const low = Math.min(open, close) - Math.random() * 1000;
+                    
+                    candlestickData.push({
+                        time: date.toISOString().split('T')[0],
+                        open: open,
+                        high: high,
+                        low: low,
+                        close: close
+                    });
+                    
+                    currentPrice = close;
+                }
+                
+                candlestickSeries.setData(candlestickData);
             }
-            
-            earningsTrendChart.data.labels = dates;
-            earningsTrendChart.data.datasets[0].data = earningsData;
-            earningsTrendChart.update();
-            
-            // Update Performance Chart
-            const performanceLabels = plans.map(p => p.name);
-            const investments = plans.map(p => p.totalInvestment);
-            const returns = plans.map(p => p.totalInvestment * (p.dailyReturn / 100) * p.duration);
-            
-            performanceChart.data.labels = performanceLabels;
-            performanceChart.data.datasets[0].data = investments;
-            performanceChart.data.datasets[1].data = returns;
-            performanceChart.update();
         }
         
-        function displayMiningTransactions(transactions) {
-            const container = document.getElementById('miningTransactionsTable');
-            const noTransactionsDiv = document.getElementById('noTransactionsMessage');
+        function showNoPlansMessage() {
+            const container = document.getElementById('activeMiningPlans');
+            const noPlansDiv = document.getElementById('noPlansMessage');
+            const tableBody = document.getElementById('planDetailsTable');
             
-            if (transactions.length === 0) {
-                container.innerHTML = '';
-                noTransactionsDiv.style.display = 'block';
-                return;
-            }
-            
-            noTransactionsDiv.style.display = 'none';
             container.innerHTML = '';
-            
-            // Sort by date (newest first)
-            transactions.sort((a, b) => new Date(b.date) - new Date(a.date));
-            
-            // Show only recent transactions
-            const recentTransactions = transactions.slice(0, 5);
-            
-            recentTransactions.forEach(transaction => {
-                const method = transaction.method || '';
-                const planKey = Object.keys(MINING_PLANS).find(plan => 
-                    method.toLowerCase().includes(plan.toLowerCase())
-                );
-                const plan = planKey ? MINING_PLANS[planKey] : null;
-                
-                const transactionDate = new Date(transaction.date);
-                const daysSinceStart = Math.floor((new Date() - transactionDate) / (1000 * 60 * 60 * 24));
-                const progressPercentage = plan ? Math.min(100, (daysSinceStart / plan.duration) * 100) : 0;
-                const isCompleted = plan && daysSinceStart >= plan.duration;
-                
-                const row = document.createElement('tr');
-                row.className = 'border-b border-gray-800 hover:bg-slate-800/50 transition';
-                
-                row.innerHTML = `
-                    <td class="py-3 px-4">
-                        <div class="flex items-center gap-2">
-                            <span class="w-2 h-2 rounded-full" style="background-color: ${plan ? plan.color : '#9ca3af'}"></span>
-                            <span class="text-white">${plan ? plan.name : method}</span>
-                        </div>
+            noPlansDiv.classList.remove('hidden');
+            tableBody.innerHTML = `
+                <tr>
+                    <td colspan="7" class="py-8 text-center text-gray-400">
+                        No active mining plans found
                     </td>
-                    <td class="py-3 px-4 text-white font-semibold">$${parseFloat(transaction.amount || 0).toFixed(2)}</td>
-                    <td class="py-3 px-4 text-gray-400">${transactionDate.toLocaleDateString()}</td>
-                    <td class="py-3 px-4">
-                        <span class="status-chip ${isCompleted ? 'status-completed' : 'status-active'}">
-                            ${isCompleted ? 'Completed' : 'Active'}
-                        </span>
-                    </td>
-                    <td class="py-3 px-4">
-                        ${plan ? `
-                        <div class="flex items-center gap-2">
-                            <div class="w-24 h-2 bg-gray-700 rounded-full overflow-hidden">
-                                <div class="h-full ${plan.progressClass}" style="width: ${progressPercentage}%"></div>
-                            </div>
-                            <span class="text-sm text-gray-400">${Math.round(progressPercentage)}%</span>
-                        </div>
-                        ` : 'N/A'}
-                    </td>
-                `;
-                
-                container.appendChild(row);
-            });
-        }
-        
-        function showNoMiningPlans() {
-            document.getElementById('noMiningPlansMessage').style.display = 'block';
-            document.getElementById('activeMiningPlans').style.display = 'none';
-            document.getElementById('noTransactionsMessage').style.display = 'block';
-        }
-        
-        function viewPlanDetails(planName) {
-            alert(`Viewing details for ${planName}\nThis would show detailed analytics and performance metrics.`);
+                </tr>
+            `;
+            
+            // Reset summary stats
+            document.getElementById('activePlansCount').textContent = '0';
+            document.getElementById('totalInvestment').textContent = '$0';
+            document.getElementById('estimatedReturns').textContent = '$0';
+            document.getElementById('totalHashrate').textContent = '0 TH/s';
+            
+            // Clear charts data
+            if (charts.distribution) {
+                charts.distribution.data.labels = [];
+                charts.distribution.data.datasets[0].data = [];
+                charts.distribution.update();
+            }
+            
+            if (charts.returns) {
+                charts.returns.data.labels = [];
+                charts.returns.data.datasets[0].data = [];
+                charts.returns.update();
+            }
         }
         
         function refreshMiningData() {
@@ -980,26 +952,27 @@
             // Show loading state
             const refreshBtn = document.querySelector('button[onclick="refreshMiningData()"]');
             const originalText = refreshBtn.innerHTML;
-            refreshBtn.innerHTML = '🔄 Refreshing...';
+            refreshBtn.innerHTML = `
+                <svg class="animate-spin w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                Refreshing...
+            `;
             refreshBtn.disabled = true;
             
-            // Simulate refresh
             setTimeout(() => {
                 loadMiningData(userEmail);
                 
-                // Restore button
-                refreshBtn.innerHTML = originalText;
-                refreshBtn.disabled = false;
-                
                 // Show success indicator
                 refreshBtn.innerHTML = '✓ Refreshed';
-                refreshBtn.classList.remove('from-purple-500', 'to-pink-500');
-                refreshBtn.classList.add('from-green-500', 'to-emerald-500');
+                refreshBtn.classList.remove('bg-purple-500', 'hover:bg-purple-600');
+                refreshBtn.classList.add('bg-green-500', 'hover:bg-green-600');
                 
                 setTimeout(() => {
                     refreshBtn.innerHTML = originalText;
-                    refreshBtn.classList.remove('from-green-500', 'to-emerald-500');
-                    refreshBtn.classList.add('from-purple-500', 'to-pink-500');
+                    refreshBtn.classList.remove('bg-green-500', 'hover:bg-green-600');
+                    refreshBtn.classList.add('bg-purple-500', 'hover:bg-purple-600');
+                    refreshBtn.disabled = false;
                 }, 2000);
             }, 1500);
         }
@@ -1015,7 +988,22 @@
             sidebar.classList.toggle('active');
             overlay.classList.toggle('active');
         }
+        
+        // Handle window resize for charts
+        window.addEventListener('resize', function() {
+            if (charts.candlestick) {
+                const candlestickElement = document.getElementById('candlestickChart');
+                charts.candlestick.applyOptions({ width: candlestickElement.clientWidth });
+            }
+        });
+        
+        // Auto-refresh when returning to the page
+        window.addEventListener('focus', () => {
+            const userEmail = localStorage.getItem("v0trade_user_email");
+            if (userEmail) {
+                loadMiningData(userEmail);
+            }
+        });
     </script>
-
 </body>
 </html>
