@@ -8,7 +8,13 @@
     <!-- Add currency config script -->
     <script src="/js/currency-config.js"></script>
     <style>
-        /* currency-switcher.css */
+        .mobile-menu { display: none; }
+        .mobile-menu.active { display: block; }
+        .dropdown { position: relative; display: inline-block; }
+        .dropdown-content { display: none; position: absolute; background-color: rgb(15 23 42 / 0.95); min-width: 12rem; border: 1px solid rgb(168 85 247 / 0.2); border-radius: 0.5rem; padding: 0.5rem; z-index: 1000; backdrop-filter: blur(10px); }
+        .dropdown:hover .dropdown-content { display: block; }
+        
+        /* Currency switcher styles */
         .currency-switcher {
             position: relative;
             display: inline-block;
@@ -94,28 +100,21 @@
             text-align: right;
         }
         
-        /* Mobile currency selector */
-        .currency-selector-mobile {
-            background: rgba(30, 41, 59, 0.5);
-            border: 1px solid rgba(168, 85, 247, 0.3);
-            color: white;
-            border-radius: 6px;
+        .mobile-currency-selector {
             width: 100%;
             padding: 10px;
+            background: rgba(30, 41, 59, 0.5);
+            border: 1px solid rgba(168, 85, 247, 0.3);
+            border-radius: 6px;
+            color: white;
             font-size: 14px;
+            margin-top: 8px;
         }
         
-        .currency-selector-mobile option {
+        .mobile-currency-selector option {
             background: #0f172a;
             color: white;
         }
-        
-        /* Original styles */
-        .mobile-menu { display: none; }
-        .mobile-menu.active { display: block; }
-        .dropdown { position: relative; display: inline-block; }
-        .dropdown-content { display: none; position: absolute; background-color: rgb(15 23 42 / 0.95); min-width: 12rem; border: 1px solid rgb(168 85 247 / 0.2); border-radius: 0.5rem; padding: 0.5rem; z-index: 1000; backdrop-filter: blur(10px); }
-        .dropdown:hover .dropdown-content { display: block; }
         
         @keyframes fadeIn {
             from { opacity: 0; }
@@ -180,10 +179,10 @@
                     </div>
                 </nav>
 
-                <!-- Right Side - Auth -->
+                <!-- Right Side - Auth with Currency Switcher -->
                 <div class="hidden items-center gap-4 md:flex">
-                    <!-- Currency switcher added here -->
-                    <div class="currency-switcher hidden md:block ml-4">
+                    <!-- Currency Switcher -->
+                    <div class="currency-switcher">
                         <div class="currency-selector">
                             <span class="current-symbol">$</span>
                             <span class="current-code">USD</span>
@@ -204,7 +203,7 @@
                 </button>
             </div>
 
-            <!-- Mobile Menu -->
+            <!-- Mobile Menu with Currency Selector -->
             <div id="mobileMenu" class="mobile-menu border-t border-purple-500/20 py-4 md:hidden">
                 <nav class="flex flex-col gap-3">
                     <a href="index.html" class="text-sm text-gray-300 hover:text-white">Home</a>
@@ -217,20 +216,24 @@
                     <a href="security.html" class="text-sm text-gray-300 hover:text-white">Security</a>
                     <a href="contact.html" class="text-sm text-gray-300 hover:text-white">Contact</a>
                     <a href="faq.html" class="text-sm text-gray-300 hover:text-white">FAQ</a>
-                    <a href="dashboard.html" class="text-sm text-gray-300 hover:text-white">My Account</a>
-                    <a href="login.html" class="text-sm text-gray-300 hover:text-white">Logout</a>
                     
-                    <!-- Mobile currency selector -->
-                    <div class="currency-switcher-mobile mt-4">
+                    <!-- Mobile Currency Selector (always visible in mobile menu) -->
+                    <div class="mt-4 pt-4 border-t border-purple-500/20">
                         <div class="text-sm text-gray-300 mb-2">Currency:</div>
-                        <select class="currency-selector-mobile w-full bg-slate-900 border border-purple-500/20 rounded px-3 py-2 text-white">
+                        <select class="mobile-currency-selector">
                             <option value="USD">$ USD</option>
                             <option value="EUR">€ EUR</option>
                             <option value="GBP">£ GBP</option>
                             <option value="ZAR">R ZAR</option>
+                            <option value="INR">₹ INR</option>
                             <option value="JPY">¥ JPY</option>
+                            <option value="AUD">A$ AUD</option>
+                            <option value="CAD">C$ CAD</option>
                         </select>
                     </div>
+                    
+                    <a href="dashboard.html" class="text-sm text-gray-300 hover:text-white mt-4">My Account</a>
+                    <a href="login.html" class="text-sm text-gray-300 hover:text-white">Logout</a>
                 </nav>
             </div>
         </div>
@@ -598,11 +601,8 @@
             const profit = (amount * plan) / 100;
             const total = amount + profit;
             
-            // Get current currency symbol
-            const currencySymbol = window.CurrencyConfig ? window.CurrencyConfig.getCurrentSymbol() : '$';
-            
-            document.getElementById('profitAmount').innerHTML = '<span data-currency-symbol>' + currencySymbol + '</span>' + profit.toFixed(2);
-            document.getElementById('totalAmount').innerHTML = '<span data-currency-symbol>' + currencySymbol + '</span>' + total.toFixed(2);
+            document.getElementById('profitAmount').textContent = '$' + profit.toFixed(2);
+            document.getElementById('totalAmount').textContent = '$' + total.toFixed(2);
             document.getElementById('calcResult').classList.remove('hidden');
         } else {
             alert('Please enter a valid amount (minimum $200)');
@@ -776,18 +776,15 @@
         const roiMultiplier = parseFloat(roi) / 100 + 1;
         const { totalReturn, dailyReturn } = calculateReturns(amount, roiMultiplier, duration);
 
-        // Get current currency symbol
-        const currencySymbol = window.CurrencyConfig ? window.CurrencyConfig.getCurrentSymbol() : '$';
-
         showModal('Confirm Investment', `
             <div class="space-y-3">
                 <div class="flex justify-between text-gray-300"><span>Plan:</span><span class="text-white font-semibold">${planName}</span></div>
                 <div class="flex justify-between text-gray-300"><span>Metal:</span><span class="text-white font-semibold">${metal}</span></div>
-                <div class="flex justify-between text-gray-300"><span>Investment:</span><span class="text-white font-semibold">${currencySymbol}${amount.toFixed(2)}</span></div>
+                <div class="flex justify-between text-gray-300"><span>Investment:</span><span class="text-white font-semibold">$${amount.toFixed(2)}</span></div>
                 <div class="flex justify-between text-gray-300"><span>ROI:</span><span class="text-green-400 font-semibold">+${roi}%</span></div>
                 <div class="flex justify-between text-gray-300"><span>Duration:</span><span class="text-white font-semibold">${duration}</span></div>
-                <div class="flex justify-between text-gray-300"><span>Daily Return:</span><span class="text-cyan-400 font-semibold">${currencySymbol}${dailyReturn.toFixed(2)}</span></div>
-                <div class="flex justify-between text-gray-300"><span>Total Expected:</span><span class="text-purple-400 font-bold text-xl">${currencySymbol}${totalReturn.toFixed(2)}</span></div>
+                <div class="flex justify-between text-gray-300"><span>Daily Return:</span><span class="text-cyan-400 font-semibold">$${dailyReturn.toFixed(2)}</span></div>
+                <div class="flex justify-between text-gray-300"><span>Total Expected:</span><span class="text-purple-400 font-bold text-xl">$${totalReturn.toFixed(2)}</span></div>
             </div>
         `, async () => await processInvestment(amount, planName, metal, duration, dailyReturn, totalReturn));
     }
@@ -804,12 +801,9 @@
         }
 
         if (walletData.balance < amount) {
-            // Get current currency symbol
-            const currencySymbol = window.CurrencyConfig ? window.CurrencyConfig.getCurrentSymbol() : '$';
-            
             showModal('Insufficient Balance', `<p class="text-gray-300">Insufficient wallet balance to complete this purchase.</p>
-                 <p class="text-gray-400 text-sm mt-2">Your balance: ${currencySymbol}${walletData.balance.toFixed(2)}</p>
-                 <p class="text-gray-400 text-sm">Required: ${currencySymbol}${amount.toFixed(2)}</p>`, closeModal);
+                 <p class="text-gray-400 text-sm mt-2">Your balance: $${walletData.balance.toFixed(2)}</p>
+                 <p class="text-gray-400 text-sm">Required: $${amount.toFixed(2)}</p>`, closeModal);
             return;
         }
 
@@ -845,41 +839,58 @@
         }
     }
 
+    // Currency system initialization for mobile
+    function initMobileCurrencySystem() {
+        const mobileCurrencySelector = document.querySelector('.mobile-currency-selector');
+        if (mobileCurrencySelector && window.CurrencyConfig) {
+            // Set current currency
+            const currentCurrency = window.CurrencyConfig.getCurrentCurrency();
+            mobileCurrencySelector.value = currentCurrency;
+            
+            // Add change event
+            mobileCurrencySelector.addEventListener('change', function(e) {
+                if (e.target.value) {
+                    window.CurrencyConfig.changeCurrency(e.target.value);
+                }
+            });
+        }
+    }
+
     document.addEventListener('DOMContentLoaded', function() {
         // Update header with user info
         updateHeader();
-
-        // Check login status and redirect if not logged in for investment actions
-        if (!checkLogin()) {
-            console.log('User not logged in - investment features disabled');
-        }
-
-        // Initialize mobile currency selector
-        function initMobileCurrencySelector() {
-            const mobileSelector = document.querySelector('.currency-selector-mobile');
-            if (mobileSelector && window.CurrencyConfig) {
-                // Set current value
-                mobileSelector.value = CurrencyConfig.getCurrentCurrency();
-                
-                // Add change event
-                mobileSelector.addEventListener('change', function(e) {
-                    if (e.target.value) {
-                        CurrencyConfig.changeCurrency(e.target.value);
-                    }
-                });
-            }
-        }
-
-        // Initialize mobile currency selector
-        initMobileCurrencySelector();
-
-        // Apply currency symbols when page loads
+        
+        // Initialize mobile currency system
+        initMobileCurrencySystem();
+        
+        // Apply currency symbols to page
         setTimeout(() => {
             if (window.CurrencyConfig) {
                 window.CurrencyConfig.applyCurrencyToPage();
             }
         }, 100);
+
+        // Check login status and redirect if not logged in for investment actions
+        if (!checkLogin()) {
+            console.log('User not logged in - investment features disabled');
+        }
+        
+        // Listen for currency changes
+        document.addEventListener('currencyChanged', function(e) {
+            // Update mobile selector if exists
+            const mobileSelector = document.querySelector('.mobile-currency-selector');
+            if (mobileSelector) {
+                mobileSelector.value = e.detail.code;
+            }
+        });
     });
-    </script>
+    
+    // Add this function to refresh currency symbols when page is loaded
+    window.refreshCurrency = function() {
+        if (window.CurrencyConfig) {
+            window.CurrencyConfig.applyCurrencyToPage();
+        }
+    };
+</script>
 </body>
 </html>
