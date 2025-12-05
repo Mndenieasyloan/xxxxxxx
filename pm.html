@@ -1,0 +1,885 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Precious Metals Investment Plans - V0 Trade</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Add currency config script -->
+    <script src="/js/currency-config.js"></script>
+    <style>
+        /* currency-switcher.css */
+        .currency-switcher {
+            position: relative;
+            display: inline-block;
+        }
+        
+        .currency-selector {
+            padding: 8px 12px;
+            border: 1px solid rgba(168, 85, 247, 0.3);
+            border-radius: 6px;
+            background: rgba(30, 41, 59, 0.5);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: white;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        
+        .currency-selector:hover {
+            border-color: #a855f7;
+            background: rgba(168, 85, 247, 0.1);
+        }
+        
+        .currency-dropdown {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+            border: 1px solid rgba(168, 85, 247, 0.2);
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            min-width: 200px;
+            z-index: 1000;
+            display: none;
+            margin-top: 5px;
+            padding: 8px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .currency-dropdown.show {
+            display: block;
+            animation: fadeIn 0.2s ease;
+        }
+        
+        .currency-option-dropdown {
+            padding: 10px 12px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border-radius: 6px;
+            color: #e2e8f0;
+            font-size: 14px;
+        }
+        
+        .currency-option-dropdown:hover {
+            background: rgba(168, 85, 247, 0.1);
+        }
+        
+        .currency-option-dropdown.active {
+            background: rgba(168, 85, 247, 0.15);
+            color: white;
+            font-weight: 600;
+        }
+        
+        .currency-option-dropdown .symbol {
+            font-size: 18px;
+            width: 24px;
+            text-align: center;
+        }
+        
+        .currency-option-dropdown .code {
+            font-weight: 600;
+            min-width: 40px;
+        }
+        
+        .currency-option-dropdown .name {
+            color: #94a3b8;
+            font-size: 12px;
+            flex-grow: 1;
+            text-align: right;
+        }
+        
+        /* Mobile currency selector */
+        .currency-selector-mobile {
+            background: rgba(30, 41, 59, 0.5);
+            border: 1px solid rgba(168, 85, 247, 0.3);
+            color: white;
+            border-radius: 6px;
+            width: 100%;
+            padding: 10px;
+            font-size: 14px;
+        }
+        
+        .currency-selector-mobile option {
+            background: #0f172a;
+            color: white;
+        }
+        
+        /* Original styles */
+        .mobile-menu { display: none; }
+        .mobile-menu.active { display: block; }
+        .dropdown { position: relative; display: inline-block; }
+        .dropdown-content { display: none; position: absolute; background-color: rgb(15 23 42 / 0.95); min-width: 12rem; border: 1px solid rgb(168 85 247 / 0.2); border-radius: 0.5rem; padding: 0.5rem; z-index: 1000; backdrop-filter: blur(10px); }
+        .dropdown:hover .dropdown-content { display: block; }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-b from-slate-950 via-purple-950 to-slate-950 text-white">
+    <!-- Updated header with proper navigation -->
+    <header class="sticky top-0 z-50 border-b border-purple-500/20 bg-slate-950/80 backdrop-blur-md">
+        <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between py-4">
+                <a href="index.html" class="flex items-center gap-2 hover:opacity-80 transition">
+                    <div class="h-10 w-10">
+                        <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" class="w-full h-full">
+                            <defs>
+                                <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" style="stop-color: #a78bfa; stop-opacity: 1" />
+                                    <stop offset="50%" style="stop-color: #ec4899; stop-opacity: 1" />
+                                    <stop offset="100%" style="stop-color: #06b6d4; stop-opacity: 1" />
+                                </linearGradient>
+                                <filter id="glow">
+                                    <feGaussianBlur stdDeviation="2" result="coloredBlur" />
+                                    <feMerge>
+                                        <feMergeNode in="coloredBlur" />
+                                        <feMergeNode in="SourceGraphic" />
+                                    </feMerge>
+                                </filter>
+                            </defs>
+                            <circle cx="100" cy="100" r="95" fill="url(#logoGradient)" opacity="0.2" />
+                            <circle cx="100" cy="100" r="90" fill="none" stroke="url(#logoGradient)" stroke-width="2" />
+                            <path d="M 50 60 L 80 140 M 150 60 L 120 140" stroke="url(#logoGradient)" stroke-width="8" stroke-linecap="round" fill="none" filter="url(#glow)" />
+                            <circle cx="100" cy="100" r="25" fill="none" stroke="url(#logoGradient)" stroke-width="6" filter="url(#glow)" />
+                            <line x1="75" y1="100" x2="125" y2="100" stroke="url(#logoGradient)" stroke-width="3" opacity="0.6" />
+                            <circle cx="100" cy="60" r="4" fill="url(#logoGradient)" filter="url(#glow)" />
+                        </svg>
+                    </div>
+                    <span class="text-xl font-bold bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent">V0 Trade</span>
+                </a>
+
+                <!-- Desktop Navigation -->
+                <nav class="hidden items-center gap-8 md:flex">
+                    <a href="index.html" class="text-sm text-gray-300 hover:text-white transition">Home</a>
+                    <div class="dropdown">
+                        <button class="text-sm text-white font-semibold transition flex items-center gap-1">Invest <span>▼</span></button>
+                        <div class="dropdown-content">
+                            <a href="cryptocurrencies.html" class="block px-3 py-2 text-sm text-gray-300 hover:text-white hover:bg-purple-500/10 rounded">Cryptocurrencies</a>
+                            <a href="precious-metals.html" class="block px-3 py-2 text-sm text-gray-300 hover:text-white hover:bg-purple-500/10 rounded">Precious Metals</a>
+                            <a href="stocks.html" class="block px-3 py-2 text-sm text-gray-300 hover:text-white hover:bg-purple-500/10 rounded">Stocks</a>
+                            <a href="etfs.html" class="block px-3 py-2 text-sm text-gray-300 hover:text-white hover:bg-purple-500/10 rounded">ETFs</a>
+                        </div>
+                    </div>
+                    <a href="btc-miner.html" class="text-sm text-gray-300 hover:text-white transition">BTC Miner</a>
+                    <a href="about.html" class="text-sm text-gray-300 hover:text-white transition">About</a>
+                    <a href="security.html" class="text-sm text-gray-300 hover:text-white transition">Security</a>
+                    <div class="dropdown">
+                        <button class="text-sm text-gray-300 hover:text-white transition flex items-center gap-1">Support <span>▼</span></button>
+                        <div class="dropdown-content">
+                            <a href="contact.html" class="block px-3 py-2 text-sm text-gray-300 hover:text-white hover:bg-purple-500/10 rounded">Contact Support</a>
+                            <a href="faq.html" class="block px-3 py-2 text-sm text-gray-300 hover:text-white hover:bg-purple-500/10 rounded">FAQ</a>
+                        </div>
+                    </div>
+                </nav>
+
+                <!-- Right Side - Auth -->
+                <div class="hidden items-center gap-4 md:flex">
+                    <!-- Currency switcher added here -->
+                    <div class="currency-switcher hidden md:block ml-4">
+                        <div class="currency-selector">
+                            <span class="current-symbol">$</span>
+                            <span class="current-code">USD</span>
+                            <span>▼</span>
+                        </div>
+                        <div class="currency-dropdown"></div>
+                    </div>
+                    
+                    <a href="dashboard.html" class="text-sm text-gray-300 hover:text-white transition">My Account</a>
+                    <a href="login.html" class="text-sm text-gray-300 hover:text-white transition">Logout</a>
+                </div>
+
+                <!-- Mobile Menu Button -->
+                <button class="md:hidden" onclick="toggleMobileMenu()">
+                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Mobile Menu -->
+            <div id="mobileMenu" class="mobile-menu border-t border-purple-500/20 py-4 md:hidden">
+                <nav class="flex flex-col gap-3">
+                    <a href="index.html" class="text-sm text-gray-300 hover:text-white">Home</a>
+                    <a href="cryptocurrencies.html" class="text-sm text-gray-300 hover:text-white">Cryptocurrencies</a>
+                    <a href="precious-metals.html" class="text-sm text-gray-300 hover:text-white">Precious Metals</a>
+                    <a href="stocks.html" class="text-sm text-gray-300 hover:text-white">Stocks</a>
+                    <a href="etfs.html" class="text-sm text-gray-300 hover:text-white">ETFs</a>
+                    <a href="btc-miner.html" class="text-sm text-gray-300 hover:text-white">BTC Miner</a>
+                    <a href="about.html" class="text-sm text-gray-300 hover:text-white">About</a>
+                    <a href="security.html" class="text-sm text-gray-300 hover:text-white">Security</a>
+                    <a href="contact.html" class="text-sm text-gray-300 hover:text-white">Contact</a>
+                    <a href="faq.html" class="text-sm text-gray-300 hover:text-white">FAQ</a>
+                    <a href="dashboard.html" class="text-sm text-gray-300 hover:text-white">My Account</a>
+                    <a href="login.html" class="text-sm text-gray-300 hover:text-white">Logout</a>
+                    
+                    <!-- Mobile currency selector -->
+                    <div class="currency-switcher-mobile mt-4">
+                        <div class="text-sm text-gray-300 mb-2">Currency:</div>
+                        <select class="currency-selector-mobile w-full bg-slate-900 border border-purple-500/20 rounded px-3 py-2 text-white">
+                            <option value="USD">$ USD</option>
+                            <option value="EUR">€ EUR</option>
+                            <option value="GBP">£ GBP</option>
+                            <option value="ZAR">R ZAR</option>
+                            <option value="JPY">¥ JPY</option>
+                        </select>
+                    </div>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <!-- Updated hero section -->
+    <section class="px-4 py-24 sm:px-6 lg:px-8">
+        <div class="mx-auto max-w-4xl text-center">
+            <h1 class="text-5xl sm:text-6xl font-bold text-white mb-6">Precious Metals Investment Plans</h1>
+            <p class="text-xl text-gray-300 mb-8">Invest in stable, globally trusted metals with high-return plans.</p>
+            <a href="signup.html" class="inline-flex items-center justify-center bg-gradient-to-r from-purple-500 via-pink-500 to-purple-500 hover:from-purple-600 hover:via-pink-600 hover:to-purple-600 text-white text-lg font-bold h-14 px-12 rounded-lg shadow-2xl shadow-purple-500/50 transition-all">
+                Start Investing
+            </a>
+        </div>
+    </section>
+
+    <!-- About Precious Metals section -->
+    <section class="px-4 py-16 sm:px-6 lg:px-8">
+        <div class="mx-auto max-w-5xl">
+            <div class="bg-gradient-to-br from-purple-900/40 to-pink-900/40 border border-purple-500/20 rounded-2xl p-8 md:p-12 backdrop-blur">
+                <h2 class="text-3xl font-bold text-white mb-6">About Precious Metals</h2>
+                <p class="text-gray-300 text-lg leading-relaxed mb-8">
+                    Precious metals investment provides stable stores of value and serves as an inflation hedge. Our platform offers investment opportunities in globally trusted metals with consistent returns and minimal volatility.
+                </p>
+                <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+                    <div class="bg-slate-900/50 border border-purple-500/20 rounded-lg p-4 text-center">
+                        <div class="font-bold text-yellow-400 text-lg mb-1">Gold</div>
+                        <div class="text-gray-400 text-sm">Safe-haven asset</div>
+                    </div>
+                    <div class="bg-slate-900/50 border border-purple-500/20 rounded-lg p-4 text-center">
+                        <div class="font-bold text-gray-300 text-lg mb-1">Platinum</div>
+                        <div class="text-gray-400 text-sm">Industrial metal</div>
+                    </div>
+                    <div class="bg-slate-900/50 border border-purple-500/20 rounded-lg p-4 text-center">
+                        <div class="font-bold text-pink-400 text-lg mb-1">Rhodium</div>
+                        <div class="text-gray-400 text-sm">Rare metal</div>
+                    </div>
+                    <div class="bg-slate-900/50 border border-purple-500/20 rounded-lg p-4 text-center">
+                        <div class="font-bold text-blue-300 text-lg mb-1">Palladium</div>
+                        <div class="text-gray-400 text-sm">Auto catalyst</div>
+                    </div>
+                    <div class="bg-slate-900/50 border border-purple-500/20 rounded-lg p-4 text-center">
+                        <div class="font-bold text-gray-400 text-lg mb-1">Silver</div>
+                        <div class="text-gray-400 text-sm">Industrial & jewelry</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Investment plans with forms -->
+    <section class="px-4 py-16 sm:px-6 lg:px-8">
+        <div class="mx-auto max-w-7xl">
+            <h2 class="text-4xl font-bold text-white text-center mb-16">Investment Plans</h2>
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                
+                <!-- 1 Hour Plan -->
+                <div class="bg-gradient-to-br from-purple-900/40 to-pink-900/40 border border-purple-500/20 rounded-2xl p-8 backdrop-blur hover:scale-105 transition-transform">
+                    <h3 class="text-2xl font-bold text-white mb-6">1 Hour Plan</h3>
+                    <div class="space-y-4 mb-8">
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">ROI</span>
+                            <span class="text-green-400 font-bold text-xl">+20%</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">Duration</span>
+                            <span class="text-white font-semibold">1 Hour</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">Withdrawal</span>
+                            <span class="text-cyan-400 font-semibold">Instant</span>
+                        </div>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-gray-400 text-sm mb-2">Select Precious Metal</label>
+                        <select class="w-full bg-slate-900 border border-purple-500/20 rounded-lg px-4 py-3 text-white">
+                            <option>Gold</option>
+                            <option>Platinum</option>
+                            <option>Rhodium</option>
+                            <option>Palladium</option>
+                            <option>Silver</option>
+                        </select>
+                    </div>
+                    <div class="mb-6">
+                        <label class="block text-gray-400 text-sm mb-2">Investment Amount (Min <span data-currency-symbol>$</span>200)</label>
+                        <input type="number" placeholder="Enter amount" class="w-full bg-slate-900 border border-purple-500/20 rounded-lg px-4 py-3 text-white">
+                    </div>
+                    <button class="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold py-3 rounded-lg transition-all" onclick="handleInvest('1 Hour Plan', '20', '1 Hour')">
+                        Invest Now
+                    </button>
+                </div>
+
+                <!-- 5 Hours Plan -->
+                <div class="bg-gradient-to-br from-blue-900/40 to-cyan-900/40 border border-blue-500/20 rounded-2xl p-8 backdrop-blur hover:scale-105 transition-transform">
+                    <h3 class="text-2xl font-bold text-white mb-6">5 Hours Plan</h3>
+                    <div class="space-y-4 mb-8">
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">ROI</span>
+                            <span class="text-green-400 font-bold text-xl">+30%</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">Duration</span>
+                            <span class="text-white font-semibold">5 Hours</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">Withdrawal</span>
+                            <span class="text-cyan-400 font-semibold">Instant</span>
+                        </div>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-gray-400 text-sm mb-2">Select Precious Metal</label>
+                        <select class="w-full bg-slate-900 border border-blue-500/20 rounded-lg px-4 py-3 text-white">
+                            <option>Gold</option>
+                            <option>Platinum</option>
+                            <option>Rhodium</option>
+                            <option>Palladium</option>
+                            <option>Silver</option>
+                        </select>
+                    </div>
+                    <div class="mb-6">
+                        <label class="block text-gray-400 text-sm mb-2">Investment Amount (Min <span data-currency-symbol>$</span>200)</label>
+                        <input type="number" placeholder="Enter amount" class="w-full bg-slate-900 border border-blue-500/20 rounded-lg px-4 py-3 text-white">
+                    </div>
+                    <button class="w-full bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white font-bold py-3 rounded-lg transition-all" onclick="handleInvest('5 Hours Plan', '30', '5 Hours')">
+                        Invest Now
+                    </button>
+                </div>
+
+                <!-- 24 Hours Plan -->
+                <div class="bg-gradient-to-br from-pink-900/40 to-purple-900/40 border border-pink-500/20 rounded-2xl p-8 backdrop-blur hover:scale-105 transition-transform">
+                    <h3 class="text-2xl font-bold text-white mb-6">24 Hours Plan</h3>
+                    <div class="space-y-4 mb-8">
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">ROI</span>
+                            <span class="text-green-400 font-bold text-xl">+68%</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">Duration</span>
+                            <span class="text-white font-semibold">24 Hours</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">Withdrawal</span>
+                            <span class="text-cyan-400 font-semibold">Instant</span>
+                        </div>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-gray-400 text-sm mb-2">Select Precious Metal</label>
+                        <select class="w-full bg-slate-900 border border-pink-500/20 rounded-lg px-4 py-3 text-white">
+                            <option>Gold</option>
+                            <option>Platinum</option>
+                            <option>Rhodium</option>
+                            <option>Palladium</option>
+                            <option>Silver</option>
+                        </select>
+                    </div>
+                    <div class="mb-6">
+                        <label class="block text-gray-400 text-sm mb-2">Investment Amount (Min <span data-currency-symbol>$</span>200)</label>
+                        <input type="number" placeholder="Enter amount" class="w-full bg-slate-900 border border-pink-500/20 rounded-lg px-4 py-3 text-white">
+                    </div>
+                    <button class="w-full bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white font-bold py-3 rounded-lg transition-all" onclick="handleInvest('24 Hours Plan', '68', '24 Hours')">
+                        Invest Now
+                    </button>
+                </div>
+
+                <!-- 72 Hours Plan -->
+                <div class="bg-gradient-to-br from-cyan-900/40 to-blue-900/40 border border-cyan-500/20 rounded-2xl p-8 backdrop-blur hover:scale-105 transition-transform">
+                    <h3 class="text-2xl font-bold text-white mb-6">72 Hours Plan</h3>
+                    <div class="space-y-4 mb-8">
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">ROI</span>
+                            <span class="text-green-400 font-bold text-xl">+89%</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">Duration</span>
+                            <span class="text-white font-semibold">72 Hours</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">Withdrawal</span>
+                            <span class="text-cyan-400 font-semibold">Instant</span>
+                        </div>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-gray-400 text-sm mb-2">Select Precious Metal</label>
+                        <select class="w-full bg-slate-900 border border-cyan-500/20 rounded-lg px-4 py-3 text-white">
+                            <option>Gold</option>
+                            <option>Platinum</option>
+                            <option>Rhodium</option>
+                            <option>Palladium</option>
+                            <option>Silver</option>
+                        </select>
+                    </div>
+                    <div class="mb-6">
+                        <label class="block text-gray-400 text-sm mb-2">Investment Amount (Min <span data-currency-symbol>$</span>200)</label>
+                        <input type="number" placeholder="Enter amount" class="w-full bg-slate-900 border border-cyan-500/20 rounded-lg px-4 py-3 text-white">
+                    </div>
+                    <button class="w-full bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white font-bold py-3 rounded-lg transition-all" onclick="handleInvest('72 Hours Plan', '89', '72 Hours')">
+                        Invest Now
+                    </button>
+                </div>
+
+                <!-- 1 Week Plan -->
+                <div class="bg-gradient-to-br from-purple-900/40 via-pink-900/40 to-cyan-900/40 border border-purple-500/20 rounded-2xl p-8 backdrop-blur hover:scale-105 transition-transform lg:col-span-2">
+                    <div class="flex flex-col md:flex-row md:items-center md:justify-between">
+                        <div class="mb-6 md:mb-0 md:w-1/3">
+                            <h3 class="text-2xl font-bold text-white mb-6">1 Week Plan</h3>
+                            <div class="space-y-4">
+                                <div class="flex justify-between md:block">
+                                    <span class="text-gray-400">ROI</span>
+                                    <span class="text-green-400 font-bold text-2xl md:block">+190%</span>
+                                </div>
+                                <div class="flex justify-between md:block">
+                                    <span class="text-gray-400">Duration</span>
+                                    <span class="text-white font-semibold md:block">1 Week</span>
+                                </div>
+                                <div class="flex justify-between md:block">
+                                    <span class="text-gray-400">Withdrawal</span>
+                                    <span class="text-cyan-400 font-semibold md:block">Instant</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="md:w-2/3 md:pl-8">
+                            <div class="mb-4">
+                                <label class="block text-gray-400 text-sm mb-2">Select Precious Metal</label>
+                                <select class="w-full bg-slate-900 border border-purple-500/20 rounded-lg px-4 py-3 text-white">
+                                    <option>Gold</option>
+                                    <option>Platinum</option>
+                                    <option>Rhodium</option>
+                                    <option>Palladium</option>
+                                    <option>Silver</option>
+                                </select>
+                            </div>
+                            <div class="mb-6">
+                                <label class="block text-gray-400 text-sm mb-2">Investment Amount (Min <span data-currency-symbol>$</span>200)</label>
+                                <input type="number" placeholder="Enter amount" class="w-full bg-slate-900 border border-purple-500/20 rounded-lg px-4 py-3 text-white">
+                            </div>
+                            <button class="w-full bg-gradient-to-r from-purple-500 via-pink-500 to-cyan-500 hover:from-purple-600 hover:via-pink-600 hover:to-cyan-600 text-white font-bold py-3 rounded-lg transition-all shadow-xl" onclick="handleInvest('1 Week Plan', '190', '1 Week')">
+                                Invest Now
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Metals profit calculator -->
+    <section class="px-4 py-16 sm:px-6 lg:px-8 bg-slate-900/50">
+        <div class="mx-auto max-w-2xl">
+            <h2 class="text-4xl font-bold text-white text-center mb-12">Metals Profit Calculator</h2>
+            <div class="bg-gradient-to-br from-purple-900/40 to-pink-900/40 border border-purple-500/20 rounded-2xl p-8 backdrop-blur">
+                <div class="space-y-6">
+                    <div>
+                        <label class="block text-gray-300 mb-2">Select Plan</label>
+                        <select class="w-full bg-slate-900 border border-purple-500/20 rounded-lg px-4 py-3 text-white" id="calcPlan">
+                            <option value="20">1 Hour (+20%)</option>
+                            <option value="30">5 Hours (+30%)</option>
+                            <option value="68">24 Hours (+68%)</option>
+                            <option value="89">72 Hours (+89%)</option>
+                            <option value="190">1 Week (+190%)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-gray-300 mb-2">Investment Amount</label>
+                        <input type="number" placeholder="Enter amount" class="w-full bg-slate-900 border border-purple-500/20 rounded-lg px-4 py-3 text-white" id="calcAmount">
+                    </div>
+                    <button onclick="calculateProfit()" class="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold py-3 rounded-lg transition-all">
+                        Calculate
+                    </button>
+                    <div id="calcResult" class="hidden mt-6 p-6 bg-slate-900/50 border border-green-500/20 rounded-lg">
+                        <div class="text-center">
+                            <div class="text-gray-400 mb-2">Estimated Profit</div>
+                            <div class="text-4xl font-bold text-green-400" id="profitAmount"><span data-currency-symbol>$</span>0.00</div>
+                            <div class="text-gray-400 mt-4 mb-2">Total Return</div>
+                            <div class="text-2xl font-bold text-white" id="totalAmount"><span data-currency-symbol>$</span>0.00</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Updated footer -->
+    <footer class="border-t border-purple-500/20 bg-slate-950 py-12">
+        <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div class="grid md:grid-cols-5 gap-8 mb-12">
+                <div>
+                    <h4 class="font-bold text-white mb-4">V0 Trade</h4>
+                    <ul class="space-y-2">
+                        <li><a href="about.html" class="text-gray-400 hover:text-white transition text-sm">About</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition text-sm">Careers</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition text-sm">Legal</a></li>
+                        <li><a href="security.html" class="text-gray-400 hover:text-white transition text-sm">Security</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-bold text-white mb-4">Trading</h4>
+                    <ul class="space-y-2">
+                        <li><a href="cryptocurrencies.html" class="text-gray-400 hover:text-white transition text-sm">Instruments</a></li>
+                        <li><a href="cryptocurrencies.html" class="text-gray-400 hover:text-white transition text-sm">Cryptocurrencies</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition text-sm">Platforms</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition text-sm">TradingView</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-bold text-white mb-4">Tools & Resources</h4>
+                    <ul class="space-y-2">
+                        <li><a href="#" class="text-gray-400 hover:text-white transition text-sm">Blog</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition text-sm">Academy</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition text-sm">Webinars</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition text-sm">Market News</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-bold text-white mb-4">Account</h4>
+                    <ul class="space-y-2">
+                        <li><a href="signup.html" class="text-gray-400 hover:text-white transition text-sm">Open Account</a></li>
+                        <li><a href="dashboard.html" class="text-gray-400 hover:text-white transition text-sm">Funding</a></li>
+                        <li><a href="dashboard.html" class="text-gray-400 hover:text-white transition text-sm">Withdrawals</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-bold text-white mb-4">Support</h4>
+                    <ul class="space-y-2">
+                        <li><a href="contact.html" class="text-gray-400 hover:text-white transition text-sm">Contact</a></li>
+                        <li><a href="faq.html" class="text-gray-400 hover:text-white transition text-sm">FAQ</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="border-t border-purple-500/20 pt-8">
+                <p class="text-xs text-gray-500 mb-4">⚠️ Risk Warning: Crypto is highly volatile and not SIPC protected. Understand the risks before investing.</p>
+                <div class="flex flex-col sm:flex-row justify-between items-center gap-4">
+                    <p class="text-xs text-gray-500">© 2025 V0 Trade. All rights reserved.</p>
+                    <div class="flex gap-4">
+                        <a href="#" class="text-xs text-gray-500 hover:text-white transition">Terms</a>
+                        <a href="#" class="text-xs text-gray-500 hover:text-white transition">Privacy</a>
+                        <a href="contact.html" class="text-xs text-gray-500 hover:text-white transition">Contact</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Investment confirmation modal -->
+    <div id="investmentModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div class="bg-slate-900 border border-purple-500/30 rounded-2xl p-8 max-w-md w-full">
+            <h3 class="text-2xl font-bold text-white mb-6" id="modalTitle">Confirm Investment</h3>
+            <div id="modalContent" class="space-y-4 mb-6"></div>
+            <div class="flex gap-4">
+                <button onclick="closeModal()" class="flex-1 bg-slate-800 text-white font-bold py-3 rounded-lg hover:bg-slate-700 transition">Cancel</button>
+                <button id="confirmButton" class="flex-1 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold py-3 rounded-lg hover:opacity-90 transition">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    function toggleMobileMenu() {
+        document.getElementById('mobileMenu').classList.toggle('active');
+    }
+
+    function calculateProfit() {
+        const plan = parseInt(document.getElementById('calcPlan').value);
+        const amount = parseFloat(document.getElementById('calcAmount').value);
+        
+        if (amount && amount >= 200) {
+            const profit = (amount * plan) / 100;
+            const total = amount + profit;
+            
+            // Get current currency symbol
+            const currencySymbol = window.CurrencyConfig ? window.CurrencyConfig.getCurrentSymbol() : '$';
+            
+            document.getElementById('profitAmount').innerHTML = '<span data-currency-symbol>' + currencySymbol + '</span>' + profit.toFixed(2);
+            document.getElementById('totalAmount').innerHTML = '<span data-currency-symbol>' + currencySymbol + '</span>' + total.toFixed(2);
+            document.getElementById('calcResult').classList.remove('hidden');
+        } else {
+            alert('Please enter a valid amount (minimum $200)');
+        }
+    }
+
+    const BASEROW_TOKEN = 'LG6hnTBxgBG78FueElsSwpHRd4Wep1oL';
+    const WALLET_TABLE_ID = '756077';
+    const INVESTMENT_TABLE_ID = '756316';
+    const BASEROW_API_URL = 'https://api.baserow.io/api/database/rows/table';
+
+    // Check if user is logged in
+    function checkLogin() {
+        const userEmail = localStorage.getItem('v0trade_user_email');
+        return userEmail !== null && userEmail !== '';
+    }
+
+    // Get logged-in user email
+    function getUserEmail() {
+        return localStorage.getItem('v0trade_user_email') || '';
+    }
+
+    // Update header with user info
+    function updateHeader() {
+        const userEmail = getUserEmail();
+        if (userEmail) {
+            // Update header account display
+            const headerAccount = document.querySelector('.md\\:flex a[href="dashboard.html"]');
+            if (headerAccount) {
+                headerAccount.textContent = userEmail;
+            }
+            
+            // Update logout link
+            const logoutLink = document.querySelector('.md\\:flex a[href="login.html"]');
+            if (logoutLink) {
+                logoutLink.textContent = 'Logout';
+                logoutLink.href = 'javascript:void(0)';
+                logoutLink.onclick = function() {
+                    localStorage.removeItem('v0trade_user_email');
+                    window.location.href = 'login.html';
+                };
+            }
+        }
+    }
+
+    function showModal(title, content, confirmCallback) {
+        document.getElementById('modalTitle').textContent = title;
+        document.getElementById('modalContent').innerHTML = content;
+        document.getElementById('investmentModal').classList.remove('hidden');
+        document.getElementById('confirmButton').onclick = confirmCallback;
+    }
+
+    function closeModal() {
+        document.getElementById('investmentModal').classList.add('hidden');
+    }
+
+    function calculateReturns(amount, roiMultiplier, duration) {
+        const totalReturn = amount * roiMultiplier;
+        const profit = totalReturn - amount;
+        const dailyReturn = profit / getDaysFromDuration(duration);
+        return { totalReturn, profit, dailyReturn };
+    }
+
+    function getDaysFromDuration(duration) {
+        if (duration.includes('Hour')) return Math.ceil(parseInt(duration) / 24) || 1;
+        if (duration.includes('Week')) return 7;
+        return 1;
+    }
+
+    // Get wallet balance from Baserow
+    async function getWalletBalance(email) {
+        try {
+            const filters = encodeURIComponent(JSON.stringify({
+                filter_type: "AND",
+                filters: [
+                    {
+                        type: "equal",
+                        field: "email",
+                        value: email
+                    }
+                ]
+            }));
+
+            const url = `${BASEROW_API_URL}/${WALLET_TABLE_ID}/?user_field_names=true&filters=${filters}`;
+            
+            const response = await fetch(url, {
+                headers: { 'Authorization': `Token ${BASEROW_TOKEN}` }
+            });
+            
+            const data = await response.json();
+            
+            if (data.results && data.results.length > 0) {
+                const userWallet = data.results[0];
+                const balance = parseFloat(userWallet['Total Wallet Balance'] || 0);
+                return { balance, rowId: userWallet.id };
+            }
+            return null;
+        } catch (error) {
+            console.error('Error fetching wallet balance:', error);
+            return null;
+        }
+    }
+
+    // Update wallet balance in Baserow
+    async function updateWalletBalance(rowId, newBalance) {
+        try {
+            await fetch(`${BASEROW_API_URL}/${WALLET_TABLE_ID}/${rowId}/?user_field_names=true`, {
+                method: 'PATCH',
+                headers: { 
+                    'Authorization': `Token ${BASEROW_TOKEN}`, 
+                    'Content-Type': 'application/json' 
+                },
+                body: JSON.stringify({ 
+                    'Total Wallet Balance': newBalance 
+                })
+            });
+            return true;
+        } catch (error) {
+            console.error('Error updating wallet balance:', error);
+            return false;
+        }
+    }
+
+    // Create investment record in Baserow using correct field names
+    async function createInvestment(email, amount, planType, duration, dailyReturn, totalEarned, investmentPlan) {
+        try {
+            const response = await fetch(`${BASEROW_API_URL}/${INVESTMENT_TABLE_ID}/?user_field_names=true`, {
+                method: 'POST',
+                headers: { 
+                    'Authorization': `Token ${BASEROW_TOKEN}`, 
+                    'Content-Type': 'application/json' 
+                },
+                body: JSON.stringify({
+                    'Investment Amount': `$${amount.toFixed(2)}`,
+                    'Daily Return': `$${dailyReturn.toFixed(2)}`,
+                    'Total Earned': `$${totalEarned.toFixed(2)}`,
+                    'Status': 'Active',
+                    'Days Remaining': getDaysFromDuration(duration).toString(),
+                    'email': email,
+                    'date': new Date().toISOString().split('T')[0],
+                    'investment type': planType,
+                    'investment plan': investmentPlan
+                })
+            });
+            return response.ok;
+        } catch (error) {
+            console.error('Error creating investment:', error);
+            return false;
+        }
+    }
+
+    function handleInvest(planName, roi, duration) {
+        const card = event.target.closest('.bg-gradient-to-br');
+        const metalSelect = card.querySelector('select');
+        const amountInput = card.querySelector('input[type="number"]');
+        const metal = metalSelect.value;
+        const amount = parseFloat(amountInput.value);
+
+        if (isNaN(amount) || amount < 200) {
+            showModal('Invalid Amount', '<p class="text-gray-300">Please enter an amount of at least $200.</p>', closeModal);
+            return;
+        }
+
+        if (!checkLogin()) {
+            showModal('Login Required', '<p class="text-gray-300">You must log in before investing in Precious Metals plans.</p>', () => {
+                window.location.href = 'login.html';
+            });
+            return;
+        }
+
+        const roiMultiplier = parseFloat(roi) / 100 + 1;
+        const { totalReturn, dailyReturn } = calculateReturns(amount, roiMultiplier, duration);
+
+        // Get current currency symbol
+        const currencySymbol = window.CurrencyConfig ? window.CurrencyConfig.getCurrentSymbol() : '$';
+
+        showModal('Confirm Investment', `
+            <div class="space-y-3">
+                <div class="flex justify-between text-gray-300"><span>Plan:</span><span class="text-white font-semibold">${planName}</span></div>
+                <div class="flex justify-between text-gray-300"><span>Metal:</span><span class="text-white font-semibold">${metal}</span></div>
+                <div class="flex justify-between text-gray-300"><span>Investment:</span><span class="text-white font-semibold">${currencySymbol}${amount.toFixed(2)}</span></div>
+                <div class="flex justify-between text-gray-300"><span>ROI:</span><span class="text-green-400 font-semibold">+${roi}%</span></div>
+                <div class="flex justify-between text-gray-300"><span>Duration:</span><span class="text-white font-semibold">${duration}</span></div>
+                <div class="flex justify-between text-gray-300"><span>Daily Return:</span><span class="text-cyan-400 font-semibold">${currencySymbol}${dailyReturn.toFixed(2)}</span></div>
+                <div class="flex justify-between text-gray-300"><span>Total Expected:</span><span class="text-purple-400 font-bold text-xl">${currencySymbol}${totalReturn.toFixed(2)}</span></div>
+            </div>
+        `, async () => await processInvestment(amount, planName, metal, duration, dailyReturn, totalReturn));
+    }
+
+    async function processInvestment(amount, planName, asset, duration, dailyReturn, totalReturn) {
+        const email = getUserEmail();
+        document.getElementById('modalContent').innerHTML = '<p class="text-center text-gray-300">Processing investment...</p>';
+        document.getElementById('confirmButton').disabled = true;
+
+        const walletData = await getWalletBalance(email);
+        if (!walletData) {
+            showModal('Wallet Not Found', '<p class="text-gray-300">Unable to find your wallet. Please contact support.</p>', closeModal);
+            return;
+        }
+
+        if (walletData.balance < amount) {
+            // Get current currency symbol
+            const currencySymbol = window.CurrencyConfig ? window.CurrencyConfig.getCurrentSymbol() : '$';
+            
+            showModal('Insufficient Balance', `<p class="text-gray-300">Insufficient wallet balance to complete this purchase.</p>
+                 <p class="text-gray-400 text-sm mt-2">Your balance: ${currencySymbol}${walletData.balance.toFixed(2)}</p>
+                 <p class="text-gray-400 text-sm">Required: ${currencySymbol}${amount.toFixed(2)}</p>`, closeModal);
+            return;
+        }
+
+        // Deduct from wallet
+        const newBalance = walletData.balance - amount;
+        const updateSuccess = await updateWalletBalance(walletData.rowId, newBalance);
+        
+        if (!updateSuccess) {
+            showModal('Error', '<p class="text-gray-300">Failed to process payment. Please try again.</p>', closeModal);
+            return;
+        }
+
+        // Create investment record
+        const investSuccess = await createInvestment(
+            email,
+            amount,
+            `Precious Metals - ${asset}`,
+            duration,
+            dailyReturn,
+            0, // Initial total earned is 0
+            planName
+        );
+
+        if (investSuccess) {
+            showModal('Success!', `<p class="text-green-400 font-semibold text-center">Investment successful!</p>
+                 <p class="text-gray-300 text-center mt-4">Your ${planName} investment is now active.</p>
+                 <p class="text-gray-400 text-sm text-center mt-2">Check your dashboard to track your returns.</p>`, 
+                () => window.location.href = 'dashboard.html');
+        } else {
+            // Rollback wallet balance
+            await updateWalletBalance(walletData.rowId, walletData.balance);
+            showModal('Error', '<p class="text-gray-300">Failed to create investment. Please try again.</p>', closeModal);
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // Update header with user info
+        updateHeader();
+
+        // Check login status and redirect if not logged in for investment actions
+        if (!checkLogin()) {
+            console.log('User not logged in - investment features disabled');
+        }
+
+        // Initialize mobile currency selector
+        function initMobileCurrencySelector() {
+            const mobileSelector = document.querySelector('.currency-selector-mobile');
+            if (mobileSelector && window.CurrencyConfig) {
+                // Set current value
+                mobileSelector.value = CurrencyConfig.getCurrentCurrency();
+                
+                // Add change event
+                mobileSelector.addEventListener('change', function(e) {
+                    if (e.target.value) {
+                        CurrencyConfig.changeCurrency(e.target.value);
+                    }
+                });
+            }
+        }
+
+        // Initialize mobile currency selector
+        initMobileCurrencySelector();
+
+        // Apply currency symbols when page loads
+        setTimeout(() => {
+            if (window.CurrencyConfig) {
+                window.CurrencyConfig.applyCurrencyToPage();
+            }
+        }, 100);
+    });
+    </script>
+</body>
+</html>
