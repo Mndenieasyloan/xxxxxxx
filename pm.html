@@ -183,12 +183,12 @@
                 <div class="hidden items-center gap-4 md:flex">
                     <!-- Currency Switcher -->
                     <div class="currency-switcher">
-                        <div class="currency-selector">
+                        <div class="currency-selector" id="desktopCurrencySelector">
                             <span class="current-symbol">$</span>
                             <span class="current-code">USD</span>
                             <span>▼</span>
                         </div>
-                        <div class="currency-dropdown"></div>
+                        <div class="currency-dropdown" id="desktopCurrencyDropdown"></div>
                     </div>
                     
                     <a href="dashboard.html" class="text-sm text-gray-300 hover:text-white transition">My Account</a>
@@ -220,7 +220,7 @@
                     <!-- Mobile Currency Selector (always visible in mobile menu) -->
                     <div class="mt-4 pt-4 border-t border-purple-500/20">
                         <div class="text-sm text-gray-300 mb-2">Currency:</div>
-                        <select class="mobile-currency-selector">
+                        <select class="mobile-currency-selector" id="mobileCurrencySelect">
                             <option value="USD">$ USD</option>
                             <option value="EUR">€ EUR</option>
                             <option value="GBP">£ GBP</option>
@@ -319,9 +319,9 @@
                     </div>
                     <div class="mb-6">
                         <label class="block text-gray-400 text-sm mb-2">Investment Amount (Min <span data-currency-symbol>$</span>200)</label>
-                        <input type="number" placeholder="Enter amount" class="w-full bg-slate-900 border border-purple-500/20 rounded-lg px-4 py-3 text-white">
+                        <input type="number" placeholder="Enter amount" class="w-full bg-slate-900 border border-purple-500/20 rounded-lg px-4 py-3 text-white" min="200">
                     </div>
-                    <button class="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold py-3 rounded-lg transition-all" onclick="handleInvest('1 Hour Plan', '20', '1 Hour')">
+                    <button class="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold py-3 rounded-lg transition-all" onclick="handleInvest(event, '1 Hour Plan', '20', '1 Hour')">
                         Invest Now
                     </button>
                 </div>
@@ -355,9 +355,9 @@
                     </div>
                     <div class="mb-6">
                         <label class="block text-gray-400 text-sm mb-2">Investment Amount (Min <span data-currency-symbol>$</span>200)</label>
-                        <input type="number" placeholder="Enter amount" class="w-full bg-slate-900 border border-blue-500/20 rounded-lg px-4 py-3 text-white">
+                        <input type="number" placeholder="Enter amount" class="w-full bg-slate-900 border border-blue-500/20 rounded-lg px-4 py-3 text-white" min="200">
                     </div>
-                    <button class="w-full bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white font-bold py-3 rounded-lg transition-all" onclick="handleInvest('5 Hours Plan', '30', '5 Hours')">
+                    <button class="w-full bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white font-bold py-3 rounded-lg transition-all" onclick="handleInvest(event, '5 Hours Plan', '30', '5 Hours')">
                         Invest Now
                     </button>
                 </div>
@@ -391,9 +391,9 @@
                     </div>
                     <div class="mb-6">
                         <label class="block text-gray-400 text-sm mb-2">Investment Amount (Min <span data-currency-symbol>$</span>200)</label>
-                        <input type="number" placeholder="Enter amount" class="w-full bg-slate-900 border border-pink-500/20 rounded-lg px-4 py-3 text-white">
+                        <input type="number" placeholder="Enter amount" class="w-full bg-slate-900 border border-pink-500/20 rounded-lg px-4 py-3 text-white" min="200">
                     </div>
-                    <button class="w-full bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white font-bold py-3 rounded-lg transition-all" onclick="handleInvest('24 Hours Plan', '68', '24 Hours')">
+                    <button class="w-full bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white font-bold py-3 rounded-lg transition-all" onclick="handleInvest(event, '24 Hours Plan', '68', '24 Hours')">
                         Invest Now
                     </button>
                 </div>
@@ -427,9 +427,9 @@
                     </div>
                     <div class="mb-6">
                         <label class="block text-gray-400 text-sm mb-2">Investment Amount (Min <span data-currency-symbol>$</span>200)</label>
-                        <input type="number" placeholder="Enter amount" class="w-full bg-slate-900 border border-cyan-500/20 rounded-lg px-4 py-3 text-white">
+                        <input type="number" placeholder="Enter amount" class="w-full bg-slate-900 border border-cyan-500/20 rounded-lg px-4 py-3 text-white" min="200">
                     </div>
-                    <button class="w-full bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white font-bold py-3 rounded-lg transition-all" onclick="handleInvest('72 Hours Plan', '89', '72 Hours')">
+                    <button class="w-full bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white font-bold py-3 rounded-lg transition-all" onclick="handleInvest(event, '72 Hours Plan', '89', '72 Hours')">
                         Invest Now
                     </button>
                 </div>
@@ -467,9 +467,9 @@
                             </div>
                             <div class="mb-6">
                                 <label class="block text-gray-400 text-sm mb-2">Investment Amount (Min <span data-currency-symbol>$</span>200)</label>
-                                <input type="number" placeholder="Enter amount" class="w-full bg-slate-900 border border-purple-500/20 rounded-lg px-4 py-3 text-white">
+                                <input type="number" placeholder="Enter amount" class="w-full bg-slate-900 border border-purple-500/20 rounded-lg px-4 py-3 text-white" min="200">
                             </div>
-                            <button class="w-full bg-gradient-to-r from-purple-500 via-pink-500 to-cyan-500 hover:from-purple-600 hover:via-pink-600 hover:to-cyan-600 text-white font-bold py-3 rounded-lg transition-all shadow-xl" onclick="handleInvest('1 Week Plan', '190', '1 Week')">
+                            <button class="w-full bg-gradient-to-r from-purple-500 via-pink-500 to-cyan-500 hover:from-purple-600 hover:via-pink-600 hover:to-cyan-600 text-white font-bold py-3 rounded-lg transition-all shadow-xl" onclick="handleInvest(event, '1 Week Plan', '190', '1 Week')">
                                 Invest Now
                             </button>
                         </div>
@@ -497,7 +497,7 @@
                     </div>
                     <div>
                         <label class="block text-gray-300 mb-2">Investment Amount</label>
-                        <input type="number" placeholder="Enter amount" class="w-full bg-slate-900 border border-purple-500/20 rounded-lg px-4 py-3 text-white" id="calcAmount">
+                        <input type="number" placeholder="Enter amount" class="w-full bg-slate-900 border border-purple-500/20 rounded-lg px-4 py-3 text-white" id="calcAmount" min="200">
                     </div>
                     <button onclick="calculateProfit()" class="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold py-3 rounded-lg transition-all">
                         Calculate
@@ -589,10 +589,21 @@
     </div>
 
     <script>
+    // Global variables
+    const BASEROW_TOKEN = 'LG6hnTBxgBG78FueElsSwpHRd4Wep1oL';
+    const WALLET_TABLE_ID = '756077';
+    const INVESTMENT_TABLE_ID = '756316';
+    const BASEROW_API_URL = 'https://api.baserow.io/api/database/rows/table';
+    
+    // Toggle mobile menu
     function toggleMobileMenu() {
-        document.getElementById('mobileMenu').classList.toggle('active');
+        const mobileMenu = document.getElementById('mobileMenu');
+        if (mobileMenu) {
+            mobileMenu.classList.toggle('active');
+        }
     }
-
+    
+    // Calculate profit for calculator
     function calculateProfit() {
         const plan = parseInt(document.getElementById('calcPlan').value);
         const amount = parseFloat(document.getElementById('calcAmount').value);
@@ -601,77 +612,86 @@
             const profit = (amount * plan) / 100;
             const total = amount + profit;
             
-            document.getElementById('profitAmount').textContent = '$' + profit.toFixed(2);
-            document.getElementById('totalAmount').textContent = '$' + total.toFixed(2);
+            document.getElementById('profitAmount').innerHTML = '<span data-currency-symbol>$</span>' + profit.toFixed(2);
+            document.getElementById('totalAmount').innerHTML = '<span data-currency-symbol>$</span>' + total.toFixed(2);
             document.getElementById('calcResult').classList.remove('hidden');
         } else {
             alert('Please enter a valid amount (minimum $200)');
         }
     }
-
-    const BASEROW_TOKEN = 'LG6hnTBxgBG78FueElsSwpHRd4Wep1oL';
-    const WALLET_TABLE_ID = '756077';
-    const INVESTMENT_TABLE_ID = '756316';
-    const BASEROW_API_URL = 'https://api.baserow.io/api/database/rows/table';
-
+    
     // Check if user is logged in
     function checkLogin() {
         const userEmail = localStorage.getItem('v0trade_user_email');
         return userEmail !== null && userEmail !== '';
     }
-
+    
     // Get logged-in user email
     function getUserEmail() {
         return localStorage.getItem('v0trade_user_email') || '';
     }
-
+    
     // Update header with user info
     function updateHeader() {
         const userEmail = getUserEmail();
         if (userEmail) {
             // Update header account display
-            const headerAccount = document.querySelector('.md\\:flex a[href="dashboard.html"]');
-            if (headerAccount) {
-                headerAccount.textContent = userEmail;
-            }
+            const headerAccounts = document.querySelectorAll('a[href="dashboard.html"]');
+            headerAccounts.forEach(account => {
+                if (!account.closest('.mobile-menu')) {
+                    account.textContent = userEmail;
+                }
+            });
             
-            // Update logout link
-            const logoutLink = document.querySelector('.md\\:flex a[href="login.html"]');
-            if (logoutLink) {
-                logoutLink.textContent = 'Logout';
-                logoutLink.href = 'javascript:void(0)';
-                logoutLink.onclick = function() {
-                    localStorage.removeItem('v0trade_user_email');
-                    window.location.href = 'login.html';
-                };
-            }
+            // Update logout links
+            const logoutLinks = document.querySelectorAll('a[href="login.html"]');
+            logoutLinks.forEach(link => {
+                if (!link.closest('.mobile-menu')) {
+                    link.textContent = 'Logout';
+                    link.href = 'javascript:void(0)';
+                    link.onclick = function() {
+                        localStorage.removeItem('v0trade_user_email');
+                        window.location.href = 'login.html';
+                    };
+                }
+            });
         }
     }
-
+    
+    // Show modal
     function showModal(title, content, confirmCallback) {
         document.getElementById('modalTitle').textContent = title;
         document.getElementById('modalContent').innerHTML = content;
         document.getElementById('investmentModal').classList.remove('hidden');
         document.getElementById('confirmButton').onclick = confirmCallback;
     }
-
+    
+    // Close modal
     function closeModal() {
         document.getElementById('investmentModal').classList.add('hidden');
+        document.getElementById('confirmButton').disabled = false;
     }
-
+    
+    // Calculate returns
     function calculateReturns(amount, roiMultiplier, duration) {
         const totalReturn = amount * roiMultiplier;
         const profit = totalReturn - amount;
-        const dailyReturn = profit / getDaysFromDuration(duration);
+        const days = getDaysFromDuration(duration);
+        const dailyReturn = days > 0 ? profit / days : profit;
         return { totalReturn, profit, dailyReturn };
     }
-
+    
+    // Get days from duration string
     function getDaysFromDuration(duration) {
-        if (duration.includes('Hour')) return Math.ceil(parseInt(duration) / 24) || 1;
+        if (duration.includes('Hour')) {
+            const hours = parseInt(duration);
+            return hours / 24;
+        }
         if (duration.includes('Week')) return 7;
+        if (duration.includes('Day')) return parseInt(duration);
         return 1;
     }
-
+    
     // Get wallet balance from Baserow
     async function getWalletBalance(email) {
         try {
@@ -685,7 +705,7 @@
                     }
                 ]
             }));
-
+    
             const url = `${BASEROW_API_URL}/${WALLET_TABLE_ID}/?user_field_names=true&filters=${filters}`;
             
             const response = await fetch(url, {
@@ -705,7 +725,7 @@
             return null;
         }
     }
-
+    
     // Update wallet balance in Baserow
     async function updateWalletBalance(rowId, newBalance) {
         try {
@@ -725,8 +745,8 @@
             return false;
         }
     }
-
-    // Create investment record in Baserow using correct field names
+    
+    // Create investment record in Baserow
     async function createInvestment(email, amount, planType, duration, dailyReturn, totalEarned, investmentPlan) {
         try {
             const response = await fetch(`${BASEROW_API_URL}/${INVESTMENT_TABLE_ID}/?user_field_names=true`, {
@@ -753,29 +773,32 @@
             return false;
         }
     }
-
-    function handleInvest(planName, roi, duration) {
+    
+    // Handle investment button click
+    function handleInvest(event, planName, roi, duration) {
+        event.preventDefault();
+        
         const card = event.target.closest('.bg-gradient-to-br');
         const metalSelect = card.querySelector('select');
         const amountInput = card.querySelector('input[type="number"]');
-        const metal = metalSelect.value;
-        const amount = parseFloat(amountInput.value);
-
+        const metal = metalSelect ? metalSelect.value : 'Gold';
+        const amount = amountInput ? parseFloat(amountInput.value) : 0;
+    
         if (isNaN(amount) || amount < 200) {
             showModal('Invalid Amount', '<p class="text-gray-300">Please enter an amount of at least $200.</p>', closeModal);
             return;
         }
-
+    
         if (!checkLogin()) {
             showModal('Login Required', '<p class="text-gray-300">You must log in before investing in Precious Metals plans.</p>', () => {
                 window.location.href = 'login.html';
             });
             return;
         }
-
+    
         const roiMultiplier = parseFloat(roi) / 100 + 1;
         const { totalReturn, dailyReturn } = calculateReturns(amount, roiMultiplier, duration);
-
+    
         showModal('Confirm Investment', `
             <div class="space-y-3">
                 <div class="flex justify-between text-gray-300"><span>Plan:</span><span class="text-white font-semibold">${planName}</span></div>
@@ -788,25 +811,26 @@
             </div>
         `, async () => await processInvestment(amount, planName, metal, duration, dailyReturn, totalReturn));
     }
-
+    
+    // Process investment
     async function processInvestment(amount, planName, asset, duration, dailyReturn, totalReturn) {
         const email = getUserEmail();
         document.getElementById('modalContent').innerHTML = '<p class="text-center text-gray-300">Processing investment...</p>';
         document.getElementById('confirmButton').disabled = true;
-
+    
         const walletData = await getWalletBalance(email);
         if (!walletData) {
             showModal('Wallet Not Found', '<p class="text-gray-300">Unable to find your wallet. Please contact support.</p>', closeModal);
             return;
         }
-
+    
         if (walletData.balance < amount) {
             showModal('Insufficient Balance', `<p class="text-gray-300">Insufficient wallet balance to complete this purchase.</p>
                  <p class="text-gray-400 text-sm mt-2">Your balance: $${walletData.balance.toFixed(2)}</p>
                  <p class="text-gray-400 text-sm">Required: $${amount.toFixed(2)}</p>`, closeModal);
             return;
         }
-
+    
         // Deduct from wallet
         const newBalance = walletData.balance - amount;
         const updateSuccess = await updateWalletBalance(walletData.rowId, newBalance);
@@ -815,7 +839,7 @@
             showModal('Error', '<p class="text-gray-300">Failed to process payment. Please try again.</p>', closeModal);
             return;
         }
-
+    
         // Create investment record
         const investSuccess = await createInvestment(
             email,
@@ -826,7 +850,7 @@
             0, // Initial total earned is 0
             planName
         );
-
+    
         if (investSuccess) {
             showModal('Success!', `<p class="text-green-400 font-semibold text-center">Investment successful!</p>
                  <p class="text-gray-300 text-center mt-4">Your ${planName} investment is now active.</p>
@@ -838,8 +862,112 @@
             showModal('Error', '<p class="text-gray-300">Failed to create investment. Please try again.</p>', closeModal);
         }
     }
-
-    // Currency system initialization for mobile
+    
+    // Initialize currency switcher
+    function initCurrencySwitcher() {
+        const currencySelector = document.getElementById('desktopCurrencySelector');
+        const currencyDropdown = document.getElementById('desktopCurrencyDropdown');
+        const mobileCurrencySelect = document.getElementById('mobileCurrencySelect');
+        
+        if (!currencySelector || !currencyDropdown) return;
+        
+        // Currency options
+        const currencies = [
+            { code: 'USD', symbol: '$', name: 'US Dollar' },
+            { code: 'EUR', symbol: '€', name: 'Euro' },
+            { code: 'GBP', symbol: '£', name: 'British Pound' },
+            { code: 'ZAR', symbol: 'R', name: 'South African Rand' },
+            { code: 'INR', symbol: '₹', name: 'Indian Rupee' },
+            { code: 'JPY', symbol: '¥', name: 'Japanese Yen' },
+            { code: 'AUD', symbol: 'A$', name: 'Australian Dollar' },
+            { code: 'CAD', symbol: 'C$', name: 'Canadian Dollar' }
+        ];
+        
+        // Get current currency from localStorage or default to USD
+        let currentCurrency = localStorage.getItem('v0trade_currency') || 'USD';
+        if (!currencies.find(c => c.code === currentCurrency)) {
+            currentCurrency = 'USD';
+        }
+        
+        // Update display
+        function updateCurrencyDisplay() {
+            const currency = currencies.find(c => c.code === currentCurrency);
+            if (currency) {
+                // Update desktop selector
+                const symbolSpan = currencySelector.querySelector('.current-symbol');
+                const codeSpan = currencySelector.querySelector('.current-code');
+                if (symbolSpan) symbolSpan.textContent = currency.symbol;
+                if (codeSpan) codeSpan.textContent = currency.code;
+                
+                // Update mobile selector
+                if (mobileCurrencySelect) {
+                    mobileCurrencySelect.value = currency.code;
+                }
+                
+                // Update all currency symbols on page
+                const symbolElements = document.querySelectorAll('[data-currency-symbol]');
+                symbolElements.forEach(el => {
+                    el.textContent = currency.symbol;
+                });
+                
+                // Save to localStorage
+                localStorage.setItem('v0trade_currency', currency.code);
+                
+                // Trigger custom event
+                document.dispatchEvent(new CustomEvent('currencyChanged', {
+                    detail: { code: currency.code, symbol: currency.symbol, name: currency.name }
+                }));
+            }
+        }
+        
+        // Populate dropdown
+        function populateDropdown() {
+            currencyDropdown.innerHTML = '';
+            currencies.forEach(currency => {
+                const option = document.createElement('div');
+                option.className = `currency-option-dropdown ${currency.code === currentCurrency ? 'active' : ''}`;
+                option.innerHTML = `
+                    <div class="symbol">${currency.symbol}</div>
+                    <div class="code">${currency.code}</div>
+                    <div class="name">${currency.name}</div>
+                `;
+                option.addEventListener('click', () => {
+                    currentCurrency = currency.code;
+                    updateCurrencyDisplay();
+                    currencyDropdown.classList.remove('show');
+                });
+                currencyDropdown.appendChild(option);
+            });
+        }
+        
+        // Toggle dropdown
+        currencySelector.addEventListener('click', (e) => {
+            e.stopPropagation();
+            currencyDropdown.classList.toggle('show');
+        });
+        
+        // Close dropdown when clicking outside
+        document.addEventListener('click', () => {
+            currencyDropdown.classList.remove('show');
+        });
+        
+        // Mobile currency selector
+        if (mobileCurrencySelect) {
+            mobileCurrencySelect.addEventListener('change', (e) => {
+                currentCurrency = e.target.value;
+                updateCurrencyDisplay();
+            });
+        }
+        
+        // Initialize
+        populateDropdown();
+        updateCurrencyDisplay();
+        
+        // Expose function to update currency symbols
+        window.refreshCurrency = updateCurrencyDisplay;
+    }
+    
+    // Initialize mobile currency system
     function initMobileCurrencySystem() {
         const mobileCurrencySelector = document.querySelector('.mobile-currency-selector');
         if (mobileCurrencySelector && window.CurrencyConfig) {
@@ -855,25 +983,34 @@
             });
         }
     }
-
+    
+    // Initialize when DOM is loaded
     document.addEventListener('DOMContentLoaded', function() {
         // Update header with user info
         updateHeader();
         
+        // Initialize currency switcher
+        initCurrencySwitcher();
+        
         // Initialize mobile currency system
         initMobileCurrencySystem();
         
-        // Apply currency symbols to page
-        setTimeout(() => {
-            if (window.CurrencyConfig) {
-                window.CurrencyConfig.applyCurrencyToPage();
-            }
-        }, 100);
-
         // Check login status and redirect if not logged in for investment actions
         if (!checkLogin()) {
             console.log('User not logged in - investment features disabled');
         }
+        
+        // Close mobile menu when clicking outside
+        document.addEventListener('click', function(event) {
+            const mobileMenu = document.getElementById('mobileMenu');
+            const menuButton = document.querySelector('button.md\\:hidden');
+            
+            if (mobileMenu && mobileMenu.classList.contains('active') && 
+                !mobileMenu.contains(event.target) && 
+                !menuButton.contains(event.target)) {
+                mobileMenu.classList.remove('active');
+            }
+        });
         
         // Listen for currency changes
         document.addEventListener('currencyChanged', function(e) {
@@ -887,10 +1024,8 @@
     
     // Add this function to refresh currency symbols when page is loaded
     window.refreshCurrency = function() {
-        if (window.CurrencyConfig) {
-            window.CurrencyConfig.applyCurrencyToPage();
-        }
+        initCurrencySwitcher();
     };
-</script>
+    </script>
 </body>
 </html>
