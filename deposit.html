@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Deposit Funds - V0 Trade</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Add currency config script -->
+    <script src="/js/currency-config.js"></script>
     <style>
         .sidebar-link {
             display: flex;
@@ -108,6 +110,209 @@
         .dropdown { position: relative; display: inline-block; }
         .dropdown-content { display: none; position: absolute; background-color: rgb(15 23 42 / 0.95); min-width: 12rem; border: 1px solid rgb(168 85 247 / 0.2); border-radius: 0.5rem; padding: 0.5rem; z-index: 1000; backdrop-filter: blur(10px); }
         .dropdown:hover .dropdown-content { display: block; }
+        
+        /* Currency switcher styles */
+        .currency-switcher {
+            position: relative;
+            display: inline-block;
+        }
+        
+        .currency-selector {
+            padding: 8px 12px;
+            border: 1px solid rgba(168, 85, 247, 0.3);
+            border-radius: 6px;
+            background: rgba(30, 41, 59, 0.5);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: white;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        
+        .currency-selector:hover {
+            border-color: #a855f7;
+            background: rgba(168, 85, 247, 0.1);
+        }
+        
+        .currency-dropdown {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+            border: 1px solid rgba(168, 85, 247, 0.2);
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            min-width: 200px;
+            z-index: 1000;
+            display: none;
+            margin-top: 5px;
+            padding: 8px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .currency-dropdown.show {
+            display: block;
+            animation: fadeIn 0.2s ease;
+        }
+        
+        .currency-option-dropdown {
+            padding: 10px 12px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border-radius: 6px;
+            color: #e2e8f0;
+            font-size: 14px;
+        }
+        
+        .currency-option-dropdown:hover {
+            background: rgba(168, 85, 247, 0.1);
+        }
+        
+        .currency-option-dropdown.active {
+            background: rgba(168, 85, 247, 0.15);
+            color: white;
+            font-weight: 600;
+        }
+        
+        .currency-option-dropdown .symbol {
+            font-size: 18px;
+            width: 24px;
+            text-align: center;
+        }
+        
+        .currency-option-dropdown .code {
+            font-weight: 600;
+            min-width: 40px;
+        }
+        
+        .currency-option-dropdown .name {
+            color: #94a3b8;
+            font-size: 12px;
+            flex-grow: 1;
+            text-align: right;
+        }
+        
+        /* Mobile currency selector - always visible */
+        .mobile-currency-toggle {
+            padding: 8px 12px;
+            border: 1px solid rgba(168, 85, 247, 0.3);
+            border-radius: 6px;
+            background: rgba(30, 41, 59, 0.5);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: white;
+            font-size: 14px;
+            transition: all 0.3s;
+            margin-left: auto;
+            margin-right: 12px;
+        }
+        
+        .mobile-currency-dropdown {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+            border: 1px solid rgba(168, 85, 247, 0.2);
+            border-radius: 12px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+            width: 90%;
+            max-width: 320px;
+            z-index: 1100;
+            display: none;
+            padding: 16px;
+            backdrop-filter: blur(20px);
+        }
+        
+        .mobile-currency-dropdown.show {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        .mobile-currency-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(5px);
+            z-index: 1099;
+            display: none;
+        }
+        
+        .mobile-currency-overlay.show {
+            display: block;
+        }
+        
+        .mobile-currency-option {
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border-radius: 8px;
+            color: #e2e8f0;
+            font-size: 16px;
+            margin-bottom: 8px;
+        }
+        
+        .mobile-currency-option:hover {
+            background: rgba(168, 85, 247, 0.1);
+        }
+        
+        .mobile-currency-option.active {
+            background: rgba(168, 85, 247, 0.2);
+            color: white;
+            font-weight: 600;
+        }
+        
+        .mobile-currency-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid rgba(168, 85, 247, 0.2);
+        }
+        
+        .mobile-currency-header h3 {
+            color: white;
+            font-size: 18px;
+            font-weight: 600;
+        }
+        
+        .close-currency-menu {
+            background: none;
+            border: none;
+            color: #94a3b8;
+            font-size: 24px;
+            cursor: pointer;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+        }
+        
+        .close-currency-menu:hover {
+            background: rgba(168, 85, 247, 0.1);
+            color: white;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translate(-50%, -48%); }
+            to { opacity: 1; transform: translate(-50%, -50%); }
+        }
     </style>
 </head>
 <body class="bg-slate-950">
@@ -122,7 +327,7 @@
     <!-- Added overlay for mobile sidebar -->
     <div id="sidebarOverlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
     
-    <!-- Added same header navigation as index.html -->
+    <!-- Updated header with currency switcher -->
     <header class="sticky top-0 z-50 border-b border-purple-500/20 bg-slate-950/80 backdrop-blur-md">
         <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div class="flex items-center justify-between py-4">
@@ -145,6 +350,7 @@
                     <span class="text-xl font-bold bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent">V0 Trade</span>
                 </a>
 
+                <!-- Desktop Navigation -->
                 <nav class="hidden items-center gap-8 md:flex">
                     <a href="index.html" class="text-sm text-gray-300 hover:text-white transition">Home</a>
                     <div class="dropdown">
@@ -168,19 +374,42 @@
                     </div>
                 </nav>
 
+                <!-- Right Side - Auth with Currency Switcher -->
                 <div class="hidden items-center gap-4 md:flex">
+                    <!-- Desktop Currency Switcher -->
+                    <div class="currency-switcher">
+                        <div class="currency-selector" onclick="toggleCurrencyDropdown(event)">
+                            <span class="current-symbol">$</span>
+                            <span class="current-code">USD</span>
+                            <span>▼</span>
+                        </div>
+                        <div class="currency-dropdown" id="currencyDropdown"></div>
+                    </div>
+                    
                     <a href="dashboard.html" class="text-sm text-purple-400 hover:text-purple-300 transition">Dashboard</a>
                     <span class="text-sm text-gray-400">user@email.com</span>
                     <a href="index.html" class="text-sm text-gray-300 hover:text-white transition">Logout</a>
                 </div>
 
-                <button class="md:hidden" onclick="toggleMobileMenu()">
-                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
-                    </svg>
-                </button>
+                <!-- Mobile header section with currency toggle and menu button -->
+                <div class="flex items-center gap-2 md:hidden">
+                    <!-- Mobile Currency Toggle (always visible) -->
+                    <button class="mobile-currency-toggle" onclick="toggleMobileCurrencyMenu()">
+                        <span class="mobile-currency-symbol">$</span>
+                        <span class="mobile-currency-code">USD</span>
+                        <span>▼</span>
+                    </button>
+
+                    <!-- Mobile Menu Button -->
+                    <button class="md:hidden" onclick="toggleMobileMenu()">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                        </svg>
+                    </button>
+                </div>
             </div>
 
+            <!-- Mobile Menu (without currency selector) -->
             <div id="mobileMenu" class="mobile-menu border-t border-purple-500/20 py-4 md:hidden">
                 <nav class="flex flex-col gap-3">
                     <a href="index.html" class="text-sm text-gray-300 hover:text-white">Home</a>
@@ -199,6 +428,20 @@
             </div>
         </div>
     </header>
+
+    <!-- Mobile Currency Menu Overlay -->
+    <div class="mobile-currency-overlay" id="mobileCurrencyOverlay" onclick="closeMobileCurrencyMenu()"></div>
+    
+    <!-- Mobile Currency Menu -->
+    <div class="mobile-currency-dropdown" id="mobileCurrencyMenu">
+        <div class="mobile-currency-header">
+            <h3>Select Currency</h3>
+            <button class="close-currency-menu" onclick="closeMobileCurrencyMenu()">×</button>
+        </div>
+        <div class="mobile-currency-options">
+            <!-- Options will be populated by JavaScript -->
+        </div>
+    </div>
 
     <div class="flex min-h-screen">
         <!-- Updated sidebar with mobile toggle behavior -->
@@ -345,7 +588,7 @@
                         <div class="mb-6">
                             <label class="block text-base font-semibold text-white mb-2">Enter Deposit Amount</label>
                             <div class="relative">
-                                <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-lg">$</span>
+                                <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-lg currency-symbol">$</span>
                                 <input 
                                     type="number" 
                                     id="depositAmount" 
@@ -357,8 +600,8 @@
                                     oninput="validateAndCalculate()"
                                 >
                             </div>
-                            <p class="text-sm text-gray-400 mt-2">Minimum: $1.00 | Maximum: $200,000.00</p>
-                            <p id="amountError" class="error-message">Please enter an amount between $1 and $200,000</p>
+                            <p class="text-sm text-gray-400 mt-2">Minimum: <span class="currency-symbol">$</span>1.00 | Maximum: <span class="currency-symbol">$</span>200,000.00</p>
+                            <p id="amountError" class="error-message">Please enter an amount between <span class="currency-symbol">$</span>1 and <span class="currency-symbol">$</span>200,000</p>
                         </div>
 
                         <!-- Automatic Calculation Panel -->
@@ -368,19 +611,19 @@
                             <!-- Processing Charge -->
                             <div class="flex justify-between items-center mb-3 pb-3 border-b border-slate-700/50">
                                 <span class="text-gray-400">Processing Charge:</span>
-                                <span class="font-semibold text-white">$0.00</span>
+                                <span class="font-semibold text-white"><span class="currency-symbol">$</span>0.00</span>
                             </div>
 
                             <!-- Total Amount -->
                             <div class="flex justify-between items-center mb-3 pb-3 border-b border-slate-700/50">
                                 <span class="text-white font-medium">Total Amount:</span>
-                                <span id="totalAmount" class="font-bold text-2xl bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">$0.00</span>
+                                <span id="totalAmount" class="font-bold text-2xl bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent"><span class="currency-symbol">$</span>0.00</span>
                             </div>
 
                             <!-- Conversion Rate -->
                             <div class="flex justify-between items-center">
                                 <span class="text-gray-400 text-sm">Conversion Rate:</span>
-                                <span class="text-gray-400 text-sm">1 USD₮ = $1.00 USD</span>
+                                <span class="text-gray-400 text-sm">1 USD₮ = <span class="currency-symbol">$</span>1.00 USD</span>
                             </div>
                         </div>
 
@@ -400,7 +643,167 @@
     </div>
 
     <script>
+        // Currency data
+        const CURRENCIES = [
+            { code: 'USD', symbol: '$', name: 'US Dollar' },
+            { code: 'EUR', symbol: '€', name: 'Euro' },
+            { code: 'GBP', symbol: '£', name: 'British Pound' },
+            { code: 'ZAR', symbol: 'R', name: 'South African Rand' },
+            { code: 'INR', symbol: '₹', name: 'Indian Rupee' },
+            { code: 'JPY', symbol: '¥', name: 'Japanese Yen' },
+            { code: 'AUD', symbol: 'A$', name: 'Australian Dollar' },
+            { code: 'CAD', symbol: 'C$', name: 'Canadian Dollar' }
+        ];
+        
         let selectedMethod = '';
+        
+        // Currency functions
+        function getCurrentCurrency() {
+            return localStorage.getItem('v0trade_currency') || 'USD';
+        }
+        
+        function getCurrentCurrencySymbol() {
+            const currentCurrency = getCurrentCurrency();
+            const currency = CURRENCIES.find(c => c.code === currentCurrency);
+            return currency ? currency.symbol : '$';
+        }
+        
+        function updateCurrencySymbols(currencyCode) {
+            const currency = CURRENCIES.find(c => c.code === currencyCode);
+            if (!currency) return;
+            
+            // Update all currency symbols on the page
+            document.querySelectorAll('.currency-symbol').forEach(el => {
+                el.textContent = currency.symbol;
+            });
+            
+            // Update mobile toggle display
+            document.querySelector('.mobile-currency-symbol').textContent = currency.symbol;
+            document.querySelector('.mobile-currency-code').textContent = currency.code;
+            
+            // Update desktop selector display
+            const desktopSelector = document.querySelector('.currency-selector');
+            if (desktopSelector) {
+                desktopSelector.querySelector('.current-symbol').textContent = currency.symbol;
+                desktopSelector.querySelector('.current-code').textContent = currency.code;
+            }
+            
+            // Re-validate and calculate with new currency symbol
+            validateAndCalculate();
+        }
+        
+        function toggleCurrencyDropdown(event) {
+            event.stopPropagation();
+            const dropdown = document.getElementById('currencyDropdown');
+            const isShowing = dropdown.classList.contains('show');
+            
+            // Close all other dropdowns
+            document.querySelectorAll('.currency-dropdown').forEach(d => {
+                d.classList.remove('show');
+            });
+            
+            if (!isShowing) {
+                populateCurrencyDropdown();
+                dropdown.classList.add('show');
+                
+                // Close on click outside
+                setTimeout(() => {
+                    document.addEventListener('click', closeCurrencyDropdowns);
+                }, 10);
+            } else {
+                document.removeEventListener('click', closeCurrencyDropdowns);
+            }
+        }
+        
+        function closeCurrencyDropdowns() {
+            document.querySelectorAll('.currency-dropdown').forEach(d => {
+                d.classList.remove('show');
+            });
+            document.removeEventListener('click', closeCurrencyDropdowns);
+        }
+        
+        function populateCurrencyDropdown() {
+            const container = document.getElementById('currencyDropdown');
+            const currentCurrency = getCurrentCurrency();
+            
+            container.innerHTML = '';
+            
+            CURRENCIES.forEach(currency => {
+                const option = document.createElement('div');
+                option.className = `currency-option-dropdown ${currency.code === currentCurrency ? 'active' : ''}`;
+                option.innerHTML = `
+                    <span class="symbol">${currency.symbol}</span>
+                    <span class="code">${currency.code}</span>
+                    <span class="name">${currency.name}</span>
+                `;
+                option.onclick = (e) => {
+                    e.stopPropagation();
+                    selectCurrency(currency.code);
+                    closeCurrencyDropdowns();
+                };
+                container.appendChild(option);
+            });
+        }
+        
+        function populateMobileCurrencyOptions() {
+            const container = document.querySelector('.mobile-currency-options');
+            const currentCurrency = getCurrentCurrency();
+            
+            container.innerHTML = '';
+            
+            CURRENCIES.forEach(currency => {
+                const option = document.createElement('div');
+                option.className = `mobile-currency-option ${currency.code === currentCurrency ? 'active' : ''}`;
+                option.innerHTML = `
+                    <span class="symbol" style="font-size: 20px; width: 30px;">${currency.symbol}</span>
+                    <span class="code" style="font-weight: 600; min-width: 50px;">${currency.code}</span>
+                    <span class="name" style="color: #94a3b8; font-size: 14px; flex-grow: 1; text-align: right;">${currency.name}</span>
+                `;
+                option.onclick = () => selectCurrency(currency.code);
+                container.appendChild(option);
+            });
+        }
+        
+        function selectCurrency(currencyCode) {
+            const currency = CURRENCIES.find(c => c.code === currencyCode);
+            if (!currency) return;
+            
+            // Update localStorage
+            localStorage.setItem('v0trade_currency', currencyCode);
+            
+            // Update UI
+            updateCurrencySymbols(currencyCode);
+            
+            // Close mobile menu if open
+            closeMobileCurrencyMenu();
+            
+            // Dispatch currency change event
+            document.dispatchEvent(new CustomEvent('currencyChanged', { 
+                detail: { 
+                    code: currencyCode, 
+                    symbol: currency.symbol,
+                    name: currency.name 
+                } 
+            }));
+        }
+        
+        function toggleMobileCurrencyMenu() {
+            const overlay = document.getElementById('mobileCurrencyOverlay');
+            const menu = document.getElementById('mobileCurrencyMenu');
+            
+            overlay.classList.toggle('show');
+            menu.classList.toggle('show');
+            
+            // Populate currency options if not already done
+            if (menu.querySelector('.mobile-currency-options').children.length === 0) {
+                populateMobileCurrencyOptions();
+            }
+        }
+        
+        function closeMobileCurrencyMenu() {
+            document.getElementById('mobileCurrencyOverlay').classList.remove('show');
+            document.getElementById('mobileCurrencyMenu').classList.remove('show');
+        }
         
         function toggleMobileMenu() {
             const menu = document.getElementById('mobileMenu');
@@ -446,6 +849,7 @@
             const errorMsg = document.getElementById('amountError');
             const confirmBtn = document.getElementById('confirmBtn');
             const totalDisplay = document.getElementById('totalAmount');
+            const currencySymbol = getCurrentCurrencySymbol();
             
             // Validate amount range
             if (amount > 0 && (amount < 1 || amount > 200000)) {
@@ -458,16 +862,17 @@
             }
             
             // Update total display
-            totalDisplay.textContent = '$' + amount.toFixed(2);
+            totalDisplay.textContent = currencySymbol + amount.toFixed(2);
         }
 
         /* Added localStorage saving and redirect logic per specification */
         function confirmOrder() {
             const amount = parseFloat(document.getElementById('depositAmount').value);
+            const currencySymbol = getCurrentCurrencySymbol();
             
             // Validate one more time
             if (!selectedMethod || !amount || amount < 1 || amount > 200000) {
-                alert('Please select a payment method and enter a valid amount between $1 and $200,000');
+                alert('Please select a payment method and enter a valid amount between ' + currencySymbol + '1 and ' + currencySymbol + '200,000');
                 return;
             }
             
@@ -490,6 +895,37 @@
                 alert('Invalid payment method selected');
             }
         }
+        
+        // Initialize currency system on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const currentCurrency = getCurrentCurrency();
+            updateCurrencySymbols(currentCurrency);
+            
+            // Close mobile menu when clicking outside
+            document.addEventListener('click', function(event) {
+                const mobileMenu = document.getElementById('mobileMenu');
+                const mobileMenuButton = document.querySelector('button[onclick="toggleMobileMenu()"]');
+                
+                if (mobileMenu && mobileMenu.classList.contains('active') && 
+                    !mobileMenu.contains(event.target) && 
+                    mobileMenuButton && !mobileMenuButton.contains(event.target)) {
+                    toggleMobileMenu();
+                }
+            });
+            
+            // Close currency dropdowns with Escape key
+            document.addEventListener('keydown', function(event) {
+                if (event.key === 'Escape') {
+                    closeCurrencyDropdowns();
+                    closeMobileCurrencyMenu();
+                }
+            });
+            
+            // Listen for currency changes
+            document.addEventListener('currencyChanged', function(event) {
+                updateCurrencySymbols(event.detail.code);
+            });
+        });
     </script>
 </body>
 </html>
