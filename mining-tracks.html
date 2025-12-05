@@ -1058,9 +1058,26 @@
                 const type = (transaction.type || '').toLowerCase();
                 const method = (transaction.method || '').toLowerCase();
                 const amount = parseFloat(transaction.amount) || 0;
-                const transactionDate = new Date(transaction.date || now);
                 
-                console.log("Processing transaction:", { type, method, amount });
+                // Parse transaction date - FIXED DATE PARSING
+                let transactionDate;
+                try {
+                    // Try to parse the date string
+                    const dateStr = transaction.date;
+                    if (dateStr) {
+                        transactionDate = new Date(dateStr);
+                        // If date is invalid, use current date
+                        if (isNaN(transactionDate.getTime())) {
+                            transactionDate = now;
+                        }
+                    } else {
+                        transactionDate = now;
+                    }
+                } catch (e) {
+                    transactionDate = now;
+                }
+                
+                console.log("Processing transaction:", { type, method, amount, date: transaction.date, parsedDate: transactionDate });
                 
                 // Find matching plan - check both type and method
                 let planKey = null;
@@ -1127,22 +1144,45 @@
                 const plan = stats.planInfo;
                 const now = new Date();
                 
-                // Get the most recent transaction for this plan
-                let latestTransaction = stats.transactions.reduce((latest, current) => {
-                    return current.transactionDate > latest ? current.transactionDate : latest;
-                }, new Date(0));
+                // Get the most recent transaction for this plan - FIXED DATE HANDLING
+                let latestTransaction = null;
+                let latestDate = new Date(0); // Earliest possible date
                 
-                if (latestTransaction.getTime() === 0) {
-                    latestTransaction = now;
+                stats.transactions.forEach(transaction => {
+                    const transactionDate = transaction.transactionDate;
+                    if (transactionDate > latestDate) {
+                        latestDate = transactionDate;
+                        latestTransaction = transaction;
+                    }
+                });
+                
+                if (!latestTransaction) {
+                    latestTransaction = stats.transactions[0];
+                    latestDate = latestTransaction ? latestTransaction.transactionDate : now;
                 }
                 
-                const endDate = new Date(latestTransaction);
+                if (latestDate.getTime() === 0) {
+                    latestDate = now;
+                }
+                
+                // Calculate end date and progress - FIXED DURATION CALCULATION
+                const startDate = latestDate;
+                const endDate = new Date(startDate);
                 endDate.setDate(endDate.getDate() + plan.duration);
                 
                 // Calculate progress
                 const totalTime = plan.duration * 24 * 60 * 60 * 1000;
-                const elapsedTime = now - latestTransaction;
-                const progress = Math.min(Math.max((elapsedTime / totalTime) * 100, 0), 100);
+                const elapsedTime = now - startDate;
+                let progress = Math.min(Math.max((elapsedTime / totalTime) * 100, 0), 100);
+                
+                // Round progress to 1 decimal place
+                progress = Math.round(progress * 10) / 10;
+                
+                // Determine if plan is completed
+                const isCompleted = now >= endDate;
+                if (isCompleted) {
+                    progress = 100;
+                }
                 
                 // Calculate estimated returns
                 const dailyReturnAmount = (plan.investment * plan.dailyReturn) / 100;
@@ -1189,14 +1229,16 @@
                             </div>
                             
                             <div class="flex justify-between text-sm text-gray-400">
-                                <span>Started: ${latestTransaction.toLocaleDateString()}</span>
+                                <span>Started: ${startDate.toLocaleDateString()}</span>
                                 <span>Ends: ${endDate.toLocaleDateString()}</span>
                             </div>
                         </div>
                         
                         <div class="flex flex-col items-center">
                             <div class="text-5xl mb-2">⛏️</div>
-                            <span class="text-sm font-medium text-white">${Math.round(progress)}% Complete</span>
+                            <span class="text-sm font-medium ${isCompleted ? 'text-blue-400' : 'text-white'}">
+                                ${isCompleted ? 'Completed' : `${Math.round(progress)}% Complete`}
+                            </span>
                         </div>
                     </div>
                 `;
@@ -1249,20 +1291,30 @@
                 const now = new Date();
                 
                 // Get the most recent transaction for this plan
-                let latestTransaction = stats.transactions.reduce((latest, current) => {
-                    return current.transactionDate > latest ? current.transactionDate : latest;
-                }, new Date(0));
+                let latestDate = new Date(0);
+                stats.transactions.forEach(transaction => {
+                    if (transaction.transactionDate > latestDate) {
+                        latestDate = transaction.transactionDate;
+                    }
+                });
                 
-                if (latestTransaction.getTime() === 0) {
-                    latestTransaction = now;
+                if (latestDate.getTime() === 0) {
+                    latestDate = now;
                 }
                 
-                const endDate = new Date(latestTransaction);
+                const startDate = latestDate;
+                const endDate = new Date(startDate);
                 endDate.setDate(endDate.getDate() + plan.duration);
                 
                 const totalTime = plan.duration * 24 * 60 * 60 * 1000;
-                const elapsedTime = now - latestTransaction;
-                const progress = Math.min(Math.max((elapsedTime / totalTime) * 100, 0), 100);
+                const elapsedTime = now - startDate;
+                let progress = Math.min(Math.max((elapsedTime / totalTime) * 100, 0), 100);
+                
+                // Determine if plan is completed
+                const isCompleted = now >= endDate;
+                if (isCompleted) {
+                    progress = 100;
+                }
                 
                 const row = document.createElement('tr');
                 row.className = 'border-b border-purple-500/10 hover:bg-purple-500/5';
@@ -1284,9 +1336,9 @@
                         </div>
                     </td>
                     <td class="py-3 px-4">
-                        <span class="inline-flex items-center gap-1 ${progress >= 100 ? 'text-blue-400' : 'text-green-400'}">
-                            <span class="w-2 h-2 ${progress >= 100 ? 'bg-blue-400' : 'bg-green-400'} rounded-full animate-pulse"></span>
-                            ${progress >= 100 ? 'Completed' : 'Active'}
+                        <span class="inline-flex items-center gap-1 ${isCompleted ? 'text-blue-400' : 'text-green-400'}">
+                            <span class="w-2 h-2 ${isCompleted ? 'bg-blue-400' : 'bg-green-400'} rounded-full ${isCompleted ? '' : 'animate-pulse'}"></span>
+                            ${isCompleted ? 'Completed' : 'Active'}
                         </span>
                     </td>
                 `;
@@ -1570,10 +1622,11 @@
             `;
             refreshBtn.disabled = true;
             
+            // Load data immediately without delay for faster loading
+            loadMiningData(userEmail);
+            
+            // Show success indicator
             setTimeout(() => {
-                loadMiningData(userEmail);
-                
-                // Show success indicator
                 refreshBtn.innerHTML = '✓ Refreshed';
                 refreshBtn.classList.remove('bg-purple-500', 'hover:bg-purple-600');
                 refreshBtn.classList.add('bg-green-500', 'hover:bg-green-600');
@@ -1583,8 +1636,8 @@
                     refreshBtn.classList.remove('bg-green-500', 'hover:bg-green-600');
                     refreshBtn.classList.add('bg-purple-500', 'hover:bg-purple-600');
                     refreshBtn.disabled = false;
-                }, 2000);
-            }, 1500);
+                }, 1500);
+            }, 500);
         }
         
         function toggleMobileMenu() {
