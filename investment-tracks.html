@@ -3,10 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Investment Tracks - V0 Trade</title>
+    <title>Deposit Funds - V0 Trade</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
     <!-- Add currency config script -->
     <script src="/js/currency-config.js"></script>
     <style>
@@ -28,8 +26,50 @@
             color: rgb(168 85 247);
             font-weight: 600;
         }
+        .payment-method {
+            border: 2px solid rgb(71 85 105);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: rgb(15 23 42 / 0.5);
+        }
+        .payment-method:hover {
+            border-color: rgb(168 85 247);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(168, 85, 247, 0.2);
+        }
+        .payment-method.selected {
+            border-color: rgb(168 85 247);
+            background: linear-gradient(135deg, rgba(168, 85, 247, 0.15), rgba(236, 72, 153, 0.15));
+            box-shadow: 0 0 20px rgba(168, 85, 247, 0.3);
+        }
+        .payment-method.selected .payment-icon {
+            transform: scale(1.1);
+        }
         
-        /* Updated mobile sidebar with toggle button behavior */
+        .amount-section {
+            max-height: 0;
+            overflow: hidden;
+            opacity: 0;
+            transition: all 0.4s ease-out;
+        }
+        .amount-section.visible {
+            max-height: 800px;
+            opacity: 1;
+        }
+        
+        .error-message {
+            display: none;
+            color: rgb(239 68 68);
+            font-size: 0.875rem;
+            margin-top: 0.5rem;
+        }
+        .error-message.show {
+            display: block;
+        }
+        
+        /* Updated mobile sidebar behavior - hidden by default with toggle */
         @media (max-width: 768px) {
             .sidebar {
                 position: fixed;
@@ -71,105 +111,6 @@
         .dropdown-content { display: none; position: absolute; background-color: rgb(15 23 42 / 0.95); min-width: 12rem; border: 1px solid rgb(168 85 247 / 0.2); border-radius: 0.5rem; padding: 0.5rem; z-index: 1000; backdrop-filter: blur(10px); }
         .dropdown:hover .dropdown-content { display: block; }
         
-        .investment-card {
-            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(168, 85, 247, 0.1));
-            border: 1px solid rgba(168, 85, 247, 0.2);
-            border-radius: 1rem;
-            transition: all 0.3s ease;
-        }
-        
-        .investment-card:hover {
-            border-color: rgba(168, 85, 247, 0.4);
-            transform: translateY(-2px);
-            box-shadow: 0 10px 25px -5px rgba(168, 85, 247, 0.1);
-        }
-        
-        /* Chart containers */
-        .chart-container {
-            background: rgba(30, 41, 59, 0.5);
-            backdrop-filter: blur(10px);
-            border-radius: 1rem;
-            border: 1px solid rgba(168, 85, 247, 0.2);
-        }
-        
-        /* Progress bars */
-        .progress-bar {
-            height: 8px;
-            background: linear-gradient(90deg, #10b981, #3b82f6, #8b5cf6);
-            border-radius: 4px;
-            animation: progressAnimation 2s ease-in-out infinite alternate;
-        }
-        
-        @keyframes progressAnimation {
-            0% { background-position: 0% 50%; }
-            100% { background-position: 100% 50%; }
-        }
-        
-        /* Badge styles */
-        .badge-crypto { background: linear-gradient(135deg, #f59e0b, #d97706); color: white; }
-        .badge-stock { background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: white; }
-        .badge-etf { background: linear-gradient(135deg, #10b981, #047857); color: white; }
-        .badge-metal { background: linear-gradient(135deg, #fbbf24, #d97706); color: white; }
-        
-        .investment-badge {
-            display: inline-block;
-            padding: 0.25rem 0.75rem;
-            border-radius: 9999px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-        
-        /* Chart animations */
-        @keyframes chartLineDraw {
-            from { stroke-dashoffset: 1000; }
-            to { stroke-dashoffset: 0; }
-        }
-        
-        @keyframes pieSliceGrow {
-            from { transform: scale(0); opacity: 0; }
-            to { transform: scale(1); opacity: 1; }
-        }
-        
-        @keyframes candleFlicker {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.9; }
-        }
-        
-        .candle-up {
-            fill: #10b981;
-            animation: candleFlicker 1.5s ease-in-out infinite;
-        }
-        
-        .candle-down {
-            fill: #ef4444;
-            animation: candleFlicker 1.5s ease-in-out infinite;
-        }
-        
-        /* Stats card animations */
-        .stats-card {
-            background: linear-gradient(135deg, rgba(168, 85, 247, 0.1), rgba(236, 72, 153, 0.05));
-            border: 1px solid rgba(168, 85, 247, 0.2);
-            border-radius: 1rem;
-            padding: 1.5rem;
-            transition: all 0.3s ease;
-        }
-        
-        .stats-card:hover {
-            transform: translateY(-5px);
-            border-color: rgba(168, 85, 247, 0.4);
-        }
-        
-        .pulse {
-            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-        }
-        
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
-
         /* Currency switcher styles */
         .currency-switcher {
             position: relative;
@@ -446,8 +387,8 @@
                     </div>
                     
                     <a href="dashboard.html" class="text-sm text-purple-400 hover:text-purple-300 transition">Dashboard</a>
-                    <span class="text-sm text-gray-400" id="userEmail">user@email.com</span>
-                    <a href="javascript:void(0)" onclick="logout()" class="text-sm text-gray-300 hover:text-white transition">Logout</a>
+                    <span class="text-sm text-gray-400">user@email.com</span>
+                    <a href="index.html" class="text-sm text-gray-300 hover:text-white transition">Logout</a>
                 </div>
 
                 <!-- Mobile header section with currency toggle and menu button -->
@@ -482,7 +423,7 @@
                     <a href="contact.html" class="text-sm text-gray-300 hover:text-white">Contact</a>
                     <a href="faq.html" class="text-sm text-gray-300 hover:text-white">FAQ</a>
                     <a href="dashboard.html" class="text-sm text-purple-400 hover:text-purple-300">Dashboard</a>
-                    <a href="javascript:void(0)" onclick="logout()" class="text-sm text-gray-300 hover:text-white">Logout</a>
+                    <a href="index.html" class="text-sm text-gray-300 hover:text-white">Logout</a>
                 </nav>
             </div>
         </div>
@@ -503,10 +444,10 @@
     </div>
 
     <div class="flex min-h-screen">
-        <!-- Added id for sidebar toggle functionality -->
+        <!-- Updated sidebar with mobile toggle behavior -->
         <aside id="sidebar" class="sidebar w-64 bg-slate-900/50 border-r border-purple-500/20 p-4 backdrop-blur-sm">
             <div class="space-y-1 mb-6">
-                <a href="deposit.html" class="sidebar-link">
+                <a href="deposit.html" class="sidebar-link active">
                     <span>💰</span>
                     <span class="sidebar-text">Deposit</span>
                 </a>
@@ -529,7 +470,7 @@
                     <span>⛏️</span>
                     <span class="sidebar-text">Mining Tracks</span>
                 </a>
-                <a href="investment-tracks.html" class="sidebar-link active">
+                <a href="investment-tracks.html" class="sidebar-link">
                     <span>📈</span>
                     <span class="sidebar-text">Investment Tracks</span>
                 </a>
@@ -572,187 +513,129 @@
             </div>
         </aside>
 
-        <!-- New investment tracks page for crypto, ETF, stock, and metal investments -->
-        <main class="flex-1 p-4 md:p-8 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
-            <div class="max-w-7xl mx-auto">
-                <!-- Header -->
-                <div class="flex flex-col md:flex-row md:items-center justify-between mb-8">
-                    <div>
-                        <h1 class="text-2xl md:text-3xl font-bold text-white mb-2">Investment Tracks</h1>
-                        <p class="text-gray-400">Monitor all your active investments across Crypto, Stocks, ETFs, and Precious Metals</p>
-                    </div>
-                    <button onclick="refreshInvestments()" class="mt-4 md:mt-0 flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white rounded-lg font-medium transition">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                        </svg>
-                        Refresh Data
-                    </button>
-                </div>
-
-                <!-- Investment Stats Summary -->
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-                    <div class="stats-card">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <p class="text-sm text-gray-400 mb-1">Total Investment</p>
-                                <p id="totalInvestment" class="text-2xl font-bold text-white"><span class="currency-symbol">$</span>0.00</p>
-                            </div>
-                            <div class="text-3xl pulse">💰</div>
-                        </div>
-                        <div class="mt-4">
-                            <div class="flex justify-between text-sm mb-1">
-                                <span class="text-gray-400">Active Plans</span>
-                                <span id="activePlansCount" class="text-green-400">0</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="stats-card">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <p class="text-sm text-gray-400 mb-1">Total Returns</p>
-                                <p id="totalReturns" class="text-2xl font-bold text-white"><span class="currency-symbol">$</span>0.00</p>
-                            </div>
-                            <div class="text-3xl text-yellow-400">📈</div>
-                        </div>
-                        <div class="mt-4">
-                            <div class="flex justify-between text-sm mb-1">
-                                <span class="text-gray-400">Daily Average</span>
-                                <span id="dailyAverage" class="text-green-400"><span class="currency-symbol">$</span>0.00</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="stats-card">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <p class="text-sm text-gray-400 mb-1">Portfolio Value</p>
-                                <p id="portfolioValue" class="text-2xl font-bold text-white"><span class="currency-symbol">$</span>0.00</p>
-                            </div>
-                            <div class="text-3xl text-cyan-400">💎</div>
-                        </div>
-                        <div class="mt-4">
-                            <div class="flex justify-between text-sm mb-1">
-                                <span class="text-gray-400">Growth</span>
-                                <span id="growthPercentage" class="text-green-400">0%</span>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="stats-card">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <p class="text-sm text-gray-400 mb-1">Best Performer</p>
-                                <p id="bestPerformer" class="text-2xl font-bold text-white">-</p>
-                            </div>
-                            <div class="text-3xl text-purple-400">🏆</div>
-                        </div>
-                        <div class="mt-4">
-                            <div class="flex justify-between text-sm mb-1">
-                                <span class="text-gray-400">Returns</span>
-                                <span id="bestPerformerReturns" class="text-green-400"><span class="currency-symbol">$</span>0.00</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Filter Tabs -->
-                <div class="flex gap-2 mb-6 overflow-x-auto">
-                    <button onclick="filterInvestments('all')" class="filter-btn px-4 py-2 rounded-lg bg-purple-500/20 text-purple-400 border border-purple-500/30 whitespace-nowrap">All Investments</button>
-                    <button onclick="filterInvestments('crypto')" class="filter-btn px-4 py-2 rounded-lg bg-slate-800 text-gray-400 border border-slate-700 hover:bg-slate-700 whitespace-nowrap">Cryptocurrencies</button>
-                    <button onclick="filterInvestments('stock')" class="filter-btn px-4 py-2 rounded-lg bg-slate-800 text-gray-400 border border-slate-700 hover:bg-slate-700 whitespace-nowrap">Stocks</button>
-                    <button onclick="filterInvestments('etf')" class="filter-btn px-4 py-2 rounded-lg bg-slate-800 text-gray-400 border border-slate-700 hover:bg-slate-700 whitespace-nowrap">ETFs</button>
-                    <button onclick="filterInvestments('metal')" class="filter-btn px-4 py-2 rounded-lg bg-slate-800 text-gray-400 border border-slate-700 hover:bg-slate-700 whitespace-nowrap">Precious Metals</button>
-                </div>
-
-                <!-- Charts Section -->
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-                    <!-- Performance Line Chart -->
-                    <div class="chart-container p-6">
-                        <h3 class="text-lg font-semibold text-white mb-4">Investment Performance</h3>
-                        <div class="h-64">
-                            <canvas id="performanceChart"></canvas>
-                        </div>
-                    </div>
-
-                    <!-- Investment Distribution Pie Chart -->
-                    <div class="chart-container p-6">
-                        <h3 class="text-lg font-semibold text-white mb-4">Investment Distribution</h3>
-                        <div class="h-64">
-                            <canvas id="distributionChart"></canvas>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Candlestick Chart -->
-                <div class="chart-container p-6 mb-8">
-                    <h3 class="text-lg font-semibold text-white mb-4">Market Performance</h3>
-                    <div class="h-80">
-                        <canvas id="candlestickChart"></canvas>
-                    </div>
-                </div>
-
-                <!-- Active Investments -->
+        <main class="flex-1 p-4 md:p-8 bg-gradient-to-br from-slate-950 via-slate-950 to-slate-950">
+            <div class="max-w-4xl mx-auto">
+                <!-- Updated page title and description to match specification -->
                 <div class="mb-8">
-                    <div class="flex items-center justify-between mb-6">
-                        <h2 class="text-xl font-bold text-white">Active Investments</h2>
-                        <div class="flex gap-2">
-                            <a href="cryptocurrencies.html" class="text-sm bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white px-4 py-2 rounded-lg font-medium transition">
-                                + Crypto
-                            </a>
-                            <a href="stocks.html" class="text-sm bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white px-4 py-2 rounded-lg font-medium transition">
-                                + Stocks
-                            </a>
-                            <a href="etfs.html" class="text-sm bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white px-4 py-2 rounded-lg font-medium transition">
-                                + ETFs
-                            </a>
-                            <a href="precious-metals.html" class="text-sm bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-600 hover:to-amber-600 text-white px-4 py-2 rounded-lg font-medium transition">
-                                + Metals
-                            </a>
-                        </div>
-                    </div>
+                    <h1 class="text-3xl md:text-4xl font-bold text-white mb-2">Deposit Funds</h1>
+                    <p class="text-gray-400">Select a payment method and enter your deposit amount.</p>
+                </div>
 
-                    <div id="investmentContainer" class="space-y-4">
-                        <!-- Investments will be loaded here -->
-                        <div class="investment-card p-6 text-center">
-                            <div class="text-5xl mb-4">📈</div>
-                            <h3 class="text-xl font-semibold text-white mb-3">No Active Investments</h3>
-                            <p class="text-gray-400 mb-6">Start investing to track your portfolio performance here</p>
-                            <div class="flex gap-4 justify-center flex-wrap">
-                                <a href="cryptocurrencies.html" class="text-sm text-orange-400 hover:text-orange-300">Invest in Crypto</a>
-                                <a href="stocks.html" class="text-sm text-blue-400 hover:text-blue-300">Invest in Stocks</a>
-                                <a href="etfs.html" class="text-sm text-green-400 hover:text-green-300">Invest in ETFs</a>
-                                <a href="precious-metals.html" class="text-sm text-yellow-400 hover:text-yellow-300">Invest in Metals</a>
+                <div class="bg-slate-900/80 backdrop-blur-sm rounded-xl border border-purple-500/20 p-6 md:p-8">
+                    <!-- Payment Method Selection Section -->
+                    <div class="mb-8">
+                        <h3 class="text-xl font-semibold text-white mb-6">Select Payment Method</h3>
+                        <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                            <!-- Bitcoin -->
+                            <div class="payment-method" data-method="btc" onclick="selectPayment('btc', event)">
+                                <div class="text-center">
+                                    <div class="payment-icon text-5xl mb-3 transition-transform">₿</div>
+                                    <p class="text-base font-semibold text-white">Bitcoin</p>
+                                    <p class="text-xs text-gray-400 mt-1">BTC</p>
+                                </div>
+                            </div>
+
+                            <!-- Ethereum -->
+                            <div class="payment-method" data-method="eth" onclick="selectPayment('eth', event)">
+                                <div class="text-center">
+                                    <div class="payment-icon text-5xl mb-3 transition-transform">⟠</div>
+                                    <p class="text-base font-semibold text-white">Ethereum</p>
+                                    <p class="text-xs text-gray-400 mt-1">ETH</p>
+                                </div>
+                            </div>
+
+                            <!-- USDT -->
+                            <div class="payment-method" data-method="usdt" onclick="selectPayment('usdt', event)">
+                                <div class="text-center">
+                                    <div class="payment-icon text-5xl mb-3 transition-transform">₮</div>
+                                    <p class="text-base font-semibold text-white">Tether USDT</p>
+                                    <p class="text-xs text-gray-400 mt-1">TRC20/ERC20</p>
+                                </div>
+                            </div>
+
+                            <!-- Blue Voucher -->
+                            <div class="payment-method" data-method="blue-voucher" onclick="selectPayment('blue-voucher', event)">
+                                <div class="text-center">
+                                    <div class="payment-icon text-5xl mb-3 transition-transform">🎫</div>
+                                    <p class="text-base font-semibold text-white">Blue Voucher</p>
+                                    <p class="text-xs text-gray-400 mt-1">Voucher</p>
+                                </div>
+                            </div>
+
+                            <!-- 1Voucher -->
+                            <div class="payment-method" data-method="1voucher" onclick="selectPayment('1voucher', event)">
+                                <div class="text-center">
+                                    <div class="payment-icon text-5xl mb-3 transition-transform">🎟️</div>
+                                    <p class="text-base font-semibold text-white">1Voucher</p>
+                                    <p class="text-xs text-gray-400 mt-1">Voucher</p>
+                                </div>
+                            </div>
+
+                            <!-- OTT Voucher -->
+                            <div class="payment-method" data-method="ott-voucher" onclick="selectPayment('ott-voucher', event)">
+                                <div class="text-center">
+                                    <div class="payment-icon text-5xl mb-3 transition-transform">🎁</div>
+                                    <p class="text-base font-semibold text-white">OTT Voucher</p>
+                                    <p class="text-xs text-gray-400 mt-1">Voucher</p>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
 
-                <!-- Investment Transactions History -->
-                <div class="chart-container p-6">
-                    <h3 class="text-lg font-semibold text-white mb-4">Investment Transactions</h3>
-                    <div class="overflow-x-auto">
-                        <table class="w-full">
-                            <thead>
-                                <tr class="border-b border-gray-700">
-                                    <th class="text-left py-3 px-4 text-sm font-medium text-gray-400">Date</th>
-                                    <th class="text-left py-3 px-4 text-sm font-medium text-gray-400">Type</th>
-                                    <th class="text-left py-3 px-4 text-sm font-medium text-gray-400">Asset</th>
-                                    <th class="text-left py-3 px-4 text-sm font-medium text-gray-400">Plan</th>
-                                    <th class="text-left py-3 px-4 text-sm font-medium text-gray-400">Investment</th>
-                                    <th class="text-left py-3 px-4 text-sm font-medium text-gray-400">Duration</th>
-                                    <th class="text-left py-3 px-4 text-sm font-medium text-gray-400">Status</th>
-                                    <th class="text-left py-3 px-4 text-sm font-medium text-gray-400">Returns</th>
-                                </tr>
-                            </thead>
-                            <tbody id="investmentTransactionsList">
-                                <tr>
-                                    <td colspan="8" class="text-center py-12">
-                                        <p class="text-gray-500">Loading investment transactions...</p>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
+                    <!-- Amount Input Section - Hidden until payment method selected -->
+                    <div id="amountSection" class="amount-section">
+                        <!-- Amount Input -->
+                        <div class="mb-6">
+                            <label class="block text-base font-semibold text-white mb-2">Enter Deposit Amount</label>
+                            <div class="relative">
+                                <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-lg currency-symbol">$</span>
+                                <input 
+                                    type="number" 
+                                    id="depositAmount" 
+                                    class="w-full pl-10 pr-4 py-4 border border-slate-700 bg-slate-800/50 text-white text-lg rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition" 
+                                    placeholder="0.00"
+                                    min="1"
+                                    max="200000"
+                                    step="0.01"
+                                    oninput="validateAndCalculate()"
+                                >
+                            </div>
+                            <p class="text-sm text-gray-400 mt-2">Minimum: <span class="currency-symbol">$</span>1.00 | Maximum: <span class="currency-symbol">$</span>200,000.00</p>
+                            <p id="amountError" class="error-message">Please enter an amount between <span class="currency-symbol">$</span>1 and <span class="currency-symbol">$</span>200,000</p>
+                        </div>
+
+                        <!-- Automatic Calculation Panel -->
+                        <div class="bg-gradient-to-br from-slate-800/60 to-purple-900/20 rounded-lg border border-purple-500/30 p-6 mb-6">
+                            <h4 class="text-lg font-semibold text-white mb-4">Transaction Summary</h4>
+                            
+                            <!-- Processing Charge -->
+                            <div class="flex justify-between items-center mb-3 pb-3 border-b border-slate-700/50">
+                                <span class="text-gray-400">Processing Charge:</span>
+                                <span class="font-semibold text-white"><span class="currency-symbol">$</span>0.00</span>
+                            </div>
+
+                            <!-- Total Amount -->
+                            <div class="flex justify-between items-center mb-3 pb-3 border-b border-slate-700/50">
+                                <span class="text-white font-medium">Total Amount:</span>
+                                <span id="totalAmount" class="font-bold text-2xl bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent"><span class="currency-symbol">$</span>0.00</span>
+                            </div>
+
+                            <!-- Conversion Rate -->
+                            <div class="flex justify-between items-center">
+                                <span class="text-gray-400 text-sm">Conversion Rate:</span>
+                                <span class="text-gray-400 text-sm">1 USD₮ = <span class="currency-symbol">$</span>1.00 USD</span>
+                            </div>
+                        </div>
+
+                        <!-- Confirm Order Button -->
+                        <button 
+                            id="confirmBtn" 
+                            onclick="confirmOrder()" 
+                            disabled
+                            class="w-full bg-gradient-to-r from-purple-500 via-pink-500 to-purple-500 hover:from-purple-600 hover:via-pink-600 hover:to-purple-600 disabled:from-gray-600 disabled:to-gray-700 disabled:cursor-not-allowed text-white py-4 rounded-lg font-semibold text-lg transition-all shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50 disabled:shadow-none">
+                            Confirm Order
+                        </button>
+                        <p class="text-center text-sm text-gray-400 mt-3">Please review your deposit details before confirming</p>
                     </div>
                 </div>
             </div>
@@ -772,42 +655,7 @@
             { code: 'CAD', symbol: 'C$', name: 'Canadian Dollar' }
         ];
         
-        // Constants
-        const TRANSACTIONS_DATA_KEY = "v0trade_transactions_data";
-        
-        // Investment plan configurations
-        const INVESTMENT_PLANS = {
-            // Crypto Plans
-            '1 hour plan crypto': { type: 'crypto', roi: 20, duration: 1, asset: 'Bitcoin (BTC)', badge: 'badge-crypto', color: '#f59e0b' },
-            '5 hours plan crypto': { type: 'crypto', roi: 30, duration: 5, asset: 'Bitcoin (BTC)', badge: 'badge-crypto', color: '#d97706' },
-            '24 hours plan crypto': { type: 'crypto', roi: 68, duration: 24, asset: 'Bitcoin (BTC)', badge: 'badge-crypto', color: '#b45309' },
-            '72 hours plan crypto': { type: 'crypto', roi: 89, duration: 72, asset: 'Bitcoin (BTC)', badge: 'badge-crypto', color: '#92400e' },
-            '1 week plan crypto': { type: 'crypto', roi: 190, duration: 168, asset: 'Bitcoin (BTC)', badge: 'badge-crypto', color: '#78350f' },
-            
-            // Stock Plans
-            '1 hour plan stock': { type: 'stock', roi: 20, duration: 1, asset: 'NVIDIA (NVDA)', badge: 'badge-stock', color: '#3b82f6' },
-            '5 hours plan stock': { type: 'stock', roi: 30, duration: 5, asset: 'NVIDIA (NVDA)', badge: 'badge-stock', color: '#1d4ed8' },
-            '24 hours plan stock': { type: 'stock', roi: 68, duration: 24, asset: 'NVIDIA (NVDA)', badge: 'badge-stock', color: '#1e40af' },
-            '72 hours plan stock': { type: 'stock', roi: 89, duration: 72, asset: 'NVIDIA (NVDA)', badge: 'badge-stock', color: '#1e3a8a' },
-            
-            // ETF Plans
-            '1 hour plan etf': { type: 'etf', roi: 20, duration: 1, asset: 'SPY - SPDR S&P 500', badge: 'badge-etf', color: '#10b981' },
-            '5 hours plan etf': { type: 'etf', roi: 30, duration: 5, asset: 'SPY - SPDR S&P 500', badge: 'badge-etf', color: '#047857' },
-            '24 hours plan etf': { type: 'etf', roi: 68, duration: 24, asset: 'SPY - SPDR S&P 500', badge: 'badge-etf', color: '#065f46' },
-            '72 hours plan etf': { type: 'etf', roi: 89, duration: 72, asset: 'SPY - SPDR S&P 500', badge: 'badge-etf', color: '#064e3b' },
-            
-            // Precious Metal Plans
-            '1 hour plan metal': { type: 'metal', roi: 20, duration: 1, asset: 'Gold', badge: 'badge-metal', color: '#fbbf24' },
-            '5 hours plan metal': { type: 'metal', roi: 30, duration: 5, asset: 'Gold', badge: 'badge-metal', color: '#d97706' },
-            '24 hours plan metal': { type: 'metal', roi: 68, duration: 24, asset: 'Gold', badge: 'badge-metal', color: '#b45309' },
-            '72 hours plan metal': { type: 'metal', roi: 89, duration: 72, asset: 'Gold', badge: 'badge-metal', color: '#92400e' },
-            '1 week plan metal': { type: 'metal', roi: 190, duration: 168, asset: 'Gold', badge: 'badge-metal', color: '#78350f' }
-        };
-        
-        // Chart instances
-        let performanceChart = null;
-        let distributionChart = null;
-        let candlestickChart = null;
+        let selectedMethod = '';
         
         // Currency functions
         function getCurrentCurrency() {
@@ -840,11 +688,8 @@
                 desktopSelector.querySelector('.current-code').textContent = currency.code;
             }
             
-            // Refresh investment data to update currency formatting
-            const userEmail = localStorage.getItem("v0trade_user_email");
-            if (userEmail) {
-                loadInvestmentData(userEmail);
-            }
+            // Re-validate and calculate with new currency symbol
+            validateAndCalculate();
         }
         
         function toggleCurrencyDropdown(event) {
@@ -960,58 +805,101 @@
             document.getElementById('mobileCurrencyMenu').classList.remove('show');
         }
         
-        // Mobile menu functions
         function toggleMobileMenu() {
             const menu = document.getElementById('mobileMenu');
-            if (menu) {
-                menu.classList.toggle('active');
-            }
-        }
-        
-        function closeMobileMenu() {
-            const menu = document.getElementById('mobileMenu');
-            if (menu) {
-                menu.classList.remove('active');
-            }
+            menu.classList.toggle('active');
         }
         
         function toggleSidebar() {
             const sidebar = document.getElementById('sidebar');
             const overlay = document.getElementById('sidebarOverlay');
-            if (sidebar && overlay) {
-                sidebar.classList.toggle('active');
-                overlay.classList.toggle('active');
-            }
+            sidebar.classList.toggle('active');
+            overlay.classList.toggle('active');
         }
         
-        function logout() {
-            if (confirm('Are you sure you want to log out?')) {
-                localStorage.removeItem("v0trade_user_email");
-                window.location.href = 'index.html';
-            }
-        }
-        
-        window.addEventListener('DOMContentLoaded', function() {
-            const userEmail = localStorage.getItem("v0trade_user_email");
+        /* Updated payment selection to show amount section and highlight selected method */
+        function selectPayment(method, event) {
+            selectedMethod = method;
             
-            if (!userEmail) {
-                alert("Please login to access this page.");
-                window.location.href = "login.html";
+            // Remove selected class from all payment methods
+            document.querySelectorAll('.payment-method').forEach(el => {
+                el.classList.remove('selected');
+            });
+            
+            // Add selected class to clicked method
+            event.currentTarget.classList.add('selected');
+            
+            // Show amount section with animation
+            const amountSection = document.getElementById('amountSection');
+            amountSection.classList.add('visible');
+            
+            // Scroll to amount section on mobile
+            setTimeout(() => {
+                amountSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }, 100);
+            
+            // Validate button state
+            validateAndCalculate();
+        }
+
+        /* Added validation and real-time calculation */
+        function validateAndCalculate() {
+            const amountInput = document.getElementById('depositAmount');
+            const amount = parseFloat(amountInput.value) || 0;
+            const errorMsg = document.getElementById('amountError');
+            const confirmBtn = document.getElementById('confirmBtn');
+            const totalDisplay = document.getElementById('totalAmount');
+            const currencySymbol = getCurrentCurrencySymbol();
+            
+            // Validate amount range
+            if (amount > 0 && (amount < 1 || amount > 200000)) {
+                errorMsg.classList.add('show');
+                confirmBtn.disabled = true;
+            } else {
+                errorMsg.classList.remove('show');
+                // Enable button only if method selected and valid amount
+                confirmBtn.disabled = !(selectedMethod && amount >= 1 && amount <= 200000);
+            }
+            
+            // Update total display
+            totalDisplay.textContent = currencySymbol + amount.toFixed(2);
+        }
+
+        /* Added localStorage saving and redirect logic per specification */
+        function confirmOrder() {
+            const amount = parseFloat(document.getElementById('depositAmount').value);
+            const currencySymbol = getCurrentCurrencySymbol();
+            
+            // Validate one more time
+            if (!selectedMethod || !amount || amount < 1 || amount > 200000) {
+                alert('Please select a payment method and enter a valid amount between ' + currencySymbol + '1 and ' + currencySymbol + '200,000');
                 return;
             }
-
-            // Update header with user email
-            const emailDisplay = document.getElementById('userEmail');
-            if (emailDisplay) {
-                emailDisplay.textContent = userEmail;
-            }
             
-            // Initialize currency system
+            localStorage.setItem('deposit_amount', amount.toFixed(2));
+            
+            // Redirect to specific payment instruction page based on method
+            const redirectMap = {
+                'btc': 'btc-deposit.html',
+                'eth': 'eth-deposit.html',
+                'usdt': 'usdt-deposit.html',
+                'blue-voucher': 'blue-voucher-deposit.html',
+                '1voucher': '1voucher-deposit.html',
+                'ott-voucher': 'ott-voucher-deposit.html'
+            };
+            
+            const redirectUrl = redirectMap[selectedMethod];
+            if (redirectUrl) {
+                window.location.href = redirectUrl;
+            } else {
+                alert('Invalid payment method selected');
+            }
+        }
+        
+        // Initialize currency system on page load
+        document.addEventListener('DOMContentLoaded', function() {
             const currentCurrency = getCurrentCurrency();
             updateCurrencySymbols(currentCurrency);
-            
-            // Load investment data
-            loadInvestmentData(userEmail);
             
             // Close mobile menu when clicking outside
             document.addEventListener('click', function(event) {
@@ -1021,7 +909,7 @@
                 if (mobileMenu && mobileMenu.classList.contains('active') && 
                     !mobileMenu.contains(event.target) && 
                     mobileMenuButton && !mobileMenuButton.contains(event.target)) {
-                    closeMobileMenu();
+                    toggleMobileMenu();
                 }
             });
             
@@ -1032,727 +920,12 @@
                     closeMobileCurrencyMenu();
                 }
             });
+            
+            // Listen for currency changes
+            document.addEventListener('currencyChanged', function(event) {
+                updateCurrencySymbols(event.detail.code);
+            });
         });
-
-        function loadInvestmentData(email) {
-            try {
-                // Get cached transactions from localStorage
-                const cachedData = localStorage.getItem(`${TRANSACTIONS_DATA_KEY}_${email}`);
-                
-                if (!cachedData) {
-                    displayNoInvestments();
-                    return;
-                }
-                
-                const allTransactions = JSON.parse(cachedData);
-                
-                // Filter to get only investment transactions (crypto, stock, etf, metal)
-                const investmentTransactions = allTransactions.filter(transaction => {
-                    const type = transaction.type?.toLowerCase() || '';
-                    const method = transaction.method?.toLowerCase() || '';
-                    
-                    // Look for investment-related transactions
-                    return type.includes('plan') || 
-                           method.includes('plan') ||
-                           type.includes('investment') ||
-                           method.includes('investment') ||
-                           type.includes('crypto') ||
-                           type.includes('stock') ||
-                           type.includes('etf') ||
-                           type.includes('metal') ||
-                           type.includes('gold') ||
-                           method.includes('crypto') ||
-                           method.includes('stock') ||
-                           method.includes('etf') ||
-                           method.includes('metal') ||
-                           method.includes('gold');
-                }).filter(t => {
-                    // Exclude mining transactions
-                    const type = t.type?.toLowerCase() || '';
-                    return !type.includes('miner') && !type.includes('mining');
-                });
-                
-                console.log("Investment transactions found:", investmentTransactions);
-                
-                if (investmentTransactions.length === 0) {
-                    displayNoInvestments();
-                    return;
-                }
-                
-                // Process investment transactions
-                const investmentStats = processInvestmentTransactions(investmentTransactions);
-                
-                // Display investments
-                displayInvestments(investmentStats);
-                
-                // Display transactions
-                displayInvestmentTransactions(investmentTransactions);
-                
-                // Update summary statistics
-                updateInvestmentStats(investmentStats);
-                
-                // Initialize charts
-                initializeCharts(investmentStats, investmentTransactions);
-                
-            } catch (err) {
-                console.error("Error loading investment data:", err);
-                displayNoInvestments();
-            }
-        }
-        
-        function processInvestmentTransactions(transactions) {
-            const investmentStats = {};
-            const now = new Date();
-            
-            transactions.forEach(transaction => {
-                const type = transaction.type?.toLowerCase() || '';
-                const method = transaction.method?.toLowerCase() || '';
-                const amount = parseFloat(transaction.amount) || 0;
-                const transactionDate = new Date(transaction.date);
-                
-                // Find matching investment plan
-                let planKey = null;
-                for (const key in INVESTMENT_PLANS) {
-                    if (type.includes(key) || method.includes(key)) {
-                        planKey = key;
-                        break;
-                    }
-                }
-                
-                // If no exact match, try to determine from transaction data
-                if (!planKey) {
-                    // Check for crypto
-                    if (type.includes('crypto') || method.includes('crypto') || type.includes('btc')) {
-                        planKey = '24 hours plan crypto';
-                    }
-                    // Check for stock
-                    else if (type.includes('stock') || method.includes('stock') || type.includes('nvidia')) {
-                        planKey = '24 hours plan stock';
-                    }
-                    // Check for etf
-                    else if (type.includes('etf') || method.includes('etf') || type.includes('spy')) {
-                        planKey = '24 hours plan etf';
-                    }
-                    // Check for metal
-                    else if (type.includes('metal') || method.includes('metal') || type.includes('gold')) {
-                        planKey = '24 hours plan metal';
-                    }
-                }
-                
-                if (!planKey) return;
-                
-                if (!investmentStats[planKey]) {
-                    investmentStats[planKey] = {
-                        count: 0,
-                        totalInvestment: 0,
-                        transactions: [],
-                        planInfo: INVESTMENT_PLANS[planKey]
-                    };
-                }
-                
-                investmentStats[planKey].count++;
-                investmentStats[planKey].totalInvestment += amount;
-                investmentStats[planKey].transactions.push({
-                    ...transaction,
-                    transactionDate: transactionDate
-                });
-            });
-            
-            return investmentStats;
-        }
-        
-        function displayInvestments(investmentStats) {
-            const container = document.getElementById('investmentContainer');
-            const currencySymbol = getCurrentCurrencySymbol();
-            
-            if (Object.keys(investmentStats).length === 0) {
-                displayNoInvestments();
-                return;
-            }
-            
-            container.innerHTML = '';
-            
-            // Create investment cards
-            for (const [planKey, stats] of Object.entries(investmentStats)) {
-                const plan = stats.planInfo;
-                const now = new Date();
-                const latestTransaction = stats.transactions[0]?.transactionDate || now;
-                
-                // Convert hours to days for display
-                const durationInDays = plan.duration / 24;
-                
-                // Calculate progress based on time elapsed
-                const totalHours = plan.duration;
-                const elapsedHours = Math.min((now - latestTransaction) / (1000 * 60 * 60), totalHours);
-                const progress = Math.min(Math.max((elapsedHours / totalHours) * 100, 0), 100);
-                
-                // Calculate returns
-                const returns = (stats.totalInvestment * plan.roi) / 100;
-                const dailyReturn = returns / durationInDays;
-                
-                // Determine days remaining
-                const remainingHours = Math.max(0, totalHours - elapsedHours);
-                const remainingDays = Math.ceil(remainingHours / 24);
-                
-                const investmentCard = document.createElement('div');
-                investmentCard.className = 'investment-card p-6';
-                investmentCard.dataset.type = plan.type;
-                
-                investmentCard.innerHTML = `
-                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                        <div class="mb-4 md:mb-0">
-                            <div class="flex items-center gap-3 mb-2">
-                                <span class="text-2xl">${getIconForType(plan.type)}</span>
-                                <div>
-                                    <div class="flex items-center gap-2">
-                                        <span class="${plan.badge} investment-badge">${plan.type.toUpperCase()}</span>
-                                        <span class="text-sm text-gray-400">${stats.count} Active</span>
-                                    </div>
-                                    <h3 class="text-lg font-semibold text-white mt-1">${plan.asset} Investment</h3>
-                                    <p class="text-sm text-gray-400">${getPlanName(planKey)} • ROI: ${plan.roi}%</p>
-                                </div>
-                            </div>
-                            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
-                                <div>
-                                    <p class="text-xs text-gray-500">Investment</p>
-                                    <p class="text-sm font-semibold text-white">${currencySymbol}${stats.totalInvestment.toLocaleString()}</p>
-                                </div>
-                                <div>
-                                    <p class="text-xs text-gray-500">Daily Return</p>
-                                    <p class="text-sm font-semibold text-green-400">+${currencySymbol}${dailyReturn.toFixed(2)}</p>
-                                </div>
-                                <div>
-                                    <p class="text-xs text-gray-500">Total Returns</p>
-                                    <p class="text-sm font-semibold text-cyan-400">${currencySymbol}${returns.toLocaleString()}</p>
-                                </div>
-                                <div>
-                                    <p class="text-xs text-gray-500">Status</p>
-                                    <span class="text-xs px-2 py-1 rounded-full bg-green-500/20 text-green-400">Active</span>
-                                </div>
-                            </div>
-                            
-                            <div class="mt-4">
-                                <div class="flex justify-between text-sm mb-1">
-                                    <span class="text-gray-400">Progress</span>
-                                    <span class="text-white">${progress.toFixed(1)}%</span>
-                                </div>
-                                <div class="w-full bg-gray-700 rounded-full h-2.5">
-                                    <div class="progress-bar h-2.5 rounded-full" style="width: ${progress}%"></div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="md:text-right">
-                            <div class="mb-2">
-                                <span class="text-gray-400">Days Remaining</span>
-                                <p class="text-2xl font-bold bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text text-transparent">${remainingDays}</p>
-                            </div>
-                            <div class="text-sm text-gray-400">
-                                Started: ${latestTransaction.toLocaleDateString()}
-                            </div>
-                        </div>
-                    </div>
-                `;
-                
-                container.appendChild(investmentCard);
-            }
-        }
-        
-        function displayInvestmentTransactions(transactions) {
-            const container = document.getElementById('investmentTransactionsList');
-            const currencySymbol = getCurrentCurrencySymbol();
-            
-            if (transactions.length === 0) {
-                container.innerHTML = `
-                    <tr>
-                        <td colspan="8" class="text-center py-12">
-                            <p class="text-gray-500">No investment transactions found</p>
-                        </td>
-                    </tr>
-                `;
-                return;
-            }
-            
-            // Sort by date (newest first)
-            transactions.sort((a, b) => new Date(b.date) - new Date(a.date));
-            
-            container.innerHTML = '';
-            
-            transactions.slice(0, 10).forEach(transaction => {
-                const row = document.createElement('tr');
-                row.className = 'border-b border-gray-800 hover:bg-gray-800/50';
-                
-                const date = new Date(transaction.date);
-                const formattedDate = date.toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'short',
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                });
-                
-                const amount = parseFloat(transaction.amount) || 0;
-                
-                // Determine investment type and plan
-                let planInfo = null;
-                let planName = 'Investment';
-                let asset = 'Unknown';
-                let duration = '24h';
-                let type = 'crypto';
-                let badge = 'badge-crypto';
-                
-                for (const [planKey, plan] of Object.entries(INVESTMENT_PLANS)) {
-                    if (transaction.type?.toLowerCase().includes(planKey) || 
-                        transaction.method?.toLowerCase().includes(planKey)) {
-                        planInfo = plan;
-                        planName = getPlanName(planKey);
-                        asset = plan.asset;
-                        duration = plan.duration < 24 ? `${plan.duration}h` : `${plan.duration/24}d`;
-                        type = plan.type;
-                        badge = plan.badge;
-                        break;
-                    }
-                }
-                
-                // Calculate returns
-                const returns = planInfo ? (amount * planInfo.roi) / 100 : amount * 0.2;
-                
-                row.innerHTML = `
-                    <td class="py-3 px-4 text-sm text-gray-300">${formattedDate}</td>
-                    <td class="py-3 px-4">
-                        <span class="${badge} investment-badge text-xs">${type.toUpperCase()}</span>
-                    </td>
-                    <td class="py-3 px-4 text-sm text-white font-medium">${asset}</td>
-                    <td class="py-3 px-4 text-sm text-gray-300">${planName}</td>
-                    <td class="py-3 px-4 text-sm text-green-400 font-semibold">${currencySymbol}${amount.toFixed(2)}</td>
-                    <td class="py-3 px-4 text-sm text-gray-300">${duration}</td>
-                    <td class="py-3 px-4 text-sm">
-                        <span class="px-2 py-1 rounded-full text-xs bg-green-400/10 text-green-400">Active</span>
-                    </td>
-                    <td class="py-3 px-4 text-sm text-yellow-400 font-semibold">${currencySymbol}${returns.toFixed(2)}</td>
-                `;
-                
-                container.appendChild(row);
-            });
-        }
-        
-        function updateInvestmentStats(investmentStats) {
-            const currencySymbol = getCurrentCurrencySymbol();
-            
-            let totalInvestment = 0;
-            let totalReturns = 0;
-            let activePlans = 0;
-            let bestPerformer = { name: '-', returns: 0 };
-            
-            for (const [planKey, stats] of Object.entries(investmentStats)) {
-                const plan = stats.planInfo;
-                activePlans += stats.count;
-                totalInvestment += stats.totalInvestment;
-                
-                // Calculate returns for this plan
-                const returns = (stats.totalInvestment * plan.roi) / 100;
-                totalReturns += returns;
-                
-                // Track best performer
-                if (returns > bestPerformer.returns) {
-                    bestPerformer = {
-                        name: plan.asset,
-                        returns: returns
-                    };
-                }
-            }
-            
-            // Calculate portfolio value and growth
-            const portfolioValue = totalInvestment + totalReturns;
-            const growthPercentage = totalInvestment > 0 ? (totalReturns / totalInvestment) * 100 : 0;
-            const dailyAverage = totalReturns > 0 ? totalReturns / 30 : 0; // Average over 30 days
-            
-            // Update DOM
-            document.getElementById('totalInvestment').innerHTML = `<span class="currency-symbol">${currencySymbol}</span>${totalInvestment.toLocaleString()}`;
-            document.getElementById('totalReturns').innerHTML = `<span class="currency-symbol">${currencySymbol}</span>${totalReturns.toLocaleString()}`;
-            document.getElementById('portfolioValue').innerHTML = `<span class="currency-symbol">${currencySymbol}</span>${portfolioValue.toLocaleString()}`;
-            document.getElementById('growthPercentage').textContent = `${growthPercentage.toFixed(1)}%`;
-            document.getElementById('activePlansCount').textContent = activePlans;
-            document.getElementById('dailyAverage').innerHTML = `<span class="currency-symbol">${currencySymbol}</span>${dailyAverage.toFixed(2)}`;
-            document.getElementById('bestPerformer').textContent = bestPerformer.name;
-            document.getElementById('bestPerformerReturns').innerHTML = `<span class="currency-symbol">${currencySymbol}</span>${bestPerformer.returns.toLocaleString()}`;
-        }
-        
-        function initializeCharts(investmentStats, transactions) {
-            // Destroy existing charts if they exist
-            if (performanceChart) performanceChart.destroy();
-            if (distributionChart) distributionChart.destroy();
-            if (candlestickChart) candlestickChart.destroy();
-            
-            const currencySymbol = getCurrentCurrencySymbol();
-            
-            // 1. Performance Line Chart
-            const performanceCtx = document.getElementById('performanceChart').getContext('2d');
-            
-            // Generate performance data for last 30 days
-            const dates = [];
-            const performanceData = [];
-            let cumulativeValue = 10000; // Starting portfolio value
-            
-            for (let i = 29; i >= 0; i--) {
-                const date = new Date();
-                date.setDate(date.getDate() - i);
-                dates.push(date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
-                
-                // Simulate daily performance with some randomness
-                const dailyChange = (Math.random() - 0.45) * 0.05; // -2.5% to +2.5%
-                cumulativeValue *= (1 + dailyChange);
-                performanceData.push(cumulativeValue);
-            }
-            
-            performanceChart = new Chart(performanceCtx, {
-                type: 'line',
-                data: {
-                    labels: dates,
-                    datasets: [{
-                        label: 'Portfolio Value',
-                        data: performanceData,
-                        borderColor: '#8b5cf6',
-                        backgroundColor: 'rgba(139, 92, 246, 0.1)',
-                        borderWidth: 2,
-                        fill: true,
-                        tension: 0.4,
-                        animation: {
-                            duration: 2000,
-                            easing: 'easeInOutQuart'
-                        }
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            labels: { color: '#9ca3af' }
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    return `${currencySymbol}${context.raw.toLocaleString()}`;
-                                }
-                            }
-                        }
-                    },
-                    scales: {
-                        x: {
-                            grid: { color: 'rgba(255, 255, 255, 0.1)' },
-                            ticks: { color: '#9ca3af' }
-                        },
-                        y: {
-                            grid: { color: 'rgba(255, 255, 255, 0.1)' },
-                            ticks: { 
-                                color: '#9ca3af',
-                                callback: function(value) {
-                                    return `${currencySymbol}${value.toLocaleString()}`;
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-            
-            // 2. Distribution Pie Chart
-            const distributionCtx = document.getElementById('distributionChart').getContext('2d');
-            
-            const typeLabels = ['Crypto', 'Stocks', 'ETFs', 'Metals'];
-            const typeColors = ['#f59e0b', '#3b82f6', '#10b981', '#fbbf24'];
-            
-            // Calculate distribution by type
-            const typeDistribution = [0, 0, 0, 0];
-            let totalValue = 0;
-            
-            for (const [planKey, stats] of Object.entries(investmentStats)) {
-                const plan = stats.planInfo;
-                const index = typeLabels.findIndex(t => t.toLowerCase() === plan.type);
-                if (index !== -1) {
-                    typeDistribution[index] += stats.totalInvestment;
-                    totalValue += stats.totalInvestment;
-                }
-            }
-            
-            distributionChart = new Chart(distributionCtx, {
-                type: 'doughnut',
-                data: {
-                    labels: typeLabels,
-                    datasets: [{
-                        data: typeDistribution,
-                        backgroundColor: typeColors,
-                        borderWidth: 0,
-                        hoverOffset: 15
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'right',
-                            labels: { color: '#9ca3af', padding: 20 }
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    const value = context.raw;
-                                    const percentage = totalValue > 0 ? Math.round((value / totalValue) * 100) : 0;
-                                    return `${context.label}: ${currencySymbol}${value.toLocaleString()} (${percentage}%)`;
-                                }
-                            }
-                        }
-                    },
-                    animation: {
-                        animateScale: true,
-                        animateRotate: true,
-                        duration: 1500
-                    }
-                }
-            });
-            
-            // 3. Candlestick Chart for Market Performance
-            const candlestickCtx = document.getElementById('candlestickChart').getContext('2d');
-            
-            // Generate candlestick data for last 7 days
-            const candlestickLabels = [];
-            const candlestickData = [];
-            
-            let currentPrice = 100; // Starting price
-            
-            for (let i = 6; i >= 0; i--) {
-                const date = new Date();
-                date.setDate(date.getDate() - i);
-                candlestickLabels.push(date.toLocaleDateString('en-US', { weekday: 'short' }));
-                
-                // Simulate OHLC data
-                const volatility = 0.04; // 4% daily volatility
-                const open = currentPrice;
-                const change = (Math.random() - 0.5) * 2 * volatility * open;
-                const close = open + change;
-                const high = Math.max(open, close) * (1 + Math.random() * volatility / 2);
-                const low = Math.min(open, close) * (1 - Math.random() * volatility / 2);
-                
-                candlestickData.push({
-                    x: i,
-                    o: open,
-                    h: high,
-                    l: low,
-                    c: close
-                });
-                
-                currentPrice = close;
-            }
-            
-            candlestickChart = new Chart(candlestickCtx, {
-                type: 'candlestick',
-                data: {
-                    labels: candlestickLabels,
-                    datasets: [{
-                        label: 'Market Index',
-                        data: candlestickData,
-                        color: {
-                            up: '#10b981',
-                            down: '#ef4444',
-                            unchanged: '#6b7280'
-                        }
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    animation: {
-                        duration: 2000,
-                        easing: 'easeInOutQuart'
-                    },
-                    scales: {
-                        x: {
-                            grid: { color: 'rgba(255, 255, 255, 0.1)' },
-                            ticks: { color: '#9ca3af' }
-                        },
-                        y: {
-                            grid: { color: 'rgba(255, 255, 255, 0.1)' },
-                            ticks: { 
-                                color: '#9ca3af',
-                                callback: function(value) {
-                                    return `${currencySymbol}${value.toFixed(0)}`;
-                                }
-                            }
-                        }
-                    },
-                    plugins: {
-                        legend: {
-                            labels: { color: '#9ca3af' }
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    const data = context.raw;
-                                    return [
-                                        `Open: ${currencySymbol}${data.o.toFixed(2)}`,
-                                        `High: ${currencySymbol}${data.h.toFixed(2)}`,
-                                        `Low: ${currencySymbol}${data.l.toFixed(2)}`,
-                                        `Close: ${currencySymbol}${data.c.toFixed(2)}`
-                                    ];
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-        }
-        
-        function displayNoInvestments() {
-            const container = document.getElementById('investmentContainer');
-            container.innerHTML = `
-                <div class="investment-card p-6 text-center">
-                    <div class="text-5xl mb-4">📈</div>
-                    <h3 class="text-xl font-semibold text-white mb-3">No Active Investments</h3>
-                    <p class="text-gray-400 mb-6">Start investing to track your portfolio performance here</p>
-                    <div class="flex gap-4 justify-center flex-wrap">
-                        <a href="cryptocurrencies.html" class="text-sm text-orange-400 hover:text-orange-300">Invest in Crypto</a>
-                        <a href="stocks.html" class="text-sm text-blue-400 hover:text-blue-300">Invest in Stocks</a>
-                        <a href="etfs.html" class="text-sm text-green-400 hover:text-green-300">Invest in ETFs</a>
-                        <a href="precious-metals.html" class="text-sm text-yellow-400 hover:text-yellow-300">Invest in Metals</a>
-                    </div>
-                </div>
-            `;
-            
-            const currencySymbol = getCurrentCurrencySymbol();
-            
-            // Reset stats
-            document.getElementById('totalInvestment').innerHTML = `<span class="currency-symbol">${currencySymbol}</span>0.00`;
-            document.getElementById('totalReturns').innerHTML = `<span class="currency-symbol">${currencySymbol}</span>0.00`;
-            document.getElementById('portfolioValue').innerHTML = `<span class="currency-symbol">${currencySymbol}</span>0.00`;
-            document.getElementById('growthPercentage').textContent = '0%';
-            document.getElementById('activePlansCount').textContent = '0';
-            document.getElementById('dailyAverage').innerHTML = `<span class="currency-symbol">${currencySymbol}</span>0.00`;
-            document.getElementById('bestPerformer').textContent = '-';
-            document.getElementById('bestPerformerReturns').innerHTML = `<span class="currency-symbol">${currencySymbol}</span>0.00`;
-            
-            // Clear transactions table
-            const containerTable = document.getElementById('investmentTransactionsList');
-            containerTable.innerHTML = `
-                <tr>
-                    <td colspan="8" class="text-center py-12">
-                        <p class="text-gray-500">No investment transactions found</p>
-                    </td>
-                </tr>
-            `;
-        }
-        
-        function refreshInvestments() {
-            const userEmail = localStorage.getItem("v0trade_user_email");
-            if (!userEmail) return;
-            
-            // Show loading state
-            const container = document.getElementById('investmentContainer');
-            container.innerHTML = `
-                <div class="investment-card p-6 text-center">
-                    <div class="flex flex-col items-center justify-center">
-                        <svg class="animate-spin h-12 w-12 text-purple-500 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        <p class="text-gray-400">Refreshing investment data...</p>
-                    </div>
-                </div>
-            `;
-            
-            // Reload data
-            setTimeout(() => {
-                loadInvestmentData(userEmail);
-                
-                // Show success indicator
-                const refreshBtn = document.querySelector('button[onclick="refreshInvestments()"]');
-                const originalText = refreshBtn.innerHTML;
-                refreshBtn.innerHTML = '✓ Refreshed';
-                refreshBtn.style.background = 'linear-gradient(135deg, #10b981, #059669)';
-                
-                setTimeout(() => {
-                    refreshBtn.innerHTML = originalText;
-                    refreshBtn.style.background = '';
-                }, 2000);
-            }, 1000);
-        }
-        
-        function filterInvestments(type) {
-            const cards = document.querySelectorAll('.investment-card');
-            const buttons = document.querySelectorAll('.filter-btn');
-            
-            buttons.forEach(btn => {
-                btn.classList.remove('bg-purple-500/20', 'text-purple-400', 'border-purple-500/30');
-                btn.classList.add('bg-slate-800', 'text-gray-400', 'border-slate-700');
-            });
-            
-            event.target.classList.remove('bg-slate-800', 'text-gray-400', 'border-slate-700');
-            event.target.classList.add('bg-purple-500/20', 'text-purple-400', 'border-purple-500/30');
-            
-            if (type === 'all') {
-                cards.forEach(card => card.style.display = 'block');
-            } else {
-                cards.forEach(card => {
-                    card.style.display = card.dataset.type === type ? 'block' : 'none';
-                });
-            }
-        }
-        
-        // Helper functions
-        function getIconForType(type) {
-            switch(type) {
-                case 'crypto': return '₿';
-                case 'stock': return '📊';
-                case 'etf': return '📈';
-                case 'metal': return '💎';
-                default: return '💰';
-            }
-        }
-        
-        function getPlanName(planKey) {
-            const parts = planKey.split(' ');
-            if (parts.length >= 3) {
-                return `${parts[0]} ${parts[1]} Plan`;
-            }
-            return planKey;
-        }
-        
-        // Listen for currency changes
-        document.addEventListener('currencyChanged', function(event) {
-            // Update all displayed amounts with new currency symbol
-            updateCurrencySymbols(event.detail.code);
-        });
-        
-        // Auto-refresh when returning to the page
-        window.addEventListener('focus', () => {
-            const userEmail = localStorage.getItem("v0trade_user_email");
-            if (userEmail) {
-                loadInvestmentData(userEmail);
-            }
-        });
-        
-        // Auto-update charts for real-time feel
-        setInterval(() => {
-            const userEmail = localStorage.getItem("v0trade_user_email");
-            if (userEmail && performanceChart) {
-                // Update performance chart with new data point
-                if (performanceChart) {
-                    const dataset = performanceChart.data.datasets[0];
-                    const lastValue = dataset.data[dataset.data.length - 1];
-                    const newValue = lastValue * (0.995 + Math.random() * 0.01); // -0.5% to +0.5% change
-                    dataset.data.push(newValue);
-                    dataset.data.shift();
-                    
-                    // Update labels
-                    const now = new Date();
-                    performanceChart.data.labels.push(now.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
-                    performanceChart.data.labels.shift();
-                    
-                    performanceChart.update('none');
-                }
-            }
-        }, 30000);
     </script>
-
 </body>
 </html>
