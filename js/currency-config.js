@@ -1,4 +1,4 @@
-// Currency Configuration File
+// Currency Configuration File - /js/currency-config.js
 const CurrencyConfig = {
     // Available currencies with their symbols
     currencies: {
