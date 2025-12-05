@@ -7,6 +7,8 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+    <!-- Add currency config script -->
+    <script src="/js/currency-config.js"></script>
     <style>
         .sidebar-link {
             display: flex;
@@ -165,6 +167,209 @@
         .badge-investment { background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: white; }
         .badge-referral { background: linear-gradient(135deg, #10b981, #047857); color: white; }
         .badge-withdrawal { background: linear-gradient(135deg, #ef4444, #dc2626); color: white; }
+        
+        /* Currency switcher styles */
+        .currency-switcher {
+            position: relative;
+            display: inline-block;
+        }
+        
+        .currency-selector {
+            padding: 8px 12px;
+            border: 1px solid rgba(168, 85, 247, 0.3);
+            border-radius: 6px;
+            background: rgba(30, 41, 59, 0.5);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: white;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        
+        .currency-selector:hover {
+            border-color: #a855f7;
+            background: rgba(168, 85, 247, 0.1);
+        }
+        
+        .currency-dropdown {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+            border: 1px solid rgba(168, 85, 247, 0.2);
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            min-width: 200px;
+            z-index: 1000;
+            display: none;
+            margin-top: 5px;
+            padding: 8px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .currency-dropdown.show {
+            display: block;
+            animation: fadeIn 0.2s ease;
+        }
+        
+        .currency-option-dropdown {
+            padding: 10px 12px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border-radius: 6px;
+            color: #e2e8f0;
+            font-size: 14px;
+        }
+        
+        .currency-option-dropdown:hover {
+            background: rgba(168, 85, 247, 0.1);
+        }
+        
+        .currency-option-dropdown.active {
+            background: rgba(168, 85, 247, 0.15);
+            color: white;
+            font-weight: 600;
+        }
+        
+        .currency-option-dropdown .symbol {
+            font-size: 18px;
+            width: 24px;
+            text-align: center;
+        }
+        
+        .currency-option-dropdown .code {
+            font-weight: 600;
+            min-width: 40px;
+        }
+        
+        .currency-option-dropdown .name {
+            color: #94a3b8;
+            font-size: 12px;
+            flex-grow: 1;
+            text-align: right;
+        }
+        
+        /* Mobile currency selector - always visible */
+        .mobile-currency-toggle {
+            padding: 8px 12px;
+            border: 1px solid rgba(168, 85, 247, 0.3);
+            border-radius: 6px;
+            background: rgba(30, 41, 59, 0.5);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: white;
+            font-size: 14px;
+            transition: all 0.3s;
+            margin-left: auto;
+            margin-right: 12px;
+        }
+        
+        .mobile-currency-dropdown {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+            border: 1px solid rgba(168, 85, 247, 0.2);
+            border-radius: 12px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+            width: 90%;
+            max-width: 320px;
+            z-index: 1100;
+            display: none;
+            padding: 16px;
+            backdrop-filter: blur(20px);
+        }
+        
+        .mobile-currency-dropdown.show {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        .mobile-currency-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(5px);
+            z-index: 1099;
+            display: none;
+        }
+        
+        .mobile-currency-overlay.show {
+            display: block;
+        }
+        
+        .mobile-currency-option {
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border-radius: 8px;
+            color: #e2e8f0;
+            font-size: 16px;
+            margin-bottom: 8px;
+        }
+        
+        .mobile-currency-option:hover {
+            background: rgba(168, 85, 247, 0.1);
+        }
+        
+        .mobile-currency-option.active {
+            background: rgba(168, 85, 247, 0.2);
+            color: white;
+            font-weight: 600;
+        }
+        
+        .mobile-currency-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid rgba(168, 85, 247, 0.2);
+        }
+        
+        .mobile-currency-header h3 {
+            color: white;
+            font-size: 18px;
+            font-weight: 600;
+        }
+        
+        .close-currency-menu {
+            background: none;
+            border: none;
+            color: #94a3b8;
+            font-size: 24px;
+            cursor: pointer;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+        }
+        
+        .close-currency-menu:hover {
+            background: rgba(168, 85, 247, 0.1);
+            color: white;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translate(-50%, -48%); }
+            to { opacity: 1; transform: translate(-50%, -50%); }
+        }
     </style>
 </head>
 <body class="bg-slate-950">
@@ -179,6 +384,7 @@
     <!-- Overlay for mobile sidebar -->
     <div id="sidebarOverlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
     
+    <!-- Updated header with mobile currency toggle -->
     <header class="sticky top-0 z-50 border-b border-purple-500/20 bg-slate-950/80 backdrop-blur-md">
         <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div class="flex items-center justify-between py-4">
@@ -201,6 +407,7 @@
                     <span class="text-xl font-bold bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent">V0 Trade</span>
                 </a>
 
+                <!-- Desktop Navigation -->
                 <nav class="hidden items-center gap-8 md:flex">
                     <a href="index.html" class="text-sm text-gray-300 hover:text-white transition">Home</a>
                     <div class="dropdown">
@@ -224,19 +431,42 @@
                     </div>
                 </nav>
 
+                <!-- Right Side - Auth with Currency Switcher -->
                 <div class="hidden items-center gap-4 md:flex">
+                    <!-- Desktop Currency Switcher -->
+                    <div class="currency-switcher">
+                        <div class="currency-selector" onclick="toggleCurrencyDropdown()">
+                            <span class="current-symbol">$</span>
+                            <span class="current-code">USD</span>
+                            <span>▼</span>
+                        </div>
+                        <div class="currency-dropdown"></div>
+                    </div>
+                    
                     <a href="dashboard.html" class="text-sm text-purple-400 hover:text-purple-300 transition">Dashboard</a>
-                    <span class="text-sm text-gray-400" id="userEmailDisplay">user@email.com</span>
-                    <a href="index.html" class="text-sm text-gray-300 hover:text-white transition">Logout</a>
+                    <span id="userEmailDisplay" class="text-sm text-gray-400">user@email.com</span>
+                    <a href="javascript:void(0)" onclick="logout()" class="text-sm text-gray-300 hover:text-white transition">Logout</a>
                 </div>
 
-                <button class="md:hidden" onclick="toggleMobileMenu()">
-                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
-                    </svg>
-                </button>
+                <!-- Mobile header section with currency toggle and menu button -->
+                <div class="flex items-center gap-2 md:hidden">
+                    <!-- Mobile Currency Toggle (always visible) -->
+                    <button class="mobile-currency-toggle" onclick="toggleMobileCurrencyMenu()">
+                        <span class="mobile-currency-symbol">$</span>
+                        <span class="mobile-currency-code">USD</span>
+                        <span>▼</span>
+                    </button>
+
+                    <!-- Mobile Menu Button -->
+                    <button class="md:hidden" onclick="toggleMobileMenu()">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                        </svg>
+                    </button>
+                </div>
             </div>
 
+            <!-- Mobile Menu (without currency selector) -->
             <div id="mobileMenu" class="mobile-menu border-t border-purple-500/20 py-4 md:hidden">
                 <nav class="flex flex-col gap-3">
                     <a href="index.html" class="text-sm text-gray-300 hover:text-white">Home</a>
@@ -250,11 +480,25 @@
                     <a href="contact.html" class="text-sm text-gray-300 hover:text-white">Contact</a>
                     <a href="faq.html" class="text-sm text-gray-300 hover:text-white">FAQ</a>
                     <a href="dashboard.html" class="text-sm text-purple-400 hover:text-purple-300">Dashboard</a>
-                    <a href="index.html" class="text-sm text-gray-300 hover:text-white">Logout</a>
+                    <a href="javascript:void(0)" onclick="logout()" class="text-sm text-gray-300 hover:text-white">Logout</a>
                 </nav>
             </div>
         </div>
     </header>
+
+    <!-- Mobile Currency Menu Overlay -->
+    <div class="mobile-currency-overlay" id="mobileCurrencyOverlay" onclick="closeMobileCurrencyMenu()"></div>
+    
+    <!-- Mobile Currency Menu -->
+    <div class="mobile-currency-dropdown" id="mobileCurrencyMenu">
+        <div class="mobile-currency-header">
+            <h3>Select Currency</h3>
+            <button class="close-currency-menu" onclick="closeMobileCurrencyMenu()">×</button>
+        </div>
+        <div class="mobile-currency-options">
+            <!-- Options will be populated by JavaScript -->
+        </div>
+    </div>
 
     <div class="flex min-h-screen">
         <aside id="sidebar" class="sidebar w-64 bg-slate-900/50 border-r border-purple-500/20 p-4 backdrop-blur-sm">
@@ -351,7 +595,7 @@
                         <div class="flex items-center justify-between">
                             <div>
                                 <p class="text-sm text-gray-400 mb-1">Total Earning Balance</p>
-                                <p id="totalEarningBalance" class="text-2xl font-bold text-white">$0.00</p>
+                                <p id="totalEarningBalance" class="text-2xl font-bold text-white" data-amount="0" data-currency-symbol="$">$0.00</p>
                             </div>
                             <div class="text-3xl money-animation">💰</div>
                         </div>
@@ -370,7 +614,7 @@
                         <div class="flex items-center justify-between">
                             <div>
                                 <p class="text-sm text-gray-400 mb-1">Mining Earnings</p>
-                                <p id="miningEarnings" class="text-2xl font-bold text-white">$0.00</p>
+                                <p id="miningEarnings" class="text-2xl font-bold text-white" data-amount="0" data-currency-symbol="$">$0.00</p>
                             </div>
                             <div class="text-3xl pulse">⛏️</div>
                         </div>
@@ -386,7 +630,7 @@
                         <div class="flex items-center justify-between">
                             <div>
                                 <p class="text-sm text-gray-400 mb-1">Investment Earnings</p>
-                                <p id="investmentEarnings" class="text-2xl font-bold text-white">$0.00</p>
+                                <p id="investmentEarnings" class="text-2xl font-bold text-white" data-amount="0" data-currency-symbol="$">$0.00</p>
                             </div>
                             <div class="text-3xl">📈</div>
                         </div>
@@ -402,7 +646,7 @@
                         <div class="flex items-center justify-between">
                             <div>
                                 <p class="text-sm text-gray-400 mb-1">Referral Commissions</p>
-                                <p id="referralEarnings" class="text-2xl font-bold text-white">$0.00</p>
+                                <p id="referralEarnings" class="text-2xl font-bold text-white" data-amount="0" data-currency-symbol="$">$0.00</p>
                             </div>
                             <div class="text-3xl">🎁</div>
                         </div>
@@ -448,7 +692,7 @@
                         <div class="flex items-center justify-between mb-4">
                             <div>
                                 <p class="text-sm text-gray-400 mb-1">Daily Average</p>
-                                <p id="dailyAverage" class="text-2xl font-bold text-white">$0.00</p>
+                                <p id="dailyAverage" class="text-2xl font-bold text-white" data-amount="0" data-currency-symbol="$">$0.00</p>
                             </div>
                             <div class="text-3xl text-green-400">📅</div>
                         </div>
@@ -474,7 +718,7 @@
                         <div class="flex items-center justify-between mb-4">
                             <div>
                                 <p class="text-sm text-gray-400 mb-1">Monthly Projection</p>
-                                <p id="monthlyProjection" class="text-2xl font-bold text-white">$0.00</p>
+                                <p id="monthlyProjection" class="text-2xl font-bold text-white" data-amount="0" data-currency-symbol="$">$0.00</p>
                             </div>
                             <div class="text-3xl text-yellow-400">🎯</div>
                         </div>
@@ -517,6 +761,18 @@
     </div>
 
     <script>
+        // Currency data
+        const CURRENCIES = [
+            { code: 'USD', symbol: '$', name: 'US Dollar' },
+            { code: 'EUR', symbol: '€', name: 'Euro' },
+            { code: 'GBP', symbol: '£', name: 'British Pound' },
+            { code: 'ZAR', symbol: 'R', name: 'South African Rand' },
+            { code: 'INR', symbol: '₹', name: 'Indian Rupee' },
+            { code: 'JPY', symbol: '¥', name: 'Japanese Yen' },
+            { code: 'AUD', symbol: 'A$', name: 'Australian Dollar' },
+            { code: 'CAD', symbol: 'C$', name: 'Canadian Dollar' }
+        ];
+        
         // Constants
         const API_TOKEN = "LG6hnTBxgBG78FueElsSwpHRd4Wep1oL";
         const WALLET_TABLE = 756077;
@@ -543,6 +799,271 @@
         // Chart initialization flag
         let chartsInitialized = false;
         
+        // Currency functions
+        function getCurrentCurrency() {
+            return localStorage.getItem('v0trade_currency') || 'USD';
+        }
+        
+        function updateCurrencySymbols(currencyCode) {
+            const currency = CURRENCIES.find(c => c.code === currencyCode);
+            if (!currency) return;
+            
+            // Update all elements with data-currency-symbol attribute
+            document.querySelectorAll('[data-currency-symbol]').forEach(el => {
+                el.textContent = currency.symbol;
+            });
+            
+            // Update currency display for wallet data
+            updateCurrencyDisplay();
+        }
+        
+        function convertAmount(amount, fromCurrency, toCurrency) {
+            // Simple conversion rates (in a real app, you would fetch live rates)
+            const rates = {
+                'USD': 1,
+                'EUR': 0.92,
+                'GBP': 0.79,
+                'ZAR': 18.75,
+                'INR': 83.5,
+                'JPY': 150,
+                'AUD': 1.52,
+                'CAD': 1.36
+            };
+            
+            if (!rates[fromCurrency] || !rates[toCurrency]) return amount;
+            
+            const amountInUSD = amount / rates[fromCurrency];
+            return amountInUSD * rates[toCurrency];
+        }
+        
+        function updateCurrencyDisplay() {
+            const currentCurrency = getCurrentCurrency();
+            const currency = CURRENCIES.find(c => c.code === currentCurrency);
+            if (!currency) return;
+            
+            // Format money with currency symbol
+            const formatMoney = (amount) => {
+                if (isNaN(amount)) return `${currency.symbol}0.00`;
+                const convertedAmount = convertAmount(amount, 'USD', currentCurrency);
+                return `${currency.symbol}${convertedAmount.toFixed(2)}`;
+            };
+            
+            // Update all amount displays
+            const totalEarningBalanceEl = document.getElementById('totalEarningBalance');
+            if (totalEarningBalanceEl) {
+                const amount = parseFloat(totalEarningBalanceEl.getAttribute('data-amount') || '0');
+                totalEarningBalanceEl.textContent = formatMoney(amount);
+            }
+            
+            const miningEarningsEl = document.getElementById('miningEarnings');
+            if (miningEarningsEl) {
+                const amount = parseFloat(miningEarningsEl.getAttribute('data-amount') || '0');
+                miningEarningsEl.textContent = formatMoney(amount);
+            }
+            
+            const investmentEarningsEl = document.getElementById('investmentEarnings');
+            if (investmentEarningsEl) {
+                const amount = parseFloat(investmentEarningsEl.getAttribute('data-amount') || '0');
+                investmentEarningsEl.textContent = formatMoney(amount);
+            }
+            
+            const referralEarningsEl = document.getElementById('referralEarnings');
+            if (referralEarningsEl) {
+                const amount = parseFloat(referralEarningsEl.getAttribute('data-amount') || '0');
+                referralEarningsEl.textContent = formatMoney(amount);
+            }
+            
+            const dailyAverageEl = document.getElementById('dailyAverage');
+            if (dailyAverageEl) {
+                const amount = parseFloat(dailyAverageEl.getAttribute('data-amount') || '0');
+                dailyAverageEl.textContent = formatMoney(amount);
+            }
+            
+            const monthlyProjectionEl = document.getElementById('monthlyProjection');
+            if (monthlyProjectionEl) {
+                const amount = parseFloat(monthlyProjectionEl.getAttribute('data-amount') || '0');
+                monthlyProjectionEl.textContent = formatMoney(amount);
+            }
+            
+            // Update charts with new currency
+            if (chartsInitialized) {
+                updateChartsCurrency();
+            }
+        }
+        
+        function updateChartsCurrency() {
+            if (earningsChart) {
+                // Update earnings chart Y-axis format
+                const currentCurrency = getCurrentCurrency();
+                const currencySymbol = CURRENCIES.find(c => c.code === currentCurrency)?.symbol || '$';
+                
+                earningsChart.options.scales.y.ticks.callback = function(value) {
+                    return currencySymbol + value.toLocaleString();
+                };
+                earningsChart.update();
+            }
+            
+            if (candlestickChart) {
+                // Update candlestick chart Y-axis format
+                const currentCurrency = getCurrentCurrency();
+                const currencySymbol = CURRENCIES.find(c => c.code === currentCurrency)?.symbol || '$';
+                
+                if (candlestickChart.options && candlestickChart.options.scales && candlestickChart.options.scales.y) {
+                    candlestickChart.options.scales.y.ticks.callback = function(value) {
+                        return currencySymbol + value.toFixed(0);
+                    };
+                    candlestickChart.update();
+                }
+            }
+            
+            if (distributionChart) {
+                // Update distribution chart tooltip format
+                const currentCurrency = getCurrentCurrency();
+                const currencySymbol = CURRENCIES.find(c => c.code === currentCurrency)?.symbol || '$';
+                
+                distributionChart.options.plugins.tooltip.callbacks.label = function(context) {
+                    const value = context.raw;
+                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                    const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
+                    const convertedValue = convertAmount(value, 'USD', currentCurrency);
+                    return `${context.label}: ${currencySymbol}${convertedValue.toFixed(2)} (${percentage}%)`;
+                };
+                distributionChart.update();
+            }
+        }
+        
+        // Mobile currency menu functions
+        function toggleMobileCurrencyMenu() {
+            const overlay = document.getElementById('mobileCurrencyOverlay');
+            const menu = document.getElementById('mobileCurrencyMenu');
+            
+            overlay.classList.toggle('show');
+            menu.classList.toggle('show');
+            
+            // Populate currency options if not already done
+            if (menu.querySelector('.mobile-currency-options').children.length === 0) {
+                populateMobileCurrencyOptions();
+            }
+        }
+        
+        function closeMobileCurrencyMenu() {
+            document.getElementById('mobileCurrencyOverlay').classList.remove('show');
+            document.getElementById('mobileCurrencyMenu').classList.remove('show');
+        }
+        
+        function populateMobileCurrencyOptions() {
+            const container = document.querySelector('.mobile-currency-options');
+            const currentCurrency = getCurrentCurrency();
+            
+            container.innerHTML = '';
+            
+            CURRENCIES.forEach(currency => {
+                const option = document.createElement('div');
+                option.className = `mobile-currency-option ${currency.code === currentCurrency ? 'active' : ''}`;
+                option.innerHTML = `
+                    <span class="symbol" style="font-size: 20px; width: 30px;">${currency.symbol}</span>
+                    <span class="code" style="font-weight: 600; min-width: 50px;">${currency.code}</span>
+                    <span class="name" style="color: #94a3b8; font-size: 14px; flex-grow: 1; text-align: right;">${currency.name}</span>
+                `;
+                option.onclick = () => selectMobileCurrency(currency.code);
+                container.appendChild(option);
+            });
+        }
+        
+        function selectMobileCurrency(currencyCode) {
+            // Update mobile toggle display
+            const currency = CURRENCIES.find(c => c.code === currencyCode);
+            if (currency) {
+                document.querySelector('.mobile-currency-symbol').textContent = currency.symbol;
+                document.querySelector('.mobile-currency-code').textContent = currency.code;
+            }
+            
+            // Update desktop switcher if visible
+            const desktopSelector = document.querySelector('.currency-selector');
+            if (desktopSelector) {
+                desktopSelector.querySelector('.current-symbol').textContent = currency.symbol;
+                desktopSelector.querySelector('.current-code').textContent = currency.code;
+            }
+            
+            // Update all currency symbols on page
+            updateCurrencySymbols(currencyCode);
+            
+            // Save to localStorage
+            localStorage.setItem('v0trade_currency', currencyCode);
+            
+            // Close mobile menu
+            closeMobileCurrencyMenu();
+            
+            // Update currency display for wallet data
+            updateCurrencyDisplay();
+            
+            // Dispatch currency change event
+            document.dispatchEvent(new CustomEvent('currencyChanged', { detail: { code: currencyCode, symbol: currency.symbol } }));
+        }
+        
+        function toggleCurrencyDropdown() {
+            const dropdown = document.querySelector('.currency-dropdown');
+            dropdown.classList.toggle('show');
+            
+            // Populate dropdown if empty
+            if (dropdown.children.length === 0) {
+                const currentCurrency = getCurrentCurrency();
+                
+                CURRENCIES.forEach(currency => {
+                    const option = document.createElement('div');
+                    option.className = `currency-option-dropdown ${currency.code === currentCurrency ? 'active' : ''}`;
+                    option.innerHTML = `
+                        <span class="symbol">${currency.symbol}</span>
+                        <span class="code">${currency.code}</span>
+                        <span class="name">${currency.name}</span>
+                    `;
+                    option.onclick = () => {
+                        selectCurrency(currency.code);
+                        dropdown.classList.remove('show');
+                    };
+                    dropdown.appendChild(option);
+                });
+            }
+        }
+        
+        function selectCurrency(currencyCode) {
+            const currency = CURRENCIES.find(c => c.code === currencyCode);
+            if (!currency) return;
+            
+            // Update desktop selector
+            const selector = document.querySelector('.currency-selector');
+            if (selector) {
+                selector.querySelector('.current-symbol').textContent = currency.symbol;
+                selector.querySelector('.current-code').textContent = currency.code;
+            }
+            
+            // Update mobile toggle
+            document.querySelector('.mobile-currency-symbol').textContent = currency.symbol;
+            document.querySelector('.mobile-currency-code').textContent = currency.code;
+            
+            // Save to localStorage
+            localStorage.setItem('v0trade_currency', currencyCode);
+            
+            // Update currency symbols
+            updateCurrencySymbols(currencyCode);
+            
+            // Update currency display for wallet data
+            updateCurrencyDisplay();
+            
+            // Dispatch currency change event
+            document.dispatchEvent(new CustomEvent('currencyChanged', { detail: { code: currencyCode, symbol: currency.symbol } }));
+        }
+        
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(event) {
+            const dropdown = document.querySelector('.currency-dropdown');
+            const selector = document.querySelector('.currency-selector');
+            
+            if (dropdown && selector && !dropdown.contains(event.target) && !selector.contains(event.target)) {
+                dropdown.classList.remove('show');
+            }
+        });
+
         window.addEventListener('DOMContentLoaded', function() {
             const userEmail = localStorage.getItem("v0trade_user_email");
             
@@ -558,11 +1079,38 @@
                 emailDisplay.textContent = userEmail;
             }
             
+            // Initialize currency system
+            const currentCurrency = getCurrentCurrency();
+            updateCurrencySymbols(currentCurrency);
+            
+            // Update mobile toggle display
+            const currency = CURRENCIES.find(c => c.code === currentCurrency);
+            if (currency) {
+                document.querySelector('.mobile-currency-symbol').textContent = currency.symbol;
+                document.querySelector('.mobile-currency-code').textContent = currency.code;
+                
+                // Update desktop switcher if exists
+                const desktopSelector = document.querySelector('.currency-selector');
+                if (desktopSelector) {
+                    desktopSelector.querySelector('.current-symbol').textContent = currency.symbol;
+                    desktopSelector.querySelector('.current-code').textContent = currency.code;
+                }
+            }
+            
             // Load wallet data from Baserow
             loadWalletData(userEmail);
             
             // Setup auto-refresh countdown
             setupAutoRefreshCountdown();
+            
+            // Close currency dropdowns with Escape key
+            document.addEventListener('keydown', function(event) {
+                if (event.key === 'Escape') {
+                    closeMobileCurrencyMenu();
+                    const dropdown = document.querySelector('.currency-dropdown');
+                    if (dropdown) dropdown.classList.remove('show');
+                }
+            });
         });
 
         async function loadWalletData(email) {
@@ -646,17 +1194,20 @@
         
         function updateWalletUI() {
             try {
-                // Format money
-                const formatMoney = (amount) => {
-                    if (isNaN(amount)) return '$0.00';
-                    return `$${amount.toFixed(2)}`;
-                };
+                // Update data attributes for currency conversion
+                document.getElementById('totalEarningBalance').setAttribute('data-amount', walletData.totalEarningBalance);
+                document.getElementById('miningEarnings').setAttribute('data-amount', walletData.miningEarnings);
+                document.getElementById('investmentEarnings').setAttribute('data-amount', walletData.investmentEarnings);
+                document.getElementById('referralEarnings').setAttribute('data-amount', walletData.referralEarnings);
                 
-                // Update balance displays
-                document.getElementById('totalEarningBalance').textContent = formatMoney(walletData.totalEarningBalance);
-                document.getElementById('miningEarnings').textContent = formatMoney(walletData.miningEarnings);
-                document.getElementById('investmentEarnings').textContent = formatMoney(walletData.investmentEarnings);
-                document.getElementById('referralEarnings').textContent = formatMoney(walletData.referralEarnings);
+                // Calculate statistics
+                const dailyAverage = walletData.totalEarningBalance / 30; // Assuming 30 days
+                const weeklyGrowth = calculateWeeklyGrowth();
+                const monthlyProjection = dailyAverage * 30;
+                
+                document.getElementById('dailyAverage').setAttribute('data-amount', dailyAverage);
+                document.getElementById('monthlyProjection').setAttribute('data-amount', monthlyProjection);
+                document.getElementById('weeklyGrowth').textContent = `${weeklyGrowth}%`;
                 
                 // Calculate percentages
                 const total = walletData.totalEarningBalance;
@@ -674,17 +1225,11 @@
                     document.getElementById('referralPercentage').textContent = '0%';
                 }
                 
-                // Calculate statistics
-                const dailyAverage = total / 30; // Assuming 30 days
-                const weeklyGrowth = calculateWeeklyGrowth();
-                const monthlyProjection = dailyAverage * 30;
-                
-                document.getElementById('dailyAverage').textContent = formatMoney(dailyAverage);
-                document.getElementById('weeklyGrowth').textContent = `${weeklyGrowth}%`;
-                document.getElementById('monthlyProjection').textContent = formatMoney(monthlyProjection);
-                
                 // Update trend indicators
                 updateTrendIndicators(weeklyGrowth);
+                
+                // Update currency display
+                updateCurrencyDisplay();
                 
             } catch (err) {
                 console.error("Error updating wallet UI:", err);
@@ -732,17 +1277,27 @@
         
         function updateUIWithEmptyData() {
             document.getElementById('totalEarningBalance').textContent = '$0.00';
+            document.getElementById('totalEarningBalance').setAttribute('data-amount', '0');
+            
             document.getElementById('miningEarnings').textContent = '$0.00';
+            document.getElementById('miningEarnings').setAttribute('data-amount', '0');
+            
             document.getElementById('investmentEarnings').textContent = '$0.00';
+            document.getElementById('investmentEarnings').setAttribute('data-amount', '0');
+            
             document.getElementById('referralEarnings').textContent = '$0.00';
+            document.getElementById('referralEarnings').setAttribute('data-amount', '0');
             
             document.getElementById('miningPercentage').textContent = '0%';
             document.getElementById('investmentPercentage').textContent = '0%';
             document.getElementById('referralPercentage').textContent = '0%';
             
             document.getElementById('dailyAverage').textContent = '$0.00';
+            document.getElementById('dailyAverage').setAttribute('data-amount', '0');
+            
             document.getElementById('weeklyGrowth').textContent = '0%';
             document.getElementById('monthlyProjection').textContent = '$0.00';
+            document.getElementById('monthlyProjection').setAttribute('data-amount', '0');
             
             document.getElementById('dailyChange').textContent = '+0%';
             document.getElementById('weeklyStatus').textContent = 'No data';
@@ -755,6 +1310,9 @@
             }
             
             try {
+                const currentCurrency = getCurrentCurrency();
+                const currencySymbol = CURRENCIES.find(c => c.code === currentCurrency)?.symbol || '$';
+                
                 // 1. Earnings Growth Line Chart
                 const earningsCanvas = document.getElementById('earningsChart');
                 if (earningsCanvas) {
@@ -771,7 +1329,7 @@
                         // Simulate daily growth
                         const dailyGrowth = cumulativeEarnings * 0.03 * (0.8 + Math.random() * 0.4);
                         cumulativeEarnings += dailyGrowth;
-                        earningsData.push(cumulativeEarnings);
+                        earningsData.push(convertAmount(cumulativeEarnings, 'USD', currentCurrency));
                     }
                     
                     earningsChart = new Chart(earningsCanvas, {
@@ -810,7 +1368,7 @@
                                     ticks: { 
                                         color: '#9ca3af',
                                         callback: function(value) {
-                                            return '$' + value.toLocaleString();
+                                            return currencySymbol + value.toLocaleString();
                                         }
                                     }
                                 }
@@ -824,9 +1382,9 @@
                 if (distributionCanvas) {
                     const distributionLabels = ['Mining', 'Investments', 'Referrals'];
                     const distributionData = [
-                        walletData.miningEarnings,
-                        walletData.investmentEarnings,
-                        walletData.referralEarnings
+                        convertAmount(walletData.miningEarnings, 'USD', currentCurrency),
+                        convertAmount(walletData.investmentEarnings, 'USD', currentCurrency),
+                        convertAmount(walletData.referralEarnings, 'USD', currentCurrency)
                     ];
                     const distributionColors = ['#f59e0b', '#3b82f6', '#10b981'];
                     
@@ -855,7 +1413,7 @@
                                             const value = context.raw;
                                             const total = distributionData.reduce((a, b) => a + b, 0);
                                             const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
-                                            return `${context.label}: $${value.toFixed(2)} (${percentage}%)`;
+                                            return `${context.label}: ${currencySymbol}${value.toFixed(2)} (${percentage}%)`;
                                         }
                                     }
                                 }
@@ -877,6 +1435,7 @@
                     const candlestickData = [];
                     
                     let baseValue = walletData.totalEarningBalance > 0 ? walletData.totalEarningBalance / 100 : 100; // Scale down for chart
+                    baseValue = convertAmount(baseValue, 'USD', currentCurrency);
                     
                     for (let i = 6; i >= 0; i--) {
                         const date = new Date();
@@ -937,7 +1496,7 @@
                                         ticks: { 
                                             color: '#9ca3af',
                                             callback: function(value) {
-                                                return '$' + value.toFixed(0);
+                                                return currencySymbol + value.toFixed(0);
                                             }
                                         }
                                     }
@@ -976,7 +1535,7 @@
                                         ticks: { 
                                             color: '#9ca3af',
                                             callback: function(value) {
-                                                return '$' + value.toFixed(0);
+                                                return currencySymbol + value.toFixed(0);
                                             }
                                         }
                                     }
@@ -1122,6 +1681,13 @@
             overlay.classList.toggle('active');
         }
         
+        function logout() {
+            if (confirm("Are you sure you want to log out?")) {
+                localStorage.removeItem("v0trade_user_email");
+                window.location.href = "login.html";
+            }
+        }
+        
         // Auto-refresh when returning to the page
         window.addEventListener('focus', () => {
             const userEmail = localStorage.getItem("v0trade_user_email");
@@ -1135,6 +1701,13 @@
         window.addEventListener('beforeunload', () => {
             destroyCharts();
         });
+        
+        // Global refresh currency function
+        window.refreshCurrency = function() {
+            const currentCurrency = getCurrentCurrency();
+            updateCurrencySymbols(currentCurrency);
+            updateCurrencyDisplay();
+        };
     </script>
 
 </body>
