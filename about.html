@@ -1,11 +1,67 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <script src="/path/to/currency-config.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>About Us - V0 Trade</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
+        /* currency-switcher.css */
+.currency-switcher {
+    position: relative;
+    display: inline-block;
+}
+
+.currency-selector {
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.currency-selector:hover {
+    border-color: #007bff;
+}
+
+.currency-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    min-width: 150px;
+    z-index: 1000;
+    display: none;
+}
+
+.currency-dropdown.show {
+    display: block;
+}
+
+.currency-option-dropdown {
+    padding: 10px 15px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.currency-option-dropdown:hover {
+    background: #f5f5f5;
+}
+
+.currency-option-dropdown.active {
+    background: #e7f3ff;
+    font-weight: bold;
+}
         .mobile-menu { display: none; }
         .mobile-menu.active { display: block; }
         .dropdown { position: relative; display: inline-block; }
@@ -196,7 +252,61 @@
             </div>
         </div>
     </section>
+<!-- Add this anywhere you want a currency switcher -->
+<div class="currency-switcher" id="currencySwitcher">
+    <div class="currency-selector" onclick="toggleCurrencyDropdown()">
+        <span id="currentCurrencySymbol">$</span>
+        <span id="currentCurrencyCode">USD</span>
+        <span>▼</span>
+    </div>
+    <div class="currency-dropdown" id="currencyDropdown">
+        <!-- Options will be populated by JavaScript -->
+    </div>
+</div>
 
+<script>
+function toggleCurrencyDropdown() {
+    const dropdown = document.getElementById('currencyDropdown');
+    dropdown.classList.toggle('show');
+}
+
+function initCurrencySwitcher() {
+    const dropdown = document.getElementById('currencyDropdown');
+    const currentCode = CurrencyConfig.getUserCurrency();
+    const currentCurrency = CurrencyConfig.currencies[currentCode];
+    
+    // Update current display
+    document.getElementById('currentCurrencySymbol').textContent = currentCurrency.symbol;
+    document.getElementById('currentCurrencyCode').textContent = currentCode;
+    
+    // Populate dropdown
+    dropdown.innerHTML = Object.entries(CurrencyConfig.currencies)
+        .map(([code, data]) => `
+            <div class="currency-option-dropdown ${code === currentCode ? 'active' : ''}" 
+                 onclick="changeCurrency('${code}')">
+                <span>${data.symbol}</span>
+                <span>${data.name} (${code})</span>
+            </div>
+        `).join('');
+}
+
+function changeCurrency(currencyCode) {
+    CurrencyConfig.setUserCurrency(currencyCode);
+    initCurrencySwitcher();
+    
+    // Close dropdown
+    document.getElementById('currencyDropdown').classList.remove('show');
+    
+    // Optional: Update page without reload
+    CurrencyConfig.processPageElements();
+}
+
+// Initialize when DOM is loaded
+document.addEventListener('DOMContentLoaded', initCurrencySwitcher);
+
+// Listen for currency changes from other parts of the app
+window.addEventListener('currencyChanged', initCurrencySwitcher);
+</script>
     <!-- Footer (same as index.html) -->
     <footer class="border-t border-purple-500/20 bg-slate-950 py-16 px-4 sm:px-6 lg:px-8">
         <div class="mx-auto max-w-7xl">
