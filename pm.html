@@ -100,25 +100,276 @@
             text-align: right;
         }
         
-        .mobile-currency-selector {
-            width: 100%;
-            padding: 10px;
-            background: rgba(30, 41, 59, 0.5);
+        /* Mobile currency selector - always visible */
+        .mobile-currency-toggle {
+            padding: 8px 12px;
             border: 1px solid rgba(168, 85, 247, 0.3);
             border-radius: 6px;
+            background: rgba(30, 41, 59, 0.5);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
             color: white;
             font-size: 14px;
-            margin-top: 8px;
+            transition: all 0.3s;
+            margin-left: auto;
+            margin-right: 12px;
         }
         
-        .mobile-currency-selector option {
-            background: #0f172a;
+        .mobile-currency-dropdown {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+            border: 1px solid rgba(168, 85, 247, 0.2);
+            border-radius: 12px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+            width: 90%;
+            max-width: 320px;
+            z-index: 1100;
+            display: none;
+            padding: 16px;
+            backdrop-filter: blur(20px);
+        }
+        
+        .mobile-currency-dropdown.show {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        .mobile-currency-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(5px);
+            z-index: 1099;
+            display: none;
+        }
+        
+        .mobile-currency-overlay.show {
+            display: block;
+        }
+        
+        .mobile-currency-option {
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border-radius: 8px;
+            color: #e2e8f0;
+            font-size: 16px;
+            margin-bottom: 8px;
+        }
+        
+        .mobile-currency-option:hover {
+            background: rgba(168, 85, 247, 0.1);
+        }
+        
+        .mobile-currency-option.active {
+            background: rgba(168, 85, 247, 0.2);
+            color: white;
+            font-weight: 600;
+        }
+        
+        .mobile-currency-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid rgba(168, 85, 247, 0.2);
+        }
+        
+        .mobile-currency-header h3 {
+            color: white;
+            font-size: 18px;
+            font-weight: 600;
+        }
+        
+        .close-currency-menu {
+            background: none;
+            border: none;
+            color: #94a3b8;
+            font-size: 24px;
+            cursor: pointer;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+        }
+        
+        .close-currency-menu:hover {
+            background: rgba(168, 85, 247, 0.1);
             color: white;
         }
         
         @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
+            from { opacity: 0; transform: translate(-50%, -48%); }
+            to { opacity: 1; transform: translate(-50%, -50%); }
+        }
+        
+        /* Investment modal styles */
+        .investment-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.9);
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        .investment-modal.show {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .modal-content {
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+            border: 1px solid rgba(168, 85, 247, 0.3);
+            border-radius: 16px;
+            padding: 24px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+            transform: translateY(20px);
+            transition: transform 0.3s ease;
+            box-shadow: 0 20px 50px rgba(168, 85, 247, 0.2);
+        }
+        
+        .investment-modal.show .modal-content {
+            transform: translateY(0);
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid rgba(168, 85, 247, 0.2);
+        }
+        
+        .modal-title {
+            color: white;
+            font-size: 24px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .close-modal {
+            background: rgba(168, 85, 247, 0.1);
+            border: 1px solid rgba(168, 85, 247, 0.3);
+            color: white;
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 20px;
+            transition: all 0.3s;
+        }
+        
+        .close-modal:hover {
+            background: rgba(168, 85, 247, 0.2);
+            transform: rotate(90deg);
+        }
+        
+        .modal-body {
+            color: #e2e8f0;
+        }
+        
+        .modal-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(168, 85, 247, 0.1);
+        }
+        
+        .modal-row:last-child {
+            border-bottom: none;
+        }
+        
+        .modal-label {
+            color: #94a3b8;
+        }
+        
+        .modal-value {
+            color: white;
+            font-weight: 600;
+        }
+        
+        .modal-value.highlight {
+            color: #10b981;
+            font-size: 20px;
+            font-weight: 700;
+        }
+        
+        .modal-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 24px;
+        }
+        
+        .modal-btn {
+            flex: 1;
+            padding: 14px;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+        }
+        
+        .modal-btn.cancel {
+            background: rgba(30, 41, 59, 0.8);
+            border: 1px solid rgba(168, 85, 247, 0.2);
+            color: #94a3b8;
+        }
+        
+        .modal-btn.cancel:hover {
+            background: rgba(30, 41, 59, 1);
+            color: white;
+        }
+        
+        .modal-btn.confirm {
+            background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%);
+            color: white;
+            border: none;
+        }
+        
+        .modal-btn.confirm:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(168, 85, 247, 0.3);
+        }
+        
+        .modal-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
         }
     </style>
 </head>
@@ -181,29 +432,39 @@
 
                 <!-- Right Side - Auth with Currency Switcher -->
                 <div class="hidden items-center gap-4 md:flex">
-                    <!-- Currency Switcher -->
+                    <!-- Desktop Currency Switcher -->
                     <div class="currency-switcher">
-                        <div class="currency-selector" id="desktopCurrencySelector">
+                        <div class="currency-selector">
                             <span class="current-symbol">$</span>
                             <span class="current-code">USD</span>
                             <span>▼</span>
                         </div>
-                        <div class="currency-dropdown" id="desktopCurrencyDropdown"></div>
+                        <div class="currency-dropdown"></div>
                     </div>
                     
                     <a href="dashboard.html" class="text-sm text-gray-300 hover:text-white transition">My Account</a>
                     <a href="login.html" class="text-sm text-gray-300 hover:text-white transition">Logout</a>
                 </div>
 
-                <!-- Mobile Menu Button -->
-                <button class="md:hidden" onclick="toggleMobileMenu()">
-                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
-                    </svg>
-                </button>
+                <!-- Mobile header section with currency toggle and menu button -->
+                <div class="flex items-center gap-2 md:hidden">
+                    <!-- Mobile Currency Toggle (always visible) -->
+                    <button class="mobile-currency-toggle" onclick="toggleMobileCurrencyMenu()">
+                        <span class="mobile-currency-symbol">$</span>
+                        <span class="mobile-currency-code">USD</span>
+                        <span>▼</span>
+                    </button>
+
+                    <!-- Mobile Menu Button -->
+                    <button class="md:hidden" onclick="toggleMobileMenu()">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                        </svg>
+                    </button>
+                </div>
             </div>
 
-            <!-- Mobile Menu with Currency Selector -->
+            <!-- Mobile Menu (without currency selector) -->
             <div id="mobileMenu" class="mobile-menu border-t border-purple-500/20 py-4 md:hidden">
                 <nav class="flex flex-col gap-3">
                     <a href="index.html" class="text-sm text-gray-300 hover:text-white">Home</a>
@@ -216,28 +477,43 @@
                     <a href="security.html" class="text-sm text-gray-300 hover:text-white">Security</a>
                     <a href="contact.html" class="text-sm text-gray-300 hover:text-white">Contact</a>
                     <a href="faq.html" class="text-sm text-gray-300 hover:text-white">FAQ</a>
-                    
-                    <!-- Mobile Currency Selector (always visible in mobile menu) -->
-                    <div class="mt-4 pt-4 border-t border-purple-500/20">
-                        <div class="text-sm text-gray-300 mb-2">Currency:</div>
-                        <select class="mobile-currency-selector" id="mobileCurrencySelect">
-                            <option value="USD">$ USD</option>
-                            <option value="EUR">€ EUR</option>
-                            <option value="GBP">£ GBP</option>
-                            <option value="ZAR">R ZAR</option>
-                            <option value="INR">₹ INR</option>
-                            <option value="JPY">¥ JPY</option>
-                            <option value="AUD">A$ AUD</option>
-                            <option value="CAD">C$ CAD</option>
-                        </select>
-                    </div>
-                    
                     <a href="dashboard.html" class="text-sm text-gray-300 hover:text-white mt-4">My Account</a>
                     <a href="login.html" class="text-sm text-gray-300 hover:text-white">Logout</a>
                 </nav>
             </div>
         </div>
     </header>
+
+    <!-- Mobile Currency Menu Overlay -->
+    <div class="mobile-currency-overlay" id="mobileCurrencyOverlay" onclick="closeMobileCurrencyMenu()"></div>
+    
+    <!-- Mobile Currency Menu -->
+    <div class="mobile-currency-dropdown" id="mobileCurrencyMenu">
+        <div class="mobile-currency-header">
+            <h3>Select Currency</h3>
+            <button class="close-currency-menu" onclick="closeMobileCurrencyMenu()">×</button>
+        </div>
+        <div class="mobile-currency-options">
+            <!-- Options will be populated by JavaScript -->
+        </div>
+    </div>
+
+    <!-- Investment Confirmation Modal -->
+    <div class="investment-modal" id="investmentModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="modalTitle">Confirm Investment</h2>
+                <button class="close-modal" onclick="closeInvestmentModal()">×</button>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <!-- Content will be populated by JavaScript -->
+            </div>
+            <div class="modal-actions">
+                <button class="modal-btn cancel" onclick="closeInvestmentModal()">Cancel</button>
+                <button class="modal-btn confirm" id="confirmInvestmentBtn">Confirm</button>
+            </div>
+        </div>
+    </div>
 
     <!-- Updated hero section -->
     <section class="px-4 py-24 sm:px-6 lg:px-8">
@@ -319,9 +595,9 @@
                     </div>
                     <div class="mb-6">
                         <label class="block text-gray-400 text-sm mb-2">Investment Amount (Min <span data-currency-symbol>$</span>200)</label>
-                        <input type="number" placeholder="Enter amount" class="w-full bg-slate-900 border border-purple-500/20 rounded-lg px-4 py-3 text-white" min="200">
+                        <input type="number" placeholder="Enter amount" class="w-full bg-slate-900 border border-purple-500/20 rounded-lg px-4 py-3 text-white">
                     </div>
-                    <button class="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold py-3 rounded-lg transition-all" onclick="handleInvest(event, '1 Hour Plan', '20', '1 Hour')">
+                    <button class="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold py-3 rounded-lg transition-all" onclick="handleInvest('1 Hour Plan', '20', '1 Hour')">
                         Invest Now
                     </button>
                 </div>
@@ -355,9 +631,9 @@
                     </div>
                     <div class="mb-6">
                         <label class="block text-gray-400 text-sm mb-2">Investment Amount (Min <span data-currency-symbol>$</span>200)</label>
-                        <input type="number" placeholder="Enter amount" class="w-full bg-slate-900 border border-blue-500/20 rounded-lg px-4 py-3 text-white" min="200">
+                        <input type="number" placeholder="Enter amount" class="w-full bg-slate-900 border border-blue-500/20 rounded-lg px-4 py-3 text-white">
                     </div>
-                    <button class="w-full bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white font-bold py-3 rounded-lg transition-all" onclick="handleInvest(event, '5 Hours Plan', '30', '5 Hours')">
+                    <button class="w-full bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white font-bold py-3 rounded-lg transition-all" onclick="handleInvest('5 Hours Plan', '30', '5 Hours')">
                         Invest Now
                     </button>
                 </div>
@@ -391,9 +667,9 @@
                     </div>
                     <div class="mb-6">
                         <label class="block text-gray-400 text-sm mb-2">Investment Amount (Min <span data-currency-symbol>$</span>200)</label>
-                        <input type="number" placeholder="Enter amount" class="w-full bg-slate-900 border border-pink-500/20 rounded-lg px-4 py-3 text-white" min="200">
+                        <input type="number" placeholder="Enter amount" class="w-full bg-slate-900 border border-pink-500/20 rounded-lg px-4 py-3 text-white">
                     </div>
-                    <button class="w-full bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white font-bold py-3 rounded-lg transition-all" onclick="handleInvest(event, '24 Hours Plan', '68', '24 Hours')">
+                    <button class="w-full bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white font-bold py-3 rounded-lg transition-all" onclick="handleInvest('24 Hours Plan', '68', '24 Hours')">
                         Invest Now
                     </button>
                 </div>
@@ -427,9 +703,9 @@
                     </div>
                     <div class="mb-6">
                         <label class="block text-gray-400 text-sm mb-2">Investment Amount (Min <span data-currency-symbol>$</span>200)</label>
-                        <input type="number" placeholder="Enter amount" class="w-full bg-slate-900 border border-cyan-500/20 rounded-lg px-4 py-3 text-white" min="200">
+                        <input type="number" placeholder="Enter amount" class="w-full bg-slate-900 border border-cyan-500/20 rounded-lg px-4 py-3 text-white">
                     </div>
-                    <button class="w-full bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white font-bold py-3 rounded-lg transition-all" onclick="handleInvest(event, '72 Hours Plan', '89', '72 Hours')">
+                    <button class="w-full bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white font-bold py-3 rounded-lg transition-all" onclick="handleInvest('72 Hours Plan', '89', '72 Hours')">
                         Invest Now
                     </button>
                 </div>
@@ -467,9 +743,9 @@
                             </div>
                             <div class="mb-6">
                                 <label class="block text-gray-400 text-sm mb-2">Investment Amount (Min <span data-currency-symbol>$</span>200)</label>
-                                <input type="number" placeholder="Enter amount" class="w-full bg-slate-900 border border-purple-500/20 rounded-lg px-4 py-3 text-white" min="200">
+                                <input type="number" placeholder="Enter amount" class="w-full bg-slate-900 border border-purple-500/20 rounded-lg px-4 py-3 text-white">
                             </div>
-                            <button class="w-full bg-gradient-to-r from-purple-500 via-pink-500 to-cyan-500 hover:from-purple-600 hover:via-pink-600 hover:to-cyan-600 text-white font-bold py-3 rounded-lg transition-all shadow-xl" onclick="handleInvest(event, '1 Week Plan', '190', '1 Week')">
+                            <button class="w-full bg-gradient-to-r from-purple-500 via-pink-500 to-cyan-500 hover:from-purple-600 hover:via-pink-600 hover:to-cyan-600 text-white font-bold py-3 rounded-lg transition-all shadow-xl" onclick="handleInvest('1 Week Plan', '190', '1 Week')">
                                 Invest Now
                             </button>
                         </div>
@@ -497,7 +773,7 @@
                     </div>
                     <div>
                         <label class="block text-gray-300 mb-2">Investment Amount</label>
-                        <input type="number" placeholder="Enter amount" class="w-full bg-slate-900 border border-purple-500/20 rounded-lg px-4 py-3 text-white" id="calcAmount" min="200">
+                        <input type="number" placeholder="Enter amount" class="w-full bg-slate-900 border border-purple-500/20 rounded-lg px-4 py-3 text-white" id="calcAmount">
                     </div>
                     <button onclick="calculateProfit()" class="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold py-3 rounded-lg transition-all">
                         Calculate
@@ -576,18 +852,6 @@
         </div>
     </footer>
 
-    <!-- Investment confirmation modal -->
-    <div id="investmentModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-        <div class="bg-slate-900 border border-purple-500/30 rounded-2xl p-8 max-w-md w-full">
-            <h3 class="text-2xl font-bold text-white mb-6" id="modalTitle">Confirm Investment</h3>
-            <div id="modalContent" class="space-y-4 mb-6"></div>
-            <div class="flex gap-4">
-                <button onclick="closeModal()" class="flex-1 bg-slate-800 text-white font-bold py-3 rounded-lg hover:bg-slate-700 transition">Cancel</button>
-                <button id="confirmButton" class="flex-1 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold py-3 rounded-lg hover:opacity-90 transition">Confirm</button>
-            </div>
-        </div>
-    </div>
-
     <script>
     // Global variables
     const BASEROW_TOKEN = 'LG6hnTBxgBG78FueElsSwpHRd4Wep1oL';
@@ -595,15 +859,141 @@
     const INVESTMENT_TABLE_ID = '756316';
     const BASEROW_API_URL = 'https://api.baserow.io/api/database/rows/table';
     
-    // Toggle mobile menu
+    // Currency data
+    const CURRENCIES = [
+        { code: 'USD', symbol: '$', name: 'US Dollar' },
+        { code: 'EUR', symbol: '€', name: 'Euro' },
+        { code: 'GBP', symbol: '£', name: 'British Pound' },
+        { code: 'ZAR', symbol: 'R', name: 'South African Rand' },
+        { code: 'INR', symbol: '₹', name: 'Indian Rupee' },
+        { code: 'JPY', symbol: '¥', name: 'Japanese Yen' },
+        { code: 'AUD', symbol: 'A$', name: 'Australian Dollar' },
+        { code: 'CAD', symbol: 'C$', name: 'Canadian Dollar' }
+    ];
+    
+    // Current investment data for modal
+    let currentInvestmentData = null;
+    
+    // Mobile menu functions
     function toggleMobileMenu() {
-        const mobileMenu = document.getElementById('mobileMenu');
-        if (mobileMenu) {
-            mobileMenu.classList.toggle('active');
+        document.getElementById('mobileMenu').classList.toggle('active');
+    }
+    
+    function closeMobileMenu() {
+        document.getElementById('mobileMenu').classList.remove('active');
+    }
+    
+    // Mobile currency menu functions
+    function toggleMobileCurrencyMenu() {
+        const overlay = document.getElementById('mobileCurrencyOverlay');
+        const menu = document.getElementById('mobileCurrencyMenu');
+        
+        overlay.classList.toggle('show');
+        menu.classList.toggle('show');
+        
+        // Populate currency options if not already done
+        if (menu.querySelector('.mobile-currency-options').children.length === 0) {
+            populateMobileCurrencyOptions();
         }
     }
     
-    // Calculate profit for calculator
+    function closeMobileCurrencyMenu() {
+        document.getElementById('mobileCurrencyOverlay').classList.remove('show');
+        document.getElementById('mobileCurrencyMenu').classList.remove('show');
+    }
+    
+    function populateMobileCurrencyOptions() {
+        const container = document.querySelector('.mobile-currency-options');
+        const currentCurrency = getCurrentCurrency();
+        
+        container.innerHTML = '';
+        
+        CURRENCIES.forEach(currency => {
+            const option = document.createElement('div');
+            option.className = `mobile-currency-option ${currency.code === currentCurrency ? 'active' : ''}`;
+            option.innerHTML = `
+                <span class="symbol" style="font-size: 20px; width: 30px;">${currency.symbol}</span>
+                <span class="code" style="font-weight: 600; min-width: 50px;">${currency.code}</span>
+                <span class="name" style="color: #94a3b8; font-size: 14px; flex-grow: 1; text-align: right;">${currency.name}</span>
+            `;
+            option.onclick = () => selectMobileCurrency(currency.code);
+            container.appendChild(option);
+        });
+    }
+    
+    function selectMobileCurrency(currencyCode) {
+        // Update mobile toggle display
+        const currency = CURRENCIES.find(c => c.code === currencyCode);
+        if (currency) {
+            document.querySelector('.mobile-currency-symbol').textContent = currency.symbol;
+            document.querySelector('.mobile-currency-code').textContent = currency.code;
+        }
+        
+        // Update desktop switcher if visible
+        const desktopSelector = document.querySelector('.currency-selector');
+        if (desktopSelector) {
+            desktopSelector.querySelector('.current-symbol').textContent = currency.symbol;
+            desktopSelector.querySelector('.current-code').textContent = currency.code;
+        }
+        
+        // Update all currency symbols on page
+        updateCurrencySymbols(currencyCode);
+        
+        // Save to localStorage
+        localStorage.setItem('v0trade_currency', currencyCode);
+        
+        // Close mobile menu
+        closeMobileCurrencyMenu();
+        
+        // Dispatch currency change event
+        document.dispatchEvent(new CustomEvent('currencyChanged', { detail: { code: currencyCode, symbol: currency.symbol } }));
+    }
+    
+    function getCurrentCurrency() {
+        return localStorage.getItem('v0trade_currency') || 'USD';
+    }
+    
+    function updateCurrencySymbols(currencyCode) {
+        const currency = CURRENCIES.find(c => c.code === currencyCode);
+        if (!currency) return;
+        
+        // Update all elements with data-currency-symbol attribute
+        document.querySelectorAll('[data-currency-symbol]').forEach(el => {
+            el.textContent = currency.symbol;
+        });
+        
+        // Update min amount displays
+        document.querySelectorAll('.text-sm.mb-2').forEach(el => {
+            if (el.textContent.includes('Min $')) {
+                el.innerHTML = el.innerHTML.replace(/Min \$/g, `Min ${currency.symbol}`);
+            }
+        });
+    }
+    
+    // Investment modal functions
+    function showInvestmentModal(title, htmlContent, confirmCallback) {
+        document.getElementById('modalTitle').textContent = title;
+        document.getElementById('modalBody').innerHTML = htmlContent;
+        
+        const confirmBtn = document.getElementById('confirmInvestmentBtn');
+        confirmBtn.onclick = confirmCallback;
+        confirmBtn.disabled = false;
+        
+        document.getElementById('investmentModal').classList.add('show');
+        
+        // Prevent body scrolling when modal is open
+        document.body.style.overflow = 'hidden';
+    }
+    
+    function closeInvestmentModal() {
+        document.getElementById('investmentModal').classList.remove('show');
+        currentInvestmentData = null;
+        
+        // Re-enable body scrolling
+        document.body.style.overflow = '';
+    }
+    
+    // Calculator functions
     function calculateProfit() {
         const plan = parseInt(document.getElementById('calcPlan').value);
         const amount = parseFloat(document.getElementById('calcAmount').value);
@@ -612,11 +1002,17 @@
             const profit = (amount * plan) / 100;
             const total = amount + profit;
             
-            document.getElementById('profitAmount').innerHTML = '<span data-currency-symbol>$</span>' + profit.toFixed(2);
-            document.getElementById('totalAmount').innerHTML = '<span data-currency-symbol>$</span>' + total.toFixed(2);
+            const currentCurrency = getCurrentCurrency();
+            const currencySymbol = CURRENCIES.find(c => c.code === currentCurrency)?.symbol || '$';
+            
+            document.getElementById('profitAmount').innerHTML = `${currencySymbol}${profit.toFixed(2)}`;
+            document.getElementById('totalAmount').innerHTML = `${currencySymbol}${total.toFixed(2)}`;
             document.getElementById('calcResult').classList.remove('hidden');
         } else {
-            alert('Please enter a valid amount (minimum $200)');
+            showInvestmentModal('Invalid Amount', 
+                '<p class="text-gray-300 text-center py-4">Please enter a valid amount (minimum $200)</p>',
+                closeInvestmentModal
+            );
         }
     }
     
@@ -636,60 +1032,37 @@
         const userEmail = getUserEmail();
         if (userEmail) {
             // Update header account display
-            const headerAccounts = document.querySelectorAll('a[href="dashboard.html"]');
-            headerAccounts.forEach(account => {
-                if (!account.closest('.mobile-menu')) {
-                    account.textContent = userEmail;
-                }
-            });
+            const headerAccount = document.querySelector('.md\\:flex a[href="dashboard.html"]');
+            if (headerAccount) {
+                headerAccount.textContent = userEmail;
+            }
             
-            // Update logout links
-            const logoutLinks = document.querySelectorAll('a[href="login.html"]');
-            logoutLinks.forEach(link => {
-                if (!link.closest('.mobile-menu')) {
-                    link.textContent = 'Logout';
-                    link.href = 'javascript:void(0)';
-                    link.onclick = function() {
-                        localStorage.removeItem('v0trade_user_email');
-                        window.location.href = 'login.html';
-                    };
-                }
-            });
+            // Update logout link
+            const logoutLink = document.querySelector('.md\\:flex a[href="login.html"]');
+            if (logoutLink) {
+                logoutLink.textContent = 'Logout';
+                logoutLink.href = 'javascript:void(0)';
+                logoutLink.onclick = function() {
+                    localStorage.removeItem('v0trade_user_email');
+                    window.location.href = 'login.html';
+                };
+            }
         }
     }
     
-    // Show modal
-    function showModal(title, content, confirmCallback) {
-        document.getElementById('modalTitle').textContent = title;
-        document.getElementById('modalContent').innerHTML = content;
-        document.getElementById('investmentModal').classList.remove('hidden');
-        document.getElementById('confirmButton').onclick = confirmCallback;
+    function getDaysFromDuration(duration) {
+        if (duration.includes('Hour')) return Math.ceil(parseInt(duration) / 24) || 1;
+        if (duration.includes('Week')) return 7;
+        return 1;
     }
     
-    // Close modal
-    function closeModal() {
-        document.getElementById('investmentModal').classList.add('hidden');
-        document.getElementById('confirmButton').disabled = false;
-    }
-    
-    // Calculate returns
-    function calculateReturns(amount, roiMultiplier, duration) {
+    // Calculate investment returns
+    function calculateReturns(amount, roiPercentage, duration) {
+        const roiMultiplier = parseFloat(roiPercentage) / 100 + 1;
         const totalReturn = amount * roiMultiplier;
         const profit = totalReturn - amount;
-        const days = getDaysFromDuration(duration);
-        const dailyReturn = days > 0 ? profit / days : profit;
+        const dailyReturn = profit / getDaysFromDuration(duration);
         return { totalReturn, profit, dailyReturn };
-    }
-    
-    // Get days from duration string
-    function getDaysFromDuration(duration) {
-        if (duration.includes('Hour')) {
-            const hours = parseInt(duration);
-            return hours / 24;
-        }
-        if (duration.includes('Week')) return 7;
-        if (duration.includes('Day')) return parseInt(duration);
-        return 1;
     }
     
     // Get wallet balance from Baserow
@@ -775,227 +1148,190 @@
     }
     
     // Handle investment button click
-    function handleInvest(event, planName, roi, duration) {
-        event.preventDefault();
-        
+    function handleInvest(planName, roi, duration) {
         const card = event.target.closest('.bg-gradient-to-br');
         const metalSelect = card.querySelector('select');
         const amountInput = card.querySelector('input[type="number"]');
-        const metal = metalSelect ? metalSelect.value : 'Gold';
-        const amount = amountInput ? parseFloat(amountInput.value) : 0;
+        const metal = metalSelect.value;
+        const amount = parseFloat(amountInput.value);
     
         if (isNaN(amount) || amount < 200) {
-            showModal('Invalid Amount', '<p class="text-gray-300">Please enter an amount of at least $200.</p>', closeModal);
+            showInvestmentModal('Invalid Amount', 
+                '<p class="text-gray-300 text-center py-4">Please enter an amount of at least $200.</p>',
+                closeInvestmentModal
+            );
             return;
         }
     
         if (!checkLogin()) {
-            showModal('Login Required', '<p class="text-gray-300">You must log in before investing in Precious Metals plans.</p>', () => {
-                window.location.href = 'login.html';
-            });
+            showInvestmentModal('Login Required', 
+                '<p class="text-gray-300 text-center py-4">You must log in before investing in Precious Metals plans.</p>',
+                () => {
+                    closeInvestmentModal();
+                    window.location.href = 'login.html';
+                }
+            );
             return;
         }
     
-        const roiMultiplier = parseFloat(roi) / 100 + 1;
-        const { totalReturn, dailyReturn } = calculateReturns(amount, roiMultiplier, duration);
+        const { totalReturn, dailyReturn } = calculateReturns(amount, roi, duration);
+        const currentCurrency = getCurrentCurrency();
+        const currencySymbol = CURRENCIES.find(c => c.code === currentCurrency)?.symbol || '$';
+        
+        currentInvestmentData = {
+            planName,
+            metal,
+            amount,
+            roi,
+            duration,
+            dailyReturn,
+            totalReturn
+        };
     
-        showModal('Confirm Investment', `
-            <div class="space-y-3">
-                <div class="flex justify-between text-gray-300"><span>Plan:</span><span class="text-white font-semibold">${planName}</span></div>
-                <div class="flex justify-between text-gray-300"><span>Metal:</span><span class="text-white font-semibold">${metal}</span></div>
-                <div class="flex justify-between text-gray-300"><span>Investment:</span><span class="text-white font-semibold">$${amount.toFixed(2)}</span></div>
-                <div class="flex justify-between text-gray-300"><span>ROI:</span><span class="text-green-400 font-semibold">+${roi}%</span></div>
-                <div class="flex justify-between text-gray-300"><span>Duration:</span><span class="text-white font-semibold">${duration}</span></div>
-                <div class="flex justify-between text-gray-300"><span>Daily Return:</span><span class="text-cyan-400 font-semibold">$${dailyReturn.toFixed(2)}</span></div>
-                <div class="flex justify-between text-gray-300"><span>Total Expected:</span><span class="text-purple-400 font-bold text-xl">$${totalReturn.toFixed(2)}</span></div>
+        showInvestmentModal('Confirm Investment', `
+            <div class="space-y-4">
+                <div class="modal-row">
+                    <span class="modal-label">Plan:</span>
+                    <span class="modal-value">${planName}</span>
+                </div>
+                <div class="modal-row">
+                    <span class="modal-label">Metal:</span>
+                    <span class="modal-value">${metal}</span>
+                </div>
+                <div class="modal-row">
+                    <span class="modal-label">Investment:</span>
+                    <span class="modal-value">${currencySymbol}${amount.toFixed(2)}</span>
+                </div>
+                <div class="modal-row">
+                    <span class="modal-label">ROI:</span>
+                    <span class="modal-value" style="color: #10b981;">+${roi}%</span>
+                </div>
+                <div class="modal-row">
+                    <span class="modal-label">Duration:</span>
+                    <span class="modal-value">${duration}</span>
+                </div>
+                <div class="modal-row">
+                    <span class="modal-label">Daily Return:</span>
+                    <span class="modal-value" style="color: #06b6d4;">${currencySymbol}${dailyReturn.toFixed(2)}</span>
+                </div>
+                <div class="modal-row" style="border-bottom: none; padding-top: 16px; border-top: 2px solid rgba(168, 85, 247, 0.3);">
+                    <span class="modal-label" style="font-size: 18px;">Total Expected:</span>
+                    <span class="modal-value highlight">${currencySymbol}${totalReturn.toFixed(2)}</span>
+                </div>
             </div>
-        `, async () => await processInvestment(amount, planName, metal, duration, dailyReturn, totalReturn));
+        `, async () => {
+            await processInvestment(currentInvestmentData);
+        });
     }
     
-    // Process investment
-    async function processInvestment(amount, planName, asset, duration, dailyReturn, totalReturn) {
+    async function processInvestment(investmentData) {
         const email = getUserEmail();
-        document.getElementById('modalContent').innerHTML = '<p class="text-center text-gray-300">Processing investment...</p>';
-        document.getElementById('confirmButton').disabled = true;
+        const confirmBtn = document.getElementById('confirmInvestmentBtn');
+        confirmBtn.disabled = true;
+        confirmBtn.textContent = 'Processing...';
     
         const walletData = await getWalletBalance(email);
         if (!walletData) {
-            showModal('Wallet Not Found', '<p class="text-gray-300">Unable to find your wallet. Please contact support.</p>', closeModal);
+            showInvestmentModal('Wallet Not Found', 
+                '<p class="text-gray-300 text-center py-4">Unable to find your wallet. Please contact support.</p>',
+                closeInvestmentModal
+            );
             return;
         }
     
-        if (walletData.balance < amount) {
-            showModal('Insufficient Balance', `<p class="text-gray-300">Insufficient wallet balance to complete this purchase.</p>
-                 <p class="text-gray-400 text-sm mt-2">Your balance: $${walletData.balance.toFixed(2)}</p>
-                 <p class="text-gray-400 text-sm">Required: $${amount.toFixed(2)}</p>`, closeModal);
+        if (walletData.balance < investmentData.amount) {
+            const currentCurrency = getCurrentCurrency();
+            const currencySymbol = CURRENCIES.find(c => c.code === currentCurrency)?.symbol || '$';
+            
+            showInvestmentModal('Insufficient Balance', 
+                `<div class="space-y-3">
+                    <p class="text-gray-300 text-center">Insufficient wallet balance to complete this purchase.</p>
+                    <div class="modal-row">
+                        <span class="modal-label">Your balance:</span>
+                        <span class="modal-value">${currencySymbol}${walletData.balance.toFixed(2)}</span>
+                    </div>
+                    <div class="modal-row">
+                        <span class="modal-label">Required:</span>
+                        <span class="modal-value">${currencySymbol}${investmentData.amount.toFixed(2)}</span>
+                    </div>
+                </div>`,
+                closeInvestmentModal
+            );
             return;
         }
     
         // Deduct from wallet
-        const newBalance = walletData.balance - amount;
+        const newBalance = walletData.balance - investmentData.amount;
         const updateSuccess = await updateWalletBalance(walletData.rowId, newBalance);
         
         if (!updateSuccess) {
-            showModal('Error', '<p class="text-gray-300">Failed to process payment. Please try again.</p>', closeModal);
+            showInvestmentModal('Error', 
+                '<p class="text-gray-300 text-center py-4">Failed to process payment. Please try again.</p>',
+                closeInvestmentModal
+            );
             return;
         }
     
         // Create investment record
         const investSuccess = await createInvestment(
             email,
-            amount,
-            `Precious Metals - ${asset}`,
-            duration,
-            dailyReturn,
+            investmentData.amount,
+            `Precious Metals - ${investmentData.metal}`,
+            investmentData.duration,
+            investmentData.dailyReturn,
             0, // Initial total earned is 0
-            planName
+            investmentData.planName
         );
     
         if (investSuccess) {
-            showModal('Success!', `<p class="text-green-400 font-semibold text-center">Investment successful!</p>
-                 <p class="text-gray-300 text-center mt-4">Your ${planName} investment is now active.</p>
-                 <p class="text-gray-400 text-sm text-center mt-2">Check your dashboard to track your returns.</p>`, 
-                () => window.location.href = 'dashboard.html');
+            showInvestmentModal('Success!', 
+                `<div class="space-y-4 text-center">
+                    <div style="width: 60px; height: 60px; margin: 0 auto 20px; background: linear-gradient(135deg, #10b981, #06b6d4); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 28px; color: white;">
+                        ✓
+                    </div>
+                    <p class="text-green-400 font-semibold text-lg">Investment successful!</p>
+                    <p class="text-gray-300">Your ${investmentData.planName} investment is now active.</p>
+                    <p class="text-gray-400 text-sm">Check your dashboard to track your returns.</p>
+                </div>`,
+                () => {
+                    closeInvestmentModal();
+                    window.location.href = 'dashboard.html';
+                }
+            );
         } else {
             // Rollback wallet balance
             await updateWalletBalance(walletData.rowId, walletData.balance);
-            showModal('Error', '<p class="text-gray-300">Failed to create investment. Please try again.</p>', closeModal);
+            showInvestmentModal('Error', 
+                '<p class="text-gray-300 text-center py-4">Failed to create investment. Please try again.</p>',
+                closeInvestmentModal
+            );
         }
     }
     
-    // Initialize currency switcher
-    function initCurrencySwitcher() {
-        const currencySelector = document.getElementById('desktopCurrencySelector');
-        const currencyDropdown = document.getElementById('desktopCurrencyDropdown');
-        const mobileCurrencySelect = document.getElementById('mobileCurrencySelect');
-        
-        if (!currencySelector || !currencyDropdown) return;
-        
-        // Currency options
-        const currencies = [
-            { code: 'USD', symbol: '$', name: 'US Dollar' },
-            { code: 'EUR', symbol: '€', name: 'Euro' },
-            { code: 'GBP', symbol: '£', name: 'British Pound' },
-            { code: 'ZAR', symbol: 'R', name: 'South African Rand' },
-            { code: 'INR', symbol: '₹', name: 'Indian Rupee' },
-            { code: 'JPY', symbol: '¥', name: 'Japanese Yen' },
-            { code: 'AUD', symbol: 'A$', name: 'Australian Dollar' },
-            { code: 'CAD', symbol: 'C$', name: 'Canadian Dollar' }
-        ];
-        
-        // Get current currency from localStorage or default to USD
-        let currentCurrency = localStorage.getItem('v0trade_currency') || 'USD';
-        if (!currencies.find(c => c.code === currentCurrency)) {
-            currentCurrency = 'USD';
-        }
-        
-        // Update display
-        function updateCurrencyDisplay() {
-            const currency = currencies.find(c => c.code === currentCurrency);
-            if (currency) {
-                // Update desktop selector
-                const symbolSpan = currencySelector.querySelector('.current-symbol');
-                const codeSpan = currencySelector.querySelector('.current-code');
-                if (symbolSpan) symbolSpan.textContent = currency.symbol;
-                if (codeSpan) codeSpan.textContent = currency.code;
-                
-                // Update mobile selector
-                if (mobileCurrencySelect) {
-                    mobileCurrencySelect.value = currency.code;
-                }
-                
-                // Update all currency symbols on page
-                const symbolElements = document.querySelectorAll('[data-currency-symbol]');
-                symbolElements.forEach(el => {
-                    el.textContent = currency.symbol;
-                });
-                
-                // Save to localStorage
-                localStorage.setItem('v0trade_currency', currency.code);
-                
-                // Trigger custom event
-                document.dispatchEvent(new CustomEvent('currencyChanged', {
-                    detail: { code: currency.code, symbol: currency.symbol, name: currency.name }
-                }));
-            }
-        }
-        
-        // Populate dropdown
-        function populateDropdown() {
-            currencyDropdown.innerHTML = '';
-            currencies.forEach(currency => {
-                const option = document.createElement('div');
-                option.className = `currency-option-dropdown ${currency.code === currentCurrency ? 'active' : ''}`;
-                option.innerHTML = `
-                    <div class="symbol">${currency.symbol}</div>
-                    <div class="code">${currency.code}</div>
-                    <div class="name">${currency.name}</div>
-                `;
-                option.addEventListener('click', () => {
-                    currentCurrency = currency.code;
-                    updateCurrencyDisplay();
-                    currencyDropdown.classList.remove('show');
-                });
-                currencyDropdown.appendChild(option);
-            });
-        }
-        
-        // Toggle dropdown
-        currencySelector.addEventListener('click', (e) => {
-            e.stopPropagation();
-            currencyDropdown.classList.toggle('show');
-        });
-        
-        // Close dropdown when clicking outside
-        document.addEventListener('click', () => {
-            currencyDropdown.classList.remove('show');
-        });
-        
-        // Mobile currency selector
-        if (mobileCurrencySelect) {
-            mobileCurrencySelect.addEventListener('change', (e) => {
-                currentCurrency = e.target.value;
-                updateCurrencyDisplay();
-            });
-        }
-        
-        // Initialize
-        populateDropdown();
-        updateCurrencyDisplay();
-        
-        // Expose function to update currency symbols
-        window.refreshCurrency = updateCurrencyDisplay;
-    }
-    
-    // Initialize mobile currency system
-    function initMobileCurrencySystem() {
-        const mobileCurrencySelector = document.querySelector('.mobile-currency-selector');
-        if (mobileCurrencySelector && window.CurrencyConfig) {
-            // Set current currency
-            const currentCurrency = window.CurrencyConfig.getCurrentCurrency();
-            mobileCurrencySelector.value = currentCurrency;
-            
-            // Add change event
-            mobileCurrencySelector.addEventListener('change', function(e) {
-                if (e.target.value) {
-                    window.CurrencyConfig.changeCurrency(e.target.value);
-                }
-            });
-        }
-    }
-    
-    // Initialize when DOM is loaded
+    // Initialize everything when DOM is loaded
     document.addEventListener('DOMContentLoaded', function() {
         // Update header with user info
         updateHeader();
         
-        // Initialize currency switcher
-        initCurrencySwitcher();
+        // Initialize currency system
+        const currentCurrency = getCurrentCurrency();
+        updateCurrencySymbols(currentCurrency);
         
-        // Initialize mobile currency system
-        initMobileCurrencySystem();
+        // Update mobile toggle display
+        const currency = CURRENCIES.find(c => c.code === currentCurrency);
+        if (currency) {
+            document.querySelector('.mobile-currency-symbol').textContent = currency.symbol;
+            document.querySelector('.mobile-currency-code').textContent = currency.code;
+        }
         
-        // Check login status and redirect if not logged in for investment actions
+        // Update desktop switcher if exists
+        const desktopSelector = document.querySelector('.currency-selector');
+        if (desktopSelector) {
+            desktopSelector.querySelector('.current-symbol').textContent = currency.symbol;
+            desktopSelector.querySelector('.current-code').textContent = currency.code;
+        }
+        
+        // Check login status
         if (!checkLogin()) {
             console.log('User not logged in - investment features disabled');
         }
@@ -1003,28 +1339,28 @@
         // Close mobile menu when clicking outside
         document.addEventListener('click', function(event) {
             const mobileMenu = document.getElementById('mobileMenu');
-            const menuButton = document.querySelector('button.md\\:hidden');
+            const mobileMenuButton = document.querySelector('button[onclick="toggleMobileMenu()"]');
             
-            if (mobileMenu && mobileMenu.classList.contains('active') && 
+            if (mobileMenu.classList.contains('active') && 
                 !mobileMenu.contains(event.target) && 
-                !menuButton.contains(event.target)) {
-                mobileMenu.classList.remove('active');
+                !mobileMenuButton.contains(event.target)) {
+                closeMobileMenu();
             }
         });
         
-        // Listen for currency changes
-        document.addEventListener('currencyChanged', function(e) {
-            // Update mobile selector if exists
-            const mobileSelector = document.querySelector('.mobile-currency-selector');
-            if (mobileSelector) {
-                mobileSelector.value = e.detail.code;
+        // Close modals with Escape key
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                closeInvestmentModal();
+                closeMobileCurrencyMenu();
             }
         });
     });
     
-    // Add this function to refresh currency symbols when page is loaded
+    // Global refresh currency function
     window.refreshCurrency = function() {
-        initCurrencySwitcher();
+        const currentCurrency = getCurrentCurrency();
+        updateCurrencySymbols(currentCurrency);
     };
     </script>
 </body>
