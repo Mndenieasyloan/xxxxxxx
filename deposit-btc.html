@@ -3,8 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Deposit Funds - V0 Trade</title>
+    <title>BTC Deposit - V0 Trade</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Add currency config script -->
+    <script src="/js/currency-config.js"></script>
     <style>
         .sidebar-link {
             display: flex;
@@ -24,50 +26,7 @@
             color: rgb(168 85 247);
             font-weight: 600;
         }
-        .payment-method {
-            border: 2px solid rgb(71 85 105);
-            border-radius: 0.75rem;
-            padding: 1.5rem;
-            cursor: pointer;
-            transition: all 0.3s;
-            background: rgb(15 23 42 / 0.5);
-        }
-        .payment-method:hover {
-            border-color: rgb(168 85 247);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 20px rgba(168, 85, 247, 0.2);
-        }
-        .payment-method.selected {
-            border-color: rgb(168 85 247);
-            background: linear-gradient(135deg, rgba(168, 85, 247, 0.15), rgba(236, 72, 153, 0.15));
-            box-shadow: 0 0 20px rgba(168, 85, 247, 0.3);
-        }
-        .payment-method.selected .payment-icon {
-            transform: scale(1.1);
-        }
         
-        .amount-section {
-            max-height: 0;
-            overflow: hidden;
-            opacity: 0;
-            transition: all 0.4s ease-out;
-        }
-        .amount-section.visible {
-            max-height: 800px;
-            opacity: 1;
-        }
-        
-        .error-message {
-            display: none;
-            color: rgb(239 68 68);
-            font-size: 0.875rem;
-            margin-top: 0.5rem;
-        }
-        .error-message.show {
-            display: block;
-        }
-        
-        /* Updated mobile sidebar behavior - hidden by default with toggle */
         @media (max-width: 768px) {
             .sidebar {
                 position: fixed;
@@ -108,21 +67,258 @@
         .dropdown { position: relative; display: inline-block; }
         .dropdown-content { display: none; position: absolute; background-color: rgb(15 23 42 / 0.95); min-width: 12rem; border: 1px solid rgb(168 85 247 / 0.2); border-radius: 0.5rem; padding: 0.5rem; z-index: 1000; backdrop-filter: blur(10px); }
         .dropdown:hover .dropdown-content { display: block; }
+        
+        /* Image upload styles */
+        .image-upload-container {
+            border: 2px dashed rgb(168 85 247 / 0.3);
+            border-radius: 0.5rem;
+            padding: 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .image-upload-container:hover {
+            border-color: rgb(168 85 247);
+            background-color: rgb(168 85 247 / 0.05);
+        }
+        .image-upload-container.drag-over {
+            border-color: rgb(168 85 247);
+            background-color: rgb(168 85 247 / 0.1);
+        }
+        .image-preview {
+            max-width: 100%;
+            max-height: 300px;
+            margin-top: 1rem;
+            border-radius: 0.5rem;
+            display: none;
+        }
+        .remove-image-btn {
+            background-color: rgb(239 68 68);
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 0.25rem;
+            font-size: 0.75rem;
+            margin-top: 0.5rem;
+        }
+        .remove-image-btn:hover {
+            background-color: rgb(220 38 38);
+        }
+        
+        /* Currency switcher styles */
+        .currency-switcher {
+            position: relative;
+            display: inline-block;
+        }
+        
+        .currency-selector {
+            padding: 8px 12px;
+            border: 1px solid rgba(168, 85, 247, 0.3);
+            border-radius: 6px;
+            background: rgba(30, 41, 59, 0.5);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: white;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        
+        .currency-selector:hover {
+            border-color: #a855f7;
+            background: rgba(168, 85, 247, 0.1);
+        }
+        
+        .currency-dropdown {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+            border: 1px solid rgba(168, 85, 247, 0.2);
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            min-width: 200px;
+            z-index: 1000;
+            display: none;
+            margin-top: 5px;
+            padding: 8px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .currency-dropdown.show {
+            display: block;
+            animation: fadeIn 0.2s ease;
+        }
+        
+        .currency-option-dropdown {
+            padding: 10px 12px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border-radius: 6px;
+            color: #e2e8f0;
+            font-size: 14px;
+        }
+        
+        .currency-option-dropdown:hover {
+            background: rgba(168, 85, 247, 0.1);
+        }
+        
+        .currency-option-dropdown.active {
+            background: rgba(168, 85, 247, 0.15);
+            color: white;
+            font-weight: 600;
+        }
+        
+        .currency-option-dropdown .symbol {
+            font-size: 18px;
+            width: 24px;
+            text-align: center;
+        }
+        
+        .currency-option-dropdown .code {
+            font-weight: 600;
+            min-width: 40px;
+        }
+        
+        .currency-option-dropdown .name {
+            color: #94a3b8;
+            font-size: 12px;
+            flex-grow: 1;
+            text-align: right;
+        }
+        
+        /* Mobile currency selector - always visible */
+        .mobile-currency-toggle {
+            padding: 8px 12px;
+            border: 1px solid rgba(168, 85, 247, 0.3);
+            border-radius: 6px;
+            background: rgba(30, 41, 59, 0.5);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: white;
+            font-size: 14px;
+            transition: all 0.3s;
+            margin-left: auto;
+            margin-right: 12px;
+        }
+        
+        .mobile-currency-dropdown {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+            border: 1px solid rgba(168, 85, 247, 0.2);
+            border-radius: 12px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+            width: 90%;
+            max-width: 320px;
+            z-index: 1100;
+            display: none;
+            padding: 16px;
+            backdrop-filter: blur(20px);
+        }
+        
+        .mobile-currency-dropdown.show {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        .mobile-currency-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(5px);
+            z-index: 1099;
+            display: none;
+        }
+        
+        .mobile-currency-overlay.show {
+            display: block;
+        }
+        
+        .mobile-currency-option {
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border-radius: 8px;
+            color: #e2e8f0;
+            font-size: 16px;
+            margin-bottom: 8px;
+        }
+        
+        .mobile-currency-option:hover {
+            background: rgba(168, 85, 247, 0.1);
+        }
+        
+        .mobile-currency-option.active {
+            background: rgba(168, 85, 247, 0.2);
+            color: white;
+            font-weight: 600;
+        }
+        
+        .mobile-currency-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid rgba(168, 85, 247, 0.2);
+        }
+        
+        .mobile-currency-header h3 {
+            color: white;
+            font-size: 18px;
+            font-weight: 600;
+        }
+        
+        .close-currency-menu {
+            background: none;
+            border: none;
+            color: #94a3b8;
+            font-size: 24px;
+            cursor: pointer;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+        }
+        
+        .close-currency-menu:hover {
+            background: rgba(168, 85, 247, 0.1);
+            color: white;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translate(-50%, -48%); }
+            to { opacity: 1; transform: translate(-50%, -50%); }
+        }
     </style>
 </head>
 <body class="bg-slate-950">
     
-    <!-- Added hamburger toggle button for mobile sidebar -->
     <button onclick="toggleSidebar()" class="sidebar-toggle fixed left-4 top-20 z-50 bg-purple-500 hover:bg-purple-600 text-white p-2 rounded-lg shadow-lg transition">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
         </svg>
     </button>
     
-    <!-- Added overlay for mobile sidebar -->
     <div id="sidebarOverlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
     
-    <!-- Added same header navigation as index.html -->
+    <!-- Updated header with mobile currency toggle -->
     <header class="sticky top-0 z-50 border-b border-purple-500/20 bg-slate-950/80 backdrop-blur-md">
         <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div class="flex items-center justify-between py-4">
@@ -145,6 +341,7 @@
                     <span class="text-xl font-bold bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent">V0 Trade</span>
                 </a>
 
+                <!-- Desktop Navigation -->
                 <nav class="hidden items-center gap-8 md:flex">
                     <a href="index.html" class="text-sm text-gray-300 hover:text-white transition">Home</a>
                     <div class="dropdown">
@@ -168,19 +365,42 @@
                     </div>
                 </nav>
 
+                <!-- Right Side - Auth with Currency Switcher -->
                 <div class="hidden items-center gap-4 md:flex">
-                    <a href="dashboard.html" class="text-sm text-purple-400 hover:text-purple-300 transition">Dashboard</a>
-                    <span class="text-sm text-gray-400">user@email.com</span>
-                    <a href="index.html" class="text-sm text-gray-300 hover:text-white transition">Logout</a>
+                    <!-- Desktop Currency Switcher -->
+                    <div class="currency-switcher">
+                        <div class="currency-selector">
+                            <span class="current-symbol">$</span>
+                            <span class="current-code">USD</span>
+                            <span>▼</span>
+                        </div>
+                        <div class="currency-dropdown"></div>
+                    </div>
+                    
+                    <a href="dashboard.html" class="text-sm text-purple-400 hover:text-purple-300 transition user-email-display"></a>
+                    <span id="headerEmailDisplay" class="text-sm text-gray-400"></span>
+                    <a href="javascript:void(0)" onclick="logout()" class="text-sm text-gray-300 hover:text-white transition">Logout</a>
                 </div>
 
-                <button class="md:hidden" onclick="toggleMobileMenu()">
-                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
-                    </svg>
-                </button>
+                <!-- Mobile header section with currency toggle and menu button -->
+                <div class="flex items-center gap-2 md:hidden">
+                    <!-- Mobile Currency Toggle (always visible) -->
+                    <button class="mobile-currency-toggle" onclick="toggleMobileCurrencyMenu()">
+                        <span class="mobile-currency-symbol">$</span>
+                        <span class="mobile-currency-code">USD</span>
+                        <span>▼</span>
+                    </button>
+
+                    <!-- Mobile Menu Button -->
+                    <button class="md:hidden" onclick="toggleMobileMenu()">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                        </svg>
+                    </button>
+                </div>
             </div>
 
+            <!-- Mobile Menu (without currency selector) -->
             <div id="mobileMenu" class="mobile-menu border-t border-purple-500/20 py-4 md:hidden">
                 <nav class="flex flex-col gap-3">
                     <a href="index.html" class="text-sm text-gray-300 hover:text-white">Home</a>
@@ -194,14 +414,27 @@
                     <a href="contact.html" class="text-sm text-gray-300 hover:text-white">Contact</a>
                     <a href="faq.html" class="text-sm text-gray-300 hover:text-white">FAQ</a>
                     <a href="dashboard.html" class="text-sm text-purple-400 hover:text-purple-300">Dashboard</a>
-                    <a href="index.html" class="text-sm text-gray-300 hover:text-white">Logout</a>
+                    <a href="javascript:void(0)" onclick="logout()" class="text-sm text-gray-300 hover:text-white">Logout</a>
                 </nav>
             </div>
         </div>
     </header>
 
+    <!-- Mobile Currency Menu Overlay -->
+    <div class="mobile-currency-overlay" id="mobileCurrencyOverlay" onclick="closeMobileCurrencyMenu()"></div>
+    
+    <!-- Mobile Currency Menu -->
+    <div class="mobile-currency-dropdown" id="mobileCurrencyMenu">
+        <div class="mobile-currency-header">
+            <h3>Select Currency</h3>
+            <button class="close-currency-menu" onclick="closeMobileCurrencyMenu()">×</button>
+        </div>
+        <div class="mobile-currency-options">
+            <!-- Options will be populated by JavaScript -->
+        </div>
+    </div>
+
     <div class="flex min-h-screen">
-        <!-- Updated sidebar with mobile toggle behavior -->
         <aside id="sidebar" class="sidebar w-64 bg-slate-900/50 border-r border-purple-500/20 p-4 backdrop-blur-sm">
             <div class="space-y-1 mb-6">
                 <a href="deposit.html" class="sidebar-link active">
@@ -271,225 +504,582 @@
         </aside>
 
         <main class="flex-1 p-4 md:p-8 bg-gradient-to-br from-slate-950 via-slate-950 to-slate-950">
-            <div class="max-w-4xl mx-auto">
-                <!-- Updated page title and description to match specification -->
+            <div class="max-w-2xl mx-auto">
                 <div class="mb-8">
-                    <h1 class="text-3xl md:text-4xl font-bold text-white mb-2">Deposit Funds</h1>
-                    <p class="text-gray-400">Select a payment method and enter your deposit amount.</p>
+                    <h1 class="text-3xl md:text-4xl font-bold text-white mb-2">Payment via Bitcoin (BTC)</h1>
+                    <p class="text-gray-400">Complete your deposit using Bitcoin</p>
                 </div>
 
-                <div class="bg-slate-900/80 backdrop-blur-sm rounded-xl border border-purple-500/20 p-6 md:p-8">
-                    <!-- Payment Method Selection Section -->
-                    <div class="mb-8">
-                        <h3 class="text-xl font-semibold text-white mb-6">Select Payment Method</h3>
-                        <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
-                            <!-- Bitcoin -->
-                            <div class="payment-method" data-method="btc" onclick="selectPayment('btc', event)">
-                                <div class="text-center">
-                                    <div class="payment-icon text-5xl mb-3 transition-transform">₿</div>
-                                    <p class="text-base font-semibold text-white">Bitcoin</p>
-                                    <p class="text-xs text-gray-400 mt-1">BTC</p>
-                                </div>
-                            </div>
+                <div class="bg-slate-900/80 backdrop-blur-sm rounded-xl border border-purple-500/20 p-6 md:p-8 mb-6">
+                    <div class="mb-6">
+                        <p class="text-gray-400 text-sm mb-1">You have requested:</p>
+                        <p class="text-2xl font-bold text-white" id="requestedAmount"><span data-currency-symbol>$</span>0.00 USD</p>
+                    </div>
 
-                            <!-- Ethereum -->
-                            <div class="payment-method" data-method="eth" onclick="selectPayment('eth', event)">
-                                <div class="text-center">
-                                    <div class="payment-icon text-5xl mb-3 transition-transform">⟠</div>
-                                    <p class="text-base font-semibold text-white">Ethereum</p>
-                                    <p class="text-xs text-gray-400 mt-1">ETH</p>
-                                </div>
-                            </div>
+                    <div class="mb-6">
+                        <p class="text-gray-400 text-sm mb-1">Please pay:</p>
+                        <p class="text-2xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent" id="payAmount"><span data-currency-symbol>$</span>0.00 USD worth of BTC</p>
+                    </div>
 
-                            <!-- USDT -->
-                            <div class="payment-method" data-method="usdt" onclick="selectPayment('usdt', event)">
-                                <div class="text-center">
-                                    <div class="payment-icon text-5xl mb-3 transition-transform">₮</div>
-                                    <p class="text-base font-semibold text-white">Tether USDT</p>
-                                    <p class="text-xs text-gray-400 mt-1">TRC20/ERC20</p>
-                                </div>
-                            </div>
-
-                            <!-- Blue Voucher -->
-                            <div class="payment-method" data-method="blue-voucher" onclick="selectPayment('blue-voucher', event)">
-                                <div class="text-center">
-                                    <div class="payment-icon text-5xl mb-3 transition-transform">🎫</div>
-                                    <p class="text-base font-semibold text-white">Blue Voucher</p>
-                                    <p class="text-xs text-gray-400 mt-1">Voucher</p>
-                                </div>
-                            </div>
-
-                            <!-- 1Voucher -->
-                            <div class="payment-method" data-method="1voucher" onclick="selectPayment('1voucher', event)">
-                                <div class="text-center">
-                                    <div class="payment-icon text-5xl mb-3 transition-transform">🎟️</div>
-                                    <p class="text-base font-semibold text-white">1Voucher</p>
-                                    <p class="text-xs text-gray-400 mt-1">Voucher</p>
-                                </div>
-                            </div>
-
-                            <!-- OTT Voucher -->
-                            <div class="payment-method" data-method="ott-voucher" onclick="selectPayment('ott-voucher', event)">
-                                <div class="text-center">
-                                    <div class="payment-icon text-5xl mb-3 transition-transform">🎁</div>
-                                    <p class="text-base font-semibold text-white">OTT Voucher</p>
-                                    <p class="text-xs text-gray-400 mt-1">Voucher</p>
-                                </div>
+                    <div class="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4 mb-6">
+                        <div class="flex gap-3">
+                            <span class="text-2xl">⚠️</span>
+                            <div>
+                                <p class="text-yellow-400 font-semibold mb-1">Warning</p>
+                                <p class="text-gray-300 text-sm">Only send BTC to this address. Sending any other asset will result in permanent loss.</p>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Amount Input Section - Hidden until payment method selected -->
-                    <div id="amountSection" class="amount-section">
-                        <!-- Amount Input -->
-                        <div class="mb-6">
-                            <label class="block text-base font-semibold text-white mb-2">Enter Deposit Amount</label>
-                            <div class="relative">
-                                <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-lg">$</span>
-                                <input 
-                                    type="number" 
-                                    id="depositAmount" 
-                                    class="w-full pl-10 pr-4 py-4 border border-slate-700 bg-slate-800/50 text-white text-lg rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition" 
-                                    placeholder="0.00"
-                                    min="1"
-                                    max="200000"
-                                    step="0.01"
-                                    oninput="validateAndCalculate()"
-                                >
-                            </div>
-                            <p class="text-sm text-gray-400 mt-2">Minimum: $1.00 | Maximum: $200,000.00</p>
-                            <p id="amountError" class="error-message">Please enter an amount between $1 and $200,000</p>
-                        </div>
-
-                        <!-- Automatic Calculation Panel -->
-                        <div class="bg-gradient-to-br from-slate-800/60 to-purple-900/20 rounded-lg border border-purple-500/30 p-6 mb-6">
-                            <h4 class="text-lg font-semibold text-white mb-4">Transaction Summary</h4>
-                            
-                            <!-- Processing Charge -->
-                            <div class="flex justify-between items-center mb-3 pb-3 border-b border-slate-700/50">
-                                <span class="text-gray-400">Processing Charge:</span>
-                                <span class="font-semibold text-white">$0.00</span>
-                            </div>
-
-                            <!-- Total Amount -->
-                            <div class="flex justify-between items-center mb-3 pb-3 border-b border-slate-700/50">
-                                <span class="text-white font-medium">Total Amount:</span>
-                                <span id="totalAmount" class="font-bold text-2xl bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">$0.00</span>
-                            </div>
-
-                            <!-- Conversion Rate -->
-                            <div class="flex justify-between items-center">
-                                <span class="text-gray-400 text-sm">Conversion Rate:</span>
-                                <span class="text-gray-400 text-sm">1 USD₮ = $1.00 USD</span>
+                    <div class="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4 mb-6">
+                        <div class="flex gap-3">
+                            <span class="text-2xl">⚠️</span>
+                            <div>
+                                <p class="text-yellow-400 font-semibold mb-1">Important Reminder</p>
+                                <p class="text-gray-300 text-sm">Please make sure you deposit the exact amount shown above (<span id="reminderAmount" class="font-bold"><span data-currency-symbol>$</span>0.00 USD</span>). Depositing a different amount may cause delays in processing your transaction.</p>
                             </div>
                         </div>
-
-                        <!-- Confirm Order Button -->
-                        <button 
-                            id="confirmBtn" 
-                            onclick="confirmOrder()" 
-                            disabled
-                            class="w-full bg-gradient-to-r from-purple-500 via-pink-500 to-purple-500 hover:from-purple-600 hover:via-pink-600 hover:to-purple-600 disabled:from-gray-600 disabled:to-gray-700 disabled:cursor-not-allowed text-white py-4 rounded-lg font-semibold text-lg transition-all shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50 disabled:shadow-none">
-                            Confirm Order
-                        </button>
-                        <p class="text-center text-sm text-gray-400 mt-3">Please review your deposit details before confirming</p>
                     </div>
+
+                    <div class="mb-6">
+                        <label class="text-sm font-semibold text-gray-300 mb-2 block">Wallet Address</label>
+                        <div class="bg-slate-950/50 border border-purple-500/30 rounded-lg p-4 mb-4">
+                            <p class="text-white break-all font-mono text-sm" id="btcWallet">bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh</p>
+                        </div>
+                        
+                        <div class="flex justify-center mb-4">
+                            <div class="bg-white p-4 rounded-lg">
+                                <img src="/placeholder.svg?height=200&width=200" alt="BTC QR Code" class="w-48 h-48">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Image Upload Section -->
+                    <div class="mb-6">
+                        <label class="text-sm font-semibold text-gray-300 mb-2 block">Upload Transaction Screenshot (Optional but Recommended)</label>
+                        <div 
+                            id="imageUploadContainer" 
+                            class="image-upload-container"
+                            onclick="document.getElementById('fileInput').click()"
+                        >
+                            <input 
+                                type="file" 
+                                id="fileInput" 
+                                accept="image/*" 
+                                style="display: none;" 
+                                onchange="handleImageUpload(event)"
+                            >
+                            <div class="text-center">
+                                <div class="inline-flex items-center justify-center w-16 h-16 bg-purple-500/10 rounded-full mb-4">
+                                    <svg class="w-8 h-8 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                                    </svg>
+                                </div>
+                                <p class="text-white font-medium mb-1">Click to upload or drag and drop</p>
+                                <p class="text-gray-400 text-sm">Upload a screenshot of your Bitcoin transaction (PNG, JPG, JPEG up to 5MB)</p>
+                            </div>
+                        </div>
+                        <img id="imagePreview" class="image-preview" alt="Preview">
+                        <div id="imageControls" class="hidden text-center">
+                            <button onclick="removeImage()" class="remove-image-btn">Remove Image</button>
+                        </div>
+                    </div>
+
+                    <div class="mb-6">
+                        <label for="userEmail" class="text-sm font-semibold text-gray-300 mb-2 block">Your V0 Trade Account Email</label>
+                        <input 
+                            type="email" 
+                            id="userEmail" 
+                            class="w-full bg-slate-950/50 border border-purple-500/30 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-purple-500 transition"
+                            placeholder="Enter your email"
+                            required
+                        >
+                    </div>
+
+                    <div class="bg-slate-950/50 border border-purple-500/20 rounded-lg p-4 mb-6">
+                        <p class="text-white font-semibold mb-2">Instructions</p>
+                        <ol class="list-decimal list-inside space-y-2 text-gray-400 text-sm">
+                            <li>Send the exact BTC amount to the wallet address above.</li>
+                            <li>Take a screenshot of your transaction confirmation.</li>
+                            <li>Upload the screenshot (optional but recommended for faster verification).</li>
+                            <li>Once payment is sent, click Confirm Payment.</li>
+                        </ol>
+                    </div>
+
+                    <button 
+                        onclick="confirmPayment()"
+                        class="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold py-3 px-6 rounded-lg transition transform hover:scale-105"
+                        id="confirmBtn"
+                    >
+                        Confirm Payment
+                    </button>
                 </div>
             </div>
         </main>
     </div>
 
-    <script>
-        let selectedMethod = '';
-        
-        function toggleMobileMenu() {
-            const menu = document.getElementById('mobileMenu');
+   <script>
+    // Currency data
+    const CURRENCIES = [
+        { code: 'USD', symbol: '$', name: 'US Dollar' },
+        { code: 'EUR', symbol: '€', name: 'Euro' },
+        { code: 'GBP', symbol: '£', name: 'British Pound' },
+        { code: 'ZAR', symbol: 'R', name: 'South African Rand' },
+        { code: 'INR', symbol: '₹', name: 'Indian Rupee' },
+        { code: 'JPY', symbol: '¥', name: 'Japanese Yen' },
+        { code: 'AUD', symbol: 'A$', name: 'Australian Dollar' },
+        { code: 'CAD', symbol: 'C$', name: 'Canadian Dollar' }
+    ];
+    
+    const API_TOKEN = "LG6hnTBxgBG78FueElsSwpHRd4Wep1oL";
+    const WALLET_TABLE = 756077;
+    const DEPOSIT_TABLE = 756078;
+    const DEPOSIT_API = `https://api.baserow.io/api/database/rows/table/${DEPOSIT_TABLE}/`;
+    const FILE_UPLOAD_API = "https://api.baserow.io/api/user-files/upload-file/";
+    
+    let currentUserEmail = '';
+    let uploadedImageName = null;
+    let uploadedImageFile = null;
+
+    // Mobile menu functions
+    function toggleMobileMenu() {
+        const menu = document.getElementById('mobileMenu');
+        if (menu) {
             menu.classList.toggle('active');
         }
+    }
+    
+    function closeMobileMenu() {
+        document.getElementById('mobileMenu').classList.remove('active');
+    }
+    
+    // Mobile currency menu functions
+    function toggleMobileCurrencyMenu() {
+        const overlay = document.getElementById('mobileCurrencyOverlay');
+        const menu = document.getElementById('mobileCurrencyMenu');
         
-        function toggleSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            const overlay = document.getElementById('sidebarOverlay');
-            sidebar.classList.toggle('active');
-            overlay.classList.toggle('active');
+        overlay.classList.toggle('show');
+        menu.classList.toggle('show');
+        
+        // Populate currency options if not already done
+        if (menu.querySelector('.mobile-currency-options').children.length === 0) {
+            populateMobileCurrencyOptions();
+        }
+    }
+    
+    function closeMobileCurrencyMenu() {
+        document.getElementById('mobileCurrencyOverlay').classList.remove('show');
+        document.getElementById('mobileCurrencyMenu').classList.remove('show');
+    }
+    
+    function populateMobileCurrencyOptions() {
+        const container = document.querySelector('.mobile-currency-options');
+        const currentCurrency = getCurrentCurrency();
+        
+        container.innerHTML = '';
+        
+        CURRENCIES.forEach(currency => {
+            const option = document.createElement('div');
+            option.className = `mobile-currency-option ${currency.code === currentCurrency ? 'active' : ''}`;
+            option.innerHTML = `
+                <span class="symbol" style="font-size: 20px; width: 30px;">${currency.symbol}</span>
+                <span class="code" style="font-weight: 600; min-width: 50px;">${currency.code}</span>
+                <span class="name" style="color: #94a3b8; font-size: 14px; flex-grow: 1; text-align: right;">${currency.name}</span>
+            `;
+            option.onclick = () => selectMobileCurrency(currency.code);
+            container.appendChild(option);
+        });
+    }
+    
+    function selectMobileCurrency(currencyCode) {
+        // Update mobile toggle display
+        const currency = CURRENCIES.find(c => c.code === currencyCode);
+        if (currency) {
+            document.querySelector('.mobile-currency-symbol').textContent = currency.symbol;
+            document.querySelector('.mobile-currency-code').textContent = currency.code;
         }
         
-        /* Updated payment selection to show amount section and highlight selected method */
-        function selectPayment(method, event) {
-            selectedMethod = method;
+        // Update desktop switcher if visible
+        const desktopSelector = document.querySelector('.currency-selector');
+        if (desktopSelector) {
+            desktopSelector.querySelector('.current-symbol').textContent = currency.symbol;
+            desktopSelector.querySelector('.current-code').textContent = currency.code;
+        }
+        
+        // Update all currency symbols on page
+        updateCurrencySymbols(currencyCode);
+        
+        // Save to localStorage
+        localStorage.setItem('v0trade_currency', currencyCode);
+        
+        // Close mobile menu
+        closeMobileCurrencyMenu();
+        
+        // Dispatch currency change event
+        document.dispatchEvent(new CustomEvent('currencyChanged', { detail: { code: currencyCode, symbol: currency.symbol } }));
+    }
+    
+    function getCurrentCurrency() {
+        return localStorage.getItem('v0trade_currency') || 'USD';
+    }
+    
+    function updateCurrencySymbols(currencyCode) {
+        const currency = CURRENCIES.find(c => c.code === currencyCode);
+        if (!currency) return;
+        
+        // Update all elements with data-currency-symbol attribute
+        document.querySelectorAll('[data-currency-symbol]').forEach(el => {
+            el.textContent = currency.symbol;
+        });
+        
+        // Update amount displays
+        const amount = localStorage.getItem('deposit_amount') || '0.00';
+        document.getElementById('requestedAmount').innerHTML = `${currency.symbol}${amount} USD`;
+        document.getElementById('payAmount').innerHTML = `${currency.symbol}${amount} USD worth of BTC`;
+        document.getElementById('reminderAmount').innerHTML = `${currency.symbol}${amount} USD`;
+    }
+
+    // Logout function
+    function logout() {
+        if (confirm('Are you sure you want to log out?')) {
+            localStorage.removeItem("v0trade_user_email");
+            window.location.href = 'login.html';
+        }
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+        const userEmail = localStorage.getItem("v0trade_user_email");
+        
+        // Check if user is logged in
+        if (!userEmail) {
+            window.location.href = 'login.html';
+            return;
+        }
+        
+        currentUserEmail = userEmail;
+
+        // Update email displays
+        document.getElementById('userEmail').value = userEmail;
+        const headerEmailElements = document.querySelectorAll('#headerEmailDisplay, .user-email-display');
+        headerEmailElements.forEach(element => {
+            if (element) {
+                element.textContent = userEmail;
+            }
+        });
+
+        // Initialize currency system
+        const currentCurrency = getCurrentCurrency();
+        updateCurrencySymbols(currentCurrency);
+        
+        // Update mobile toggle display
+        const currency = CURRENCIES.find(c => c.code === currentCurrency);
+        if (currency) {
+            document.querySelector('.mobile-currency-symbol').textContent = currency.symbol;
+            document.querySelector('.mobile-currency-code').textContent = currency.code;
             
-            // Remove selected class from all payment methods
-            document.querySelectorAll('.payment-method').forEach(el => {
-                el.classList.remove('selected');
+            // Update desktop switcher if exists
+            const desktopSelector = document.querySelector('.currency-selector');
+            if (desktopSelector) {
+                desktopSelector.querySelector('.current-symbol').textContent = currency.symbol;
+                desktopSelector.querySelector('.current-code').textContent = currency.code;
+            }
+        }
+
+        // Load deposit amount
+        const amount = localStorage.getItem('deposit_amount') || '0.00';
+        const currencySymbol = CURRENCIES.find(c => c.code === currentCurrency)?.symbol || '$';
+        document.getElementById('requestedAmount').innerHTML = `${currencySymbol}${amount} USD`;
+        document.getElementById('payAmount').innerHTML = `${currencySymbol}${amount} USD worth of BTC`;
+        document.getElementById('reminderAmount').innerHTML = `${currencySymbol}${amount} USD`;
+
+        // Update navigation based on login status
+        updateNavigation();
+
+        // Setup drag and drop
+        setupDragAndDrop();
+        
+        // Clean up expired transactions
+        cleanupExpiredTransactions();
+    });
+
+    function setupDragAndDrop() {
+        const container = document.getElementById('imageUploadContainer');
+        const fileInput = document.getElementById('fileInput');
+
+        container.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            container.classList.add('drag-over');
+        });
+
+        container.addEventListener('dragleave', () => {
+            container.classList.remove('drag-over');
+        });
+
+        container.addEventListener('drop', (e) => {
+            e.preventDefault();
+            container.classList.remove('drag-over');
+            
+            if (e.dataTransfer.files.length) {
+                const file = e.dataTransfer.files[0];
+                if (file.type.startsWith('image/')) {
+                    handleFile(file);
+                } else {
+                    alert('Please upload an image file (PNG, JPG, JPEG)');
+                }
+            }
+        });
+    }
+
+    function handleImageUpload(event) {
+        const file = event.target.files[0];
+        if (file) {
+            handleFile(file);
+        }
+    }
+
+    function handleFile(file) {
+        // Check file size (5MB limit)
+        if (file.size > 5 * 1024 * 1024) {
+            alert('File size must be less than 5MB');
+            return;
+        }
+
+        // Check file type
+        if (!file.type.startsWith('image/')) {
+            alert('Please upload an image file (PNG, JPG, JPEG)');
+            return;
+        }
+
+        // Preview image
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const preview = document.getElementById('imagePreview');
+            preview.src = e.target.result;
+            preview.style.display = 'block';
+            
+            const controls = document.getElementById('imageControls');
+            controls.classList.remove('hidden');
+            
+            // Store the file for later upload
+            uploadedImageName = file.name;
+            uploadedImageFile = file;
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function removeImage() {
+        document.getElementById('imagePreview').src = '';
+        document.getElementById('imagePreview').style.display = 'none';
+        document.getElementById('imageControls').classList.add('hidden');
+        document.getElementById('fileInput').value = '';
+        uploadedImageName = null;
+        uploadedImageFile = null;
+    }
+
+    async function uploadImageToBaserow(file) {
+        try {
+            // First, upload the file to Baserow's file upload endpoint
+            const formData = new FormData();
+            formData.append('file', file);
+
+            const uploadResponse = await fetch(FILE_UPLOAD_API, {
+                method: 'POST',
+                headers: {
+                    'Authorization': 'Token ' + API_TOKEN,
+                },
+                body: formData
             });
-            
-            // Add selected class to clicked method
-            event.currentTarget.classList.add('selected');
-            
-            // Show amount section with animation
-            const amountSection = document.getElementById('amountSection');
-            amountSection.classList.add('visible');
-            
-            // Scroll to amount section on mobile
-            setTimeout(() => {
-                amountSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-            }, 100);
-            
-            // Validate button state
-            validateAndCalculate();
+
+            if (!uploadResponse.ok) {
+                throw new Error('Failed to upload image');
+            }
+
+            const uploadData = await uploadResponse.json();
+            return uploadData;
+        } catch (error) {
+            console.error('Error uploading image:', error);
+            return null;
+        }
+    }
+
+    function updateNavigation() {
+        const userEmail = localStorage.getItem("v0trade_user_email");
+        const authSection = document.querySelector('.hidden.items-center.gap-4.md\\:flex');
+        
+        if (authSection && userEmail) {
+            authSection.innerHTML = `
+                <!-- Desktop Currency Switcher -->
+                <div class="currency-switcher">
+                    <div class="currency-selector">
+                        <span class="current-symbol">${CURRENCIES.find(c => c.code === getCurrentCurrency())?.symbol || '$'}</span>
+                        <span class="current-code">${getCurrentCurrency()}</span>
+                        <span>▼</span>
+                    </div>
+                    <div class="currency-dropdown"></div>
+                </div>
+                
+                <a href="dashboard.html" class="text-sm text-purple-400 hover:text-purple-300 transition">Dashboard</a>
+                <span class="text-sm text-gray-400">${userEmail}</span>
+                <a href="javascript:void(0)" onclick="logout()" class="text-sm text-gray-300 hover:text-white transition">Logout</a>
+            `;
+        }
+    }
+
+    function toggleSidebar() {
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('sidebarOverlay');
+        sidebar.classList.toggle('active');
+        overlay.classList.toggle('active');
+    }
+
+    // Clean up expired transactions
+    function cleanupExpiredTransactions() {
+        try {
+            const transactions = JSON.parse(localStorage.getItem('latest_transactions') || '[]');
+            const now = Date.now();
+            const validTransactions = transactions.filter(tx => tx.expiry > now);
+            localStorage.setItem('latest_transactions', JSON.stringify(validTransactions));
+        } catch (error) {
+            console.error('[BTC Deposit] Error cleaning up transactions:', error);
+        }
+    }
+
+    async function confirmPayment() {
+        const userEmail = localStorage.getItem("v0trade_user_email");
+        const emailInput = document.getElementById('userEmail').value;
+        const amount = localStorage.getItem('deposit_amount') || '0.00';
+        const btcWallet = document.getElementById('btcWallet').textContent;
+        const confirmBtn = document.getElementById('confirmBtn');
+        
+        // Get current currency symbol
+        const currentCurrency = getCurrentCurrency();
+        const currencySymbol = CURRENCIES.find(c => c.code === currentCurrency)?.symbol || '$';
+
+        // Verify user is logged in
+        if (!userEmail) {
+            alert('You must be logged in to make a deposit');
+            window.location.href = 'login.html';
+            return;
         }
 
-        /* Added validation and real-time calculation */
-        function validateAndCalculate() {
-            const amountInput = document.getElementById('depositAmount');
-            const amount = parseFloat(amountInput.value) || 0;
-            const errorMsg = document.getElementById('amountError');
-            const confirmBtn = document.getElementById('confirmBtn');
-            const totalDisplay = document.getElementById('totalAmount');
-            
-            // Validate amount range
-            if (amount > 0 && (amount < 1 || amount > 200000)) {
-                errorMsg.classList.add('show');
-                confirmBtn.disabled = true;
-            } else {
-                errorMsg.classList.remove('show');
-                // Enable button only if method selected and valid amount
-                confirmBtn.disabled = !(selectedMethod && amount >= 1 && amount <= 200000);
-            }
-            
-            // Update total display
-            totalDisplay.textContent = '$' + amount.toFixed(2);
+        // Verify email matches logged in user
+        if (emailInput !== userEmail) {
+            alert('Email must match your logged in account');
+            return;
         }
 
-        /* Added localStorage saving and redirect logic per specification */
-        function confirmOrder() {
-            const amount = parseFloat(document.getElementById('depositAmount').value);
+        if (!emailInput) {
+            alert('Please enter your email address');
+            return;
+        }
+
+        // Disable button to prevent multiple clicks
+        confirmBtn.disabled = true;
+        confirmBtn.textContent = 'Processing...';
+        confirmBtn.classList.remove('hover:scale-105');
+
+        // Generate transaction ID and timestamp
+        const transactionId = 'TXN-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9).toUpperCase();
+        const timestamp = new Date().toISOString();
+
+        try {
+            let imageData = null;
             
-            // Validate one more time
-            if (!selectedMethod || !amount || amount < 1 || amount > 200000) {
-                alert('Please select a payment method and enter a valid amount between $1 and $200,000');
-                return;
+            // Upload image if present
+            if (uploadedImageFile) {
+                imageData = await uploadImageToBaserow(uploadedImageFile);
             }
-            
-            localStorage.setItem('deposit_amount', amount.toFixed(2));
-            
-            // Redirect to specific payment instruction page based on method
-            const redirectMap = {
-                'btc': 'btc-deposit.html',
-                'eth': 'eth-deposit.html',
-                'usdt': 'usdt-deposit.html',
-                'blue-voucher': 'blue-voucher-deposit.html',
-                '1voucher': '1voucher-deposit.html',
-                'ott-voucher': 'ott-voucher-deposit.html'
+
+            // Prepare deposit payload
+            const depositPayload = {
+                "id 2": transactionId,
+                email: emailInput,
+                method: 'BTC',
+                amount: amount,
+                pin: '', // Ignore pin as requested
+                wallet_address: btcWallet,
+                status: 'pending',
+                transaction_id: transactionId,
+                timestamp: timestamp
             };
-            
-            const redirectUrl = redirectMap[selectedMethod];
-            if (redirectUrl) {
-                window.location.href = redirectUrl;
-            } else {
-                alert('Invalid payment method selected');
+
+            // Add image data if uploaded
+            if (imageData) {
+                depositPayload.image = [{
+                    name: imageData.name
+                }];
             }
+
+            // Send data to Baserow
+            const response = await fetch(DEPOSIT_API + '?user_field_names=true', {
+                method: "POST",
+                headers: {
+                    "Authorization": "Token " + API_TOKEN,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(depositPayload)
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('Baserow error response:', errorText);
+                throw new Error('Failed to submit deposit to Baserow');
+            }
+
+            const responseData = await response.json();
+            console.log('Deposit submitted successfully:', responseData);
+
+            // Save transaction to localStorage as Latest Transactions (valid for 24 hours)
+            const transactionData = {
+                type: 'incoming',
+                method: 'BTC',
+                amount: amount,
+                wallet_address: btcWallet,
+                transaction_id: transactionId,
+                timestamp: timestamp,
+                expiresAt: Date.now() + (24 * 60 * 60 * 1000) // 24 hours from now
+            };
+
+            // Get existing transactions or initialize empty array
+            let latestTransactions = JSON.parse(localStorage.getItem('latest_transactions') || '[]');
+            
+            // Add new transaction
+            latestTransactions.push(transactionData);
+            
+            // Keep only last 10 transactions
+            if (latestTransactions.length > 10) {
+                latestTransactions = latestTransactions.slice(-10);
+            }
+            
+            // Save back to localStorage
+            localStorage.setItem('latest_transactions', JSON.stringify(latestTransactions));
+
+            // Save individual deposit details
+            localStorage.setItem('deposit_method', 'BTC');
+            localStorage.setItem('deposit_amount', amount);
+            localStorage.setItem('deposit_wallet_address', btcWallet);
+            localStorage.setItem('deposit_email', emailInput);
+            localStorage.setItem('transaction_id', transactionId);
+
+            // Redirect to payment pending page
+            window.location.href = 'payment-pending.html';
+            
+        } catch (error) {
+            console.error('[v0] Error submitting deposit:', error);
+            alert('Failed to submit deposit. Please try again.\nError: ' + error.message);
+            
+            // Re-enable button
+            confirmBtn.disabled = false;
+            confirmBtn.textContent = 'Confirm Payment';
+            confirmBtn.classList.add('hover:scale-105');
         }
-    </script>
+    }
+    
+    // Global refresh currency function
+    window.refreshCurrency = function() {
+        const currentCurrency = getCurrentCurrency();
+        updateCurrencySymbols(currentCurrency);
+    };
+</script>
 </body>
 </html>
