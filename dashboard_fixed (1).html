@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Wallet Dashboard - V0 Trade</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Add currency config script -->
+    <script src="/js/currency-config.js"></script>
     <style>
         .sidebar-link {
             display: flex;
@@ -91,6 +93,292 @@
         .status-completed { background-color: #d1fae5; color: #065f46; }
         .status-pending { background-color: #fef3c7; color: #92400e; }
         .status-failed { background-color: #fee2e2; color: #991b1b; }
+        
+        /* Currency switcher styles */
+        .currency-switcher {
+            position: relative;
+            display: inline-block;
+        }
+        
+        .currency-selector {
+            padding: 8px 12px;
+            border: 1px solid rgba(168, 85, 247, 0.3);
+            border-radius: 6px;
+            background: rgba(30, 41, 59, 0.5);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: white;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        
+        .currency-selector:hover {
+            border-color: #a855f7;
+            background: rgba(168, 85, 247, 0.1);
+        }
+        
+        .currency-dropdown {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+            border: 1px solid rgba(168, 85, 247, 0.2);
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            min-width: 200px;
+            z-index: 1000;
+            display: none;
+            margin-top: 5px;
+            padding: 8px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .currency-dropdown.show {
+            display: block;
+            animation: fadeIn 0.2s ease;
+        }
+        
+        .currency-option-dropdown {
+            padding: 10px 12px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border-radius: 6px;
+            color: #e2e8f0;
+            font-size: 14px;
+        }
+        
+        .currency-option-dropdown:hover {
+            background: rgba(168, 85, 247, 0.1);
+        }
+        
+        .currency-option-dropdown.active {
+            background: rgba(168, 85, 247, 0.15);
+            color: white;
+            font-weight: 600;
+        }
+        
+        .currency-option-dropdown .symbol {
+            font-size: 18px;
+            width: 24px;
+            text-align: center;
+        }
+        
+        .currency-option-dropdown .code {
+            font-weight: 600;
+            min-width: 40px;
+        }
+        
+        .currency-option-dropdown .name {
+            color: #94a3b8;
+            font-size: 12px;
+            flex-grow: 1;
+            text-align: right;
+        }
+        
+        /* Mobile currency selector - always visible */
+        .mobile-currency-toggle {
+            padding: 8px 12px;
+            border: 1px solid rgba(168, 85, 247, 0.3);
+            border-radius: 6px;
+            background: rgba(30, 41, 59, 0.5);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: white;
+            font-size: 14px;
+            transition: all 0.3s;
+            margin-left: auto;
+            margin-right: 12px;
+        }
+        
+        .mobile-currency-dropdown {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+            border: 1px solid rgba(168, 85, 247, 0.2);
+            border-radius: 12px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+            width: 90%;
+            max-width: 320px;
+            z-index: 1100;
+            display: none;
+            padding: 16px;
+            backdrop-filter: blur(20px);
+        }
+        
+        .mobile-currency-dropdown.show {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        .mobile-currency-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(5px);
+            z-index: 1099;
+            display: none;
+        }
+        
+        .mobile-currency-overlay.show {
+            display: block;
+        }
+        
+        .mobile-currency-option {
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border-radius: 8px;
+            color: #e2e8f0;
+            font-size: 16px;
+            margin-bottom: 8px;
+        }
+        
+        .mobile-currency-option:hover {
+            background: rgba(168, 85, 247, 0.1);
+        }
+        
+        .mobile-currency-option.active {
+            background: rgba(168, 85, 247, 0.2);
+            color: white;
+            font-weight: 600;
+        }
+        
+        .mobile-currency-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid rgba(168, 85, 247, 0.2);
+        }
+        
+        .mobile-currency-header h3 {
+            color: white;
+            font-size: 18px;
+            font-weight: 600;
+        }
+        
+        .close-currency-menu {
+            background: none;
+            border: none;
+            color: #94a3b8;
+            font-size: 24px;
+            cursor: pointer;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+        }
+        
+        .close-currency-menu:hover {
+            background: rgba(168, 85, 247, 0.1);
+            color: white;
+        }
+        
+        /* Info modal for dashboard */
+        .info-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.9);
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        .info-modal.show {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .info-modal-content {
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+            border: 1px solid rgba(168, 85, 247, 0.3);
+            border-radius: 16px;
+            padding: 32px;
+            width: 90%;
+            max-width: 400px;
+            text-align: center;
+            transform: translateY(20px);
+            transition: transform 0.3s ease;
+            box-shadow: 0 20px 50px rgba(168, 85, 247, 0.2);
+        }
+        
+        .info-modal.show .info-modal-content {
+            transform: translateY(0);
+        }
+        
+        .info-modal-icon {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 20px;
+            background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 36px;
+            color: white;
+        }
+        
+        .info-modal-title {
+            color: white;
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 16px;
+        }
+        
+        .info-modal-text {
+            color: #e2e8f0;
+            margin-bottom: 24px;
+            line-height: 1.6;
+        }
+        
+        .info-modal-btn {
+            padding: 12px 32px;
+            background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .info-modal-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(168, 85, 247, 0.3);
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translate(-50%, -48%); }
+            to { opacity: 1; transform: translate(-50%, -50%); }
+        }
     </style>
 </head>
 <body class="bg-gray-50">
@@ -103,6 +391,7 @@
     
     <div id="sidebarOverlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
     
+    <!-- Updated header with mobile currency toggle -->
     <header class="sticky top-0 z-50 border-b border-purple-500/20 bg-slate-950/80 backdrop-blur-md">
         <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div class="flex items-center justify-between py-4">
@@ -125,6 +414,7 @@
                     <span class="text-xl font-bold bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent">V0 Trade</span>
                 </a>
 
+                <!-- Desktop Navigation -->
                 <nav class="hidden items-center gap-8 md:flex">
                     <a href="index.html" class="text-sm text-gray-300 hover:text-white transition">Home</a>
                     <div class="dropdown">
@@ -148,19 +438,42 @@
                     </div>
                 </nav>
 
+                <!-- Right Side - Auth with Currency Switcher -->
                 <div class="hidden items-center gap-4 md:flex">
+                    <!-- Desktop Currency Switcher -->
+                    <div class="currency-switcher">
+                        <div class="currency-selector">
+                            <span class="current-symbol">$</span>
+                            <span class="current-code">USD</span>
+                            <span>▼</span>
+                        </div>
+                        <div class="currency-dropdown"></div>
+                    </div>
+                    
                     <a href="dashboard.html" class="text-sm text-purple-400 hover:text-purple-300 transition">Dashboard</a>
                     <span class="text-sm text-gray-400" id="headerEmailDisplay">Loading...</span>
-                    <a href="index.html" class="text-sm text-gray-300 hover:text-white transition">Logout</a>
+                    <a href="index.html" class="text-sm text-gray-300 hover:text-white transition logout-btn">Logout</a>
                 </div>
 
-                <button class="md:hidden" onclick="toggleMobileMenu()">
-                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
-                    </svg>
-                </button>
+                <!-- Mobile header section with currency toggle and menu button -->
+                <div class="flex items-center gap-2 md:hidden">
+                    <!-- Mobile Currency Toggle (always visible) -->
+                    <button class="mobile-currency-toggle" onclick="toggleMobileCurrencyMenu()">
+                        <span class="mobile-currency-symbol">$</span>
+                        <span class="mobile-currency-code">USD</span>
+                        <span>▼</span>
+                    </button>
+
+                    <!-- Mobile Menu Button -->
+                    <button class="md:hidden" onclick="toggleMobileMenu()">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                        </svg>
+                    </button>
+                </div>
             </div>
 
+            <!-- Mobile Menu (without currency selector) -->
             <div id="mobileMenu" class="mobile-menu border-t border-purple-500/20 py-4 md:hidden">
                 <nav class="flex flex-col gap-3">
                     <a href="index.html" class="text-sm text-gray-300 hover:text-white">Home</a>
@@ -174,11 +487,37 @@
                     <a href="contact.html" class="text-sm text-gray-300 hover:text-white">Contact</a>
                     <a href="faq.html" class="text-sm text-gray-300 hover:text-white">FAQ</a>
                     <a href="dashboard.html" class="text-sm text-purple-400 hover:text-purple-300">Dashboard</a>
-                    <a href="index.html" class="text-sm text-gray-300 hover:text-white">Logout</a>
+                    <a href="index.html" class="text-sm text-gray-300 hover:text-white logout-btn">Logout</a>
                 </nav>
             </div>
         </div>
     </header>
+
+    <!-- Mobile Currency Menu Overlay -->
+    <div class="mobile-currency-overlay" id="mobileCurrencyOverlay" onclick="closeMobileCurrencyMenu()"></div>
+    
+    <!-- Mobile Currency Menu -->
+    <div class="mobile-currency-dropdown" id="mobileCurrencyMenu">
+        <div class="mobile-currency-header">
+            <h3>Select Currency</h3>
+            <button class="close-currency-menu" onclick="closeMobileCurrencyMenu()">×</button>
+        </div>
+        <div class="mobile-currency-options">
+            <!-- Options will be populated by JavaScript -->
+        </div>
+    </div>
+
+    <!-- Info Modal for dashboard messages -->
+    <div class="info-modal" id="infoModal">
+        <div class="info-modal-content">
+            <div class="info-modal-icon" id="infoModalIcon">
+                ℹ️
+            </div>
+            <h2 class="info-modal-title" id="infoModalTitle">Information</h2>
+            <p class="info-modal-text" id="infoModalText">Your message here.</p>
+            <button class="info-modal-btn" onclick="closeInfoModal()">OK</button>
+        </div>
+    </div>
 
     <div class="flex min-h-screen">
         <aside id="sidebar" class="sidebar w-64 bg-white border-r border-gray-200 p-4">
@@ -277,7 +616,7 @@
                             </div>
                             <div class="text-4xl">📁</div>
                         </div>
-                        <p id="depositBalance" class="text-3xl font-bold text-gray-900 mb-4">$0.00</p>
+                        <p id="depositBalance" class="text-3xl font-bold text-gray-900 mb-4"><span data-currency-symbol>$</span>0.00</p>
                         <div class="flex items-center justify-between gap-2">
                             <a href="deposit-wallet.html" class="text-sm text-orange-500 hover:text-orange-600 font-medium">View Transactions</a>
                             <a href="deposit.html" class="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2">
@@ -294,7 +633,7 @@
                             </div>
                             <div class="text-4xl">💵</div>
                         </div>
-                        <p id="earningBalance" class="text-3xl font-bold text-gray-900 mb-4">$0.00</p>
+                        <p id="earningBalance" class="text-3xl font-bold text-gray-900 mb-4"><span data-currency-symbol>$</span>0.00</p>
                         <div class="flex items-center justify-between gap-2">
                             <a href="earning-wallet.html" class="text-sm text-green-500 hover:text-green-600 font-medium">View Transactions</a>
                             <a href="withdraw.html" class="bg-gray-900 hover:bg-gray-800 text-white px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2">
@@ -326,7 +665,7 @@
                             <div class="text-3xl">🔄</div>
                             <p class="text-sm font-medium text-gray-600">Miner Earning</p>
                         </div>
-                        <p id="totalReturned" class="text-2xl font-bold text-gray-900">$0.00</p>
+                        <p id="totalReturned" class="text-2xl font-bold text-gray-900"><span data-currency-symbol>$</span>0.00</p>
                     </div>
 
                     <div class="bg-white rounded-xl border-2 border-green-300 p-6">
@@ -334,7 +673,7 @@
                             <div class="text-3xl">💰</div>
                             <p class="text-sm font-medium text-gray-600">Total Ref. Commissions</p>
                         </div>
-                        <p id="totalCommissions" class="text-2xl font-bold text-gray-900">$0.00</p>
+                        <p id="totalCommissions" class="text-2xl font-bold text-gray-900"><span data-currency-symbol>$</span>0.00</p>
                     </div>
 
                     <div class="bg-white rounded-xl border-2 border-green-300 p-6">
@@ -342,7 +681,7 @@
                             <div class="text-3xl">💵</div>
                             <p class="text-sm font-medium text-gray-600">Investment Earning</p>
                         </div>
-                        <p id="totalEarnings" class="text-2xl font-bold text-gray-900">$0.00</p>
+                        <p id="totalEarnings" class="text-2xl font-bold text-gray-900"><span data-currency-symbol>$</span>0.00</p>
                     </div>
                 </div>
 
@@ -383,6 +722,18 @@
     </div>
 
 <script>
+    // Currency data
+    const CURRENCIES = [
+        { code: 'USD', symbol: '$', name: 'US Dollar' },
+        { code: 'EUR', symbol: '€', name: 'Euro' },
+        { code: 'GBP', symbol: '£', name: 'British Pound' },
+        { code: 'ZAR', symbol: 'R', name: 'South African Rand' },
+        { code: 'INR', symbol: '₹', name: 'Indian Rupee' },
+        { code: 'JPY', symbol: '¥', name: 'Japanese Yen' },
+        { code: 'AUD', symbol: 'A$', name: 'Australian Dollar' },
+        { code: 'CAD', symbol: 'C$', name: 'Canadian Dollar' }
+    ];
+    
     const API_TOKEN = "LG6hnTBxgBG78FueElsSwpHRd4Wep1oL";
     const WALLET_TABLE = 756077;
     const TRANSACTIONS_TABLE = 756081;
@@ -392,19 +743,188 @@
     const TRANSACTIONS_DATA_KEY = "v0trade_transactions_data";
     const TRANSACTIONS_SYNC_INTERVAL = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
 
+    // Mobile menu functions
+    function toggleMobileMenu() {
+        document.getElementById('mobileMenu').classList.toggle('active');
+    }
+    
+    function closeMobileMenu() {
+        document.getElementById('mobileMenu').classList.remove('active');
+    }
+    
+    // Mobile currency menu functions
+    function toggleMobileCurrencyMenu() {
+        const overlay = document.getElementById('mobileCurrencyOverlay');
+        const menu = document.getElementById('mobileCurrencyMenu');
+        
+        overlay.classList.toggle('show');
+        menu.classList.toggle('show');
+        
+        // Populate currency options if not already done
+        if (menu.querySelector('.mobile-currency-options').children.length === 0) {
+            populateMobileCurrencyOptions();
+        }
+    }
+    
+    function closeMobileCurrencyMenu() {
+        document.getElementById('mobileCurrencyOverlay').classList.remove('show');
+        document.getElementById('mobileCurrencyMenu').classList.remove('show');
+    }
+    
+    function populateMobileCurrencyOptions() {
+        const container = document.querySelector('.mobile-currency-options');
+        const currentCurrency = getCurrentCurrency();
+        
+        container.innerHTML = '';
+        
+        CURRENCIES.forEach(currency => {
+            const option = document.createElement('div');
+            option.className = `mobile-currency-option ${currency.code === currentCurrency ? 'active' : ''}`;
+            option.innerHTML = `
+                <span class="symbol" style="font-size: 20px; width: 30px;">${currency.symbol}</span>
+                <span class="code" style="font-weight: 600; min-width: 50px;">${currency.code}</span>
+                <span class="name" style="color: #94a3b8; font-size: 14px; flex-grow: 1; text-align: right;">${currency.name}</span>
+            `;
+            option.onclick = () => selectMobileCurrency(currency.code);
+            container.appendChild(option);
+        });
+    }
+    
+    function selectMobileCurrency(currencyCode) {
+        // Update mobile toggle display
+        const currency = CURRENCIES.find(c => c.code === currencyCode);
+        if (currency) {
+            document.querySelector('.mobile-currency-symbol').textContent = currency.symbol;
+            document.querySelector('.mobile-currency-code').textContent = currency.code;
+        }
+        
+        // Update desktop switcher if visible
+        const desktopSelector = document.querySelector('.currency-selector');
+        if (desktopSelector) {
+            desktopSelector.querySelector('.current-symbol').textContent = currency.symbol;
+            desktopSelector.querySelector('.current-code').textContent = currency.code;
+        }
+        
+        // Update all currency symbols on page
+        updateCurrencySymbols(currencyCode);
+        
+        // Save to localStorage
+        localStorage.setItem('v0trade_currency', currencyCode);
+        
+        // Close mobile menu
+        closeMobileCurrencyMenu();
+        
+        // Dispatch currency change event
+        document.dispatchEvent(new CustomEvent('currencyChanged', { detail: { code: currencyCode, symbol: currency.symbol } }));
+    }
+    
+    function getCurrentCurrency() {
+        return localStorage.getItem('v0trade_currency') || 'USD';
+    }
+    
+    function updateCurrencySymbols(currencyCode) {
+        const currency = CURRENCIES.find(c => c.code === currencyCode);
+        if (!currency) return;
+        
+        // Update all elements with data-currency-symbol attribute
+        document.querySelectorAll('[data-currency-symbol]').forEach(el => {
+            el.textContent = currency.symbol;
+        });
+        
+        // Also update any hardcoded $ symbols in amounts
+        document.querySelectorAll('#depositBalance, #earningBalance, #totalReturned, #totalCommissions, #totalEarnings').forEach(el => {
+            const currentText = el.textContent;
+            if (currentText.startsWith('$')) {
+                el.textContent = currency.symbol + currentText.substring(1);
+            }
+        });
+    }
+    
+    // Info modal functions
+    function showInfoModal(title, text, icon = 'ℹ️') {
+        document.getElementById('infoModalTitle').textContent = title;
+        document.getElementById('infoModalText').textContent = text;
+        document.getElementById('infoModalIcon').textContent = icon;
+        document.getElementById('infoModal').classList.add('show');
+        document.body.style.overflow = 'hidden';
+    }
+    
+    function closeInfoModal() {
+        document.getElementById('infoModal').classList.remove('show');
+        document.body.style.overflow = '';
+    }
+    
+    // Dashboard specific functions
     window.addEventListener("DOMContentLoaded", () => {
         const userEmail = localStorage.getItem("v0trade_user_email");
 
         if (!userEmail) {
-            window.location.href = "login.html";
+            showInfoModal('Login Required', 
+                'Please log in to access your dashboard.',
+                '🔒');
+            setTimeout(() => {
+                window.location.href = "login.html";
+            }, 2000);
             return;
         }
 
         document.getElementById("headerEmailDisplay").textContent = userEmail;
         document.getElementById("userEmailDisplay").textContent = userEmail;
+        
+        // Update logout buttons
+        document.querySelectorAll('.logout-btn').forEach(btn => {
+            btn.href = 'javascript:void(0)';
+            btn.onclick = function() {
+                localStorage.removeItem('v0trade_user_email');
+                showInfoModal('Logged Out', 
+                    'You have been successfully logged out.',
+                    '👋');
+                setTimeout(() => {
+                    window.location.href = "login.html";
+                }, 1500);
+            };
+        });
+
+        // Initialize currency system
+        const currentCurrency = getCurrentCurrency();
+        updateCurrencySymbols(currentCurrency);
+        
+        // Update mobile toggle display
+        const currency = CURRENCIES.find(c => c.code === currentCurrency);
+        if (currency) {
+            document.querySelector('.mobile-currency-symbol').textContent = currency.symbol;
+            document.querySelector('.mobile-currency-code').textContent = currency.code;
+            
+            // Update desktop switcher if exists
+            const desktopSelector = document.querySelector('.currency-selector');
+            if (desktopSelector) {
+                desktopSelector.querySelector('.current-symbol').textContent = currency.symbol;
+                desktopSelector.querySelector('.current-code').textContent = currency.code;
+            }
+        }
 
         loadUserData(userEmail);
         loadTransactions(userEmail);
+        
+        // Close mobile menu when clicking outside
+        document.addEventListener('click', function(event) {
+            const mobileMenu = document.getElementById('mobileMenu');
+            const mobileMenuButton = document.querySelector('button[onclick="toggleMobileMenu()"]');
+            
+            if (mobileMenu && mobileMenu.classList.contains('active') && 
+                !mobileMenu.contains(event.target) && 
+                mobileMenuButton && !mobileMenuButton.contains(event.target)) {
+                closeMobileMenu();
+            }
+        });
+        
+        // Close modals with Escape key
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                closeMobileCurrencyMenu();
+                closeInfoModal();
+            }
+        });
     });
 
     async function loadUserData(email) {
@@ -432,6 +952,9 @@
 
             if (!data.results || data.results.length === 0) {
                 console.warn("No wallet row found for:", email);
+                showInfoModal('Wallet Not Found', 
+                    'No wallet information found for your account. Please contact support.',
+                    '⚠️');
                 return;
             }
 
@@ -440,8 +963,12 @@
             // Assign name
             document.getElementById("userName").textContent = w["name"] || "User";
 
-            // Format money
-            const money = n => "$" + (parseFloat(n) || 0).toFixed(2);
+            // Get current currency
+            const currentCurrency = getCurrentCurrency();
+            const currencySymbol = CURRENCIES.find(c => c.code === currentCurrency)?.symbol || '$';
+            
+            // Format money with correct currency symbol
+            const money = n => currencySymbol + (parseFloat(n) || 0).toFixed(2);
 
             // Assign correct wallet values using field names
             document.getElementById("depositBalance").textContent = money(w["Total Wallet Balance"]);
@@ -452,6 +979,9 @@
 
         } catch (err) {
             console.error("LOAD ERROR:", err);
+            showInfoModal('Error Loading Data', 
+                'Unable to load your wallet data. Please try again later.',
+                '❌');
         }
     }
 
@@ -473,45 +1003,20 @@
                 }
             }
             
-            // First, let's check if there are any transactions in the table
-            // We'll use the search endpoint with POST method to filter by email
-            const url = `https://api.baserow.io/api/database/rows/table/${TRANSACTIONS_TABLE}/?user_field_names=true&size=100`;
+            // Fetch ALL transactions from Baserow and filter client-side
+            const url = `https://api.baserow.io/api/database/rows/table/${TRANSACTIONS_TABLE}/?user_field_names=true&size=200`;
             
-            console.log("Fetching transactions from:", url);
-            
-            const requestBody = {
-                filters: {
-                    filter_type: "AND",
-                    filters: [
-                        {
-                            field: "email",  // Using field name since user_field_names=true
-                            type: "equal",
-                            value: email
-                        }
-                    ]
-                },
-                sortings: [
-                    {
-                        field: "date",  // Sort by date, newest first
-                        order: "DESC"
-                    }
-                ]
-            };
-            
+            console.log("Fetching ALL transactions from:", url);
+
             const res = await fetch(url, {
-                method: 'POST',
-                headers: { 
-                    'Authorization': `Token ${API_TOKEN}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(requestBody)
+                headers: { Authorization: `Token ${API_TOKEN}` }
             });
 
             const data = await res.json();
-            console.log("Transactions API response:", data);
+            console.log("All transactions API response:", data);
             
             if (!data.results || data.results.length === 0) {
-                console.log("No transactions found for email:", email);
+                console.log("No transactions found in table");
                 displayNoTransactions();
                 // Clear cache if no transactions
                 localStorage.removeItem(`${TRANSACTIONS_DATA_KEY}_${email}`);
@@ -519,23 +1024,51 @@
                 return;
             }
 
-            // Process transactions data using field names (since user_field_names=true)
-            const transactions = data.results.map(row => {
-                console.log("Processing row:", row);
-                return {
-                    id: row.id,
-                    email: row["email"] || "",  // email field
-                    amount: row["amount"] || "0.00",  // amount field
-                    type: row["type"] || "",  // type field
-                    method: row["method"] || "",  // method field
-                    status: row["status"] || "",  // status field
-                    date: row["date"] || new Date().toISOString(),  // date field
-                    timestamp: row["date"] ? new Date(row["date"]).getTime() : now,
-                    order: row["order"] || "0"
-                };
+            // Filter transactions by user email on client side
+            const userTransactions = data.results.filter(row => {
+                const rowEmail = row["email"] || row["field_6394448"] || "";
+                return rowEmail.toLowerCase() === email.toLowerCase();
             });
 
-            console.log("Processed transactions:", transactions);
+            console.log("Filtered transactions for user:", userTransactions);
+
+            if (userTransactions.length === 0) {
+                console.log("No transactions found for email:", email);
+                displayNoTransactions();
+                // Clear cache if no transactions for this user
+                localStorage.removeItem(`${TRANSACTIONS_DATA_KEY}_${email}`);
+                localStorage.removeItem(`${LAST_TRANSACTION_SYNC_KEY}_${email}`);
+                return;
+            }
+
+            // Process transactions data
+            const transactions = userTransactions.map(row => {
+                // Try to get values from field names first, then fall back to field IDs
+                const transaction = {
+                    id: row.id,
+                    email: row["email"] || row["field_6394448"] || "",
+                    amount: row["amount"] || row["field_6394449"] || "0.00",
+                    type: row["type"] || row["field_6394450"] || "",
+                    method: row["method"] || row["field_6394451"] || "",
+                    status: row["status"] || row["field_6394452"] || "",
+                    date: row["date"] || row["field_6394453"] || new Date().toISOString(),
+                    timestamp: 0
+                };
+                
+                // Parse date to timestamp
+                try {
+                    transaction.timestamp = new Date(transaction.date).getTime();
+                    if (isNaN(transaction.timestamp)) {
+                        transaction.timestamp = now;
+                    }
+                } catch (e) {
+                    transaction.timestamp = now;
+                }
+                
+                return transaction;
+            });
+
+            console.log("Processed user transactions:", transactions);
 
             // Get existing cached transactions
             let allTransactions = [];
@@ -595,6 +1128,10 @@
         
         container.innerHTML = '';
         
+        // Get current currency
+        const currentCurrency = getCurrentCurrency();
+        const currencySymbol = CURRENCIES.find(c => c.code === currentCurrency)?.symbol || '$';
+        
         // Show only latest 10 transactions
         const recentTransactions = transactions.slice(0, 10);
         
@@ -615,61 +1152,54 @@
                         minute: '2-digit'
                     });
                 } else {
-                    // Try to parse if it's in a different format
-                    formattedDate = transaction.date || 'Unknown date';
+                    // Try parsing string date
+                    const dateStr = transaction.date.toString();
+                    if (dateStr) {
+                        formattedDate = dateStr;
+                    }
                 }
             } catch (e) {
-                console.log("Error formatting date:", e);
                 formattedDate = transaction.date || 'Unknown date';
             }
             
             // Format amount
             const amount = parseFloat(transaction.amount) || 0;
-            const formattedAmount = `$${Math.abs(amount).toFixed(2)}`;
+            const formattedAmount = `${currencySymbol}${Math.abs(amount).toFixed(2)}`;
             
             // Determine amount color based on type
             let amountColor = 'text-gray-700';
-            let amountSign = '';
             const type = transaction.type?.toLowerCase() || '';
-            
-            if (type === 'deposit') {
+            if (type.includes('deposit')) {
                 amountColor = 'text-green-600';
-                amountSign = '+';
-            } else if (type === 'withdrawal') {
+            } else if (type.includes('withdrawal') || type.includes('withdraw')) {
                 amountColor = 'text-red-600';
-                amountSign = '-';
-            } else if (type === 'investment') {
+            } else if (type.includes('investment')) {
                 amountColor = 'text-purple-600';
-                amountSign = '•';
             }
             
             // Get status class
             let statusClass = 'status-pending';
             const status = transaction.status?.toLowerCase() || '';
-            if (status.includes('complete') || status === 'completed' || status === 'success') {
+            if (status.includes('complete') || status.includes('success')) {
                 statusClass = 'status-completed';
-            } else if (status.includes('fail') || status === 'failed' || status === 'error') {
+            } else if (status.includes('fail') || status.includes('error')) {
                 statusClass = 'status-failed';
             }
             
             // Get transaction type icon
             let typeIcon = '💳';
-            switch(type) {
-                case 'deposit':
-                    typeIcon = '📥';
-                    break;
-                case 'withdrawal':
-                    typeIcon = '📤';
-                    break;
-                case 'investment':
-                    typeIcon = '📈';
-                    break;
-                case 'earning':
-                    typeIcon = '💰';
-                    break;
-                case 'commission':
-                    typeIcon = '🎁';
-                    break;
+            if (type.includes('deposit')) {
+                typeIcon = '📥';
+            } else if (type.includes('withdrawal') || type.includes('withdraw')) {
+                typeIcon = '📤';
+            } else if (type.includes('investment')) {
+                typeIcon = '📈';
+            }
+            
+            // Format type text
+            let typeText = transaction.type || 'Transaction';
+            if (typeText) {
+                typeText = typeText.charAt(0).toUpperCase() + typeText.slice(1).toLowerCase();
             }
             
             row.innerHTML = `
@@ -677,10 +1207,10 @@
                 <td class="py-3 px-4 text-sm">
                     <div class="flex items-center gap-2">
                         <span class="text-lg">${typeIcon}</span>
-                        <span class="font-medium capitalize">${transaction.type || 'Transaction'}</span>
+                        <span class="font-medium">${typeText}</span>
                     </div>
                 </td>
-                <td class="py-3 px-4 text-sm ${amountColor} font-semibold">${amountSign}${formattedAmount}</td>
+                <td class="py-3 px-4 text-sm ${amountColor} font-semibold">${formattedAmount}</td>
                 <td class="py-3 px-4 text-sm text-gray-700 capitalize">${transaction.method || 'N/A'}</td>
                 <td class="py-3 px-4 text-sm">
                     <span class="transaction-status ${statusClass} capitalize">${transaction.status || 'Pending'}</span>
@@ -711,7 +1241,7 @@
                     <div class="flex flex-col items-center gap-2">
                         <span class="text-4xl">📄</span>
                         <p class="text-gray-500">No transactions found</p>
-                        <p class="text-sm text-gray-400">Your transactions will appear here</p>
+                        <p class="text-sm text-gray-400">Complete your first deposit or withdrawal to see transactions here</p>
                     </div>
                 </td>
             </tr>
@@ -757,6 +1287,14 @@
         }, 1000);
     }
 
+    // Sidebar toggle function
+    function toggleSidebar() {
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('sidebarOverlay');
+        sidebar.classList.toggle('active');
+        overlay.classList.toggle('active');
+    }
+
     // Auto-refresh wallet data every 30 seconds
     setInterval(() => {
         const userEmail = localStorage.getItem("v0trade_user_email");
@@ -772,19 +1310,12 @@
             loadTransactions(userEmail, false);
         }
     }, 60 * 60 * 1000);
-
-    // Mobile menu toggle functions
-    function toggleSidebar() {
-        const sidebar = document.getElementById('sidebar');
-        const overlay = document.getElementById('sidebarOverlay');
-        sidebar.classList.toggle('active');
-        overlay.classList.toggle('active');
-    }
-
-    function toggleMobileMenu() {
-        const menu = document.getElementById('mobileMenu');
-        menu.classList.toggle('active');
-    }
+    
+    // Global refresh currency function
+    window.refreshCurrency = function() {
+        const currentCurrency = getCurrentCurrency();
+        updateCurrencySymbols(currentCurrency);
+    };
 </script>
 </body>
 </html>
