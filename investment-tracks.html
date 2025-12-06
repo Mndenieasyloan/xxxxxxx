@@ -774,6 +774,8 @@
         
         // Constants
         const TRANSACTIONS_DATA_KEY = "v0trade_transactions_data";
+        const INVESTMENT_CACHE_KEY = "v0trade_investment_cache";
+        const INVESTMENT_CACHE_EXPIRY = 5 * 60 * 1000; // 5 minutes cache
         
         // Investment plan configurations
         const INVESTMENT_PLANS = {
@@ -1010,7 +1012,7 @@
             const currentCurrency = getCurrentCurrency();
             updateCurrencySymbols(currentCurrency);
             
-            // Load investment data
+            // Auto-load investment data on page visit
             loadInvestmentData(userEmail);
             
             // Close mobile menu when clicking outside
@@ -1034,53 +1036,107 @@
             });
         });
 
+        function getCachedInvestmentData(email) {
+            try {
+                const cacheKey = `${INVESTMENT_CACHE_KEY}_${email}`;
+                const cached = localStorage.getItem(cacheKey);
+                if (!cached) return null;
+                
+                const data = JSON.parse(cached);
+                const now = Date.now();
+                
+                // Check if cache is expired
+                if (now - data.timestamp > INVESTMENT_CACHE_EXPIRY) {
+                    localStorage.removeItem(cacheKey);
+                    return null;
+                }
+                
+                return data.investmentStats;
+            } catch (e) {
+                return null;
+            }
+        }
+        
+        function cacheInvestmentData(email, investmentStats) {
+            try {
+                const cacheKey = `${INVESTMENT_CACHE_KEY}_${email}`;
+                const cacheData = {
+                    timestamp: Date.now(),
+                    investmentStats: investmentStats
+                };
+                localStorage.setItem(cacheKey, JSON.stringify(cacheData));
+            } catch (e) {
+                console.error("Failed to cache investment data:", e);
+            }
+        }
+
         function loadInvestmentData(email) {
             try {
+                console.log("Loading investment data for:", email);
+                
+                // Check for cached investment data first
+                const cachedStats = getCachedInvestmentData(email);
+                if (cachedStats) {
+                    console.log("Using cached investment data");
+                    displayInvestments(cachedStats);
+                    updateInvestmentStats(cachedStats);
+                    initializeCharts(cachedStats, []);
+                    return;
+                }
+                
                 // Get cached transactions from localStorage
                 const cachedData = localStorage.getItem(`${TRANSACTIONS_DATA_KEY}_${email}`);
                 
                 if (!cachedData) {
+                    console.log("No cached transactions data found");
                     displayNoInvestments();
                     return;
                 }
                 
                 const allTransactions = JSON.parse(cachedData);
+                console.log("Total transactions found:", allTransactions.length);
                 
                 // Filter to get only investment transactions (crypto, stock, etf, metal)
                 const investmentTransactions = allTransactions.filter(transaction => {
-                    const type = transaction.type?.toLowerCase() || '';
-                    const method = transaction.method?.toLowerCase() || '';
+                    const type = (transaction.type || '').toLowerCase();
+                    const method = (transaction.method || '').toLowerCase();
                     
-                    // Look for investment-related transactions
-                    return type.includes('plan') || 
-                           method.includes('plan') ||
-                           type.includes('investment') ||
-                           method.includes('investment') ||
-                           type.includes('crypto') ||
-                           type.includes('stock') ||
-                           type.includes('etf') ||
-                           type.includes('metal') ||
-                           type.includes('gold') ||
-                           method.includes('crypto') ||
-                           method.includes('stock') ||
-                           method.includes('etf') ||
-                           method.includes('metal') ||
-                           method.includes('gold');
-                }).filter(t => {
-                    // Exclude mining transactions
-                    const type = t.type?.toLowerCase() || '';
-                    return !type.includes('miner') && !type.includes('mining');
+                    // Look for investment-related transactions but exclude mining
+                    const isInvestment = 
+                        (type.includes('plan') || 
+                         method.includes('plan') ||
+                         type.includes('investment') ||
+                         method.includes('investment') ||
+                         type.includes('crypto') ||
+                         type.includes('stock') ||
+                         type.includes('etf') ||
+                         type.includes('metal') ||
+                         type.includes('gold') ||
+                         method.includes('crypto') ||
+                         method.includes('stock') ||
+                         method.includes('etf') ||
+                         method.includes('metal') ||
+                         method.includes('gold')) &&
+                        !type.includes('miner') && 
+                        !type.includes('mining');
+                    
+                    return isInvestment;
                 });
                 
-                console.log("Investment transactions found:", investmentTransactions);
+                console.log("Investment transactions found:", investmentTransactions.length, investmentTransactions);
                 
                 if (investmentTransactions.length === 0) {
+                    console.log("No investment transactions found");
                     displayNoInvestments();
                     return;
                 }
                 
                 // Process investment transactions
                 const investmentStats = processInvestmentTransactions(investmentTransactions);
+                console.log("Processed investment stats:", investmentStats);
+                
+                // Cache the processed data
+                cacheInvestmentData(email, investmentStats);
                 
                 // Display investments
                 displayInvestments(investmentStats);
@@ -1102,44 +1158,103 @@
         
         function processInvestmentTransactions(transactions) {
             const investmentStats = {};
-            const now = new Date();
             
             transactions.forEach(transaction => {
                 const type = transaction.type?.toLowerCase() || '';
                 const method = transaction.method?.toLowerCase() || '';
                 const amount = parseFloat(transaction.amount) || 0;
-                const transactionDate = new Date(transaction.date);
+                
+                // Parse transaction date correctly
+                let transactionDate;
+                try {
+                    if (transaction.date) {
+                        // Try different date formats
+                        const dateStr = transaction.date.toString();
+                        
+                        // Check if it's already a timestamp
+                        if (!isNaN(dateStr)) {
+                            transactionDate = new Date(parseInt(dateStr));
+                        } else {
+                            // Try parsing as ISO string or other formats
+                            transactionDate = new Date(dateStr);
+                        }
+                        
+                        // If still invalid, use timestamp
+                        if (isNaN(transactionDate.getTime()) && transaction.timestamp) {
+                            transactionDate = new Date(transaction.timestamp);
+                        }
+                    } else if (transaction.timestamp) {
+                        transactionDate = new Date(transaction.timestamp);
+                    }
+                    
+                    // If all else fails, use current date
+                    if (!transactionDate || isNaN(transactionDate.getTime())) {
+                        transactionDate = new Date();
+                    }
+                } catch (e) {
+                    transactionDate = new Date();
+                }
+                
+                console.log("Processing transaction:", { 
+                    type, 
+                    method, 
+                    amount, 
+                    date: transaction.date,
+                    timestamp: transaction.timestamp,
+                    parsedDate: transactionDate 
+                });
                 
                 // Find matching investment plan
                 let planKey = null;
+                const transactionText = (type + ' ' + method).toLowerCase();
+                
+                // Check for exact plan matches first
                 for (const key in INVESTMENT_PLANS) {
-                    if (type.includes(key) || method.includes(key)) {
+                    if (transactionText.includes(key)) {
                         planKey = key;
                         break;
                     }
                 }
                 
-                // If no exact match, try to determine from transaction data
+                // If no exact match, try partial matches
                 if (!planKey) {
-                    // Check for crypto
-                    if (type.includes('crypto') || method.includes('crypto') || type.includes('btc')) {
-                        planKey = '24 hours plan crypto';
+                    if (transactionText.includes('crypto')) {
+                        if (transactionText.includes('1 hour') || transactionText.includes('1h')) planKey = '1 hour plan crypto';
+                        else if (transactionText.includes('5 hour') || transactionText.includes('5h')) planKey = '5 hours plan crypto';
+                        else if (transactionText.includes('72 hour') || transactionText.includes('72h') || transactionText.includes('3 day')) planKey = '72 hours plan crypto';
+                        else if (transactionText.includes('1 week') || transactionText.includes('7 day')) planKey = '1 week plan crypto';
+                        else planKey = '24 hours plan crypto';
                     }
-                    // Check for stock
-                    else if (type.includes('stock') || method.includes('stock') || type.includes('nvidia')) {
-                        planKey = '24 hours plan stock';
+                    else if (transactionText.includes('stock')) {
+                        if (transactionText.includes('1 hour') || transactionText.includes('1h')) planKey = '1 hour plan stock';
+                        else if (transactionText.includes('5 hour') || transactionText.includes('5h')) planKey = '5 hours plan stock';
+                        else if (transactionText.includes('72 hour') || transactionText.includes('72h') || transactionText.includes('3 day')) planKey = '72 hours plan stock';
+                        else planKey = '24 hours plan stock';
                     }
-                    // Check for etf
-                    else if (type.includes('etf') || method.includes('etf') || type.includes('spy')) {
-                        planKey = '24 hours plan etf';
+                    else if (transactionText.includes('etf')) {
+                        if (transactionText.includes('1 hour') || transactionText.includes('1h')) planKey = '1 hour plan etf';
+                        else if (transactionText.includes('5 hour') || transactionText.includes('5h')) planKey = '5 hours plan etf';
+                        else if (transactionText.includes('72 hour') || transactionText.includes('72h') || transactionText.includes('3 day')) planKey = '72 hours plan etf';
+                        else planKey = '24 hours plan etf';
                     }
-                    // Check for metal
-                    else if (type.includes('metal') || method.includes('metal') || type.includes('gold')) {
+                    else if (transactionText.includes('metal')) {
+                        if (transactionText.includes('1 hour') || transactionText.includes('1h')) planKey = '1 hour plan metal';
+                        else if (transactionText.includes('5 hour') || transactionText.includes('5h')) planKey = '5 hours plan metal';
+                        else if (transactionText.includes('72 hour') || transactionText.includes('72h') || transactionText.includes('3 day')) planKey = '72 hours plan metal';
+                        else if (transactionText.includes('1 week') || transactionText.includes('7 day')) planKey = '1 week plan metal';
+                        else planKey = '24 hours plan metal';
+                    }
+                    else if (transactionText.includes('gold') || transactionText.includes('silver')) {
                         planKey = '24 hours plan metal';
                     }
                 }
                 
-                if (!planKey) return;
+                if (!planKey) {
+                    console.log("No plan match found for transaction");
+                    return;
+                }
+                
+                console.log("Matched plan:", planKey);
                 
                 if (!investmentStats[planKey]) {
                     investmentStats[planKey] = {
@@ -1154,7 +1269,9 @@
                 investmentStats[planKey].totalInvestment += amount;
                 investmentStats[planKey].transactions.push({
                     ...transaction,
-                    transactionDate: transactionDate
+                    parsedDate: transactionDate,
+                    originalDate: transaction.date,
+                    timestamp: transaction.timestamp
                 });
             });
             
@@ -1172,89 +1289,117 @@
             
             container.innerHTML = '';
             
-            // Create investment cards
+            // Create investment cards for each investment plan type
             for (const [planKey, stats] of Object.entries(investmentStats)) {
                 const plan = stats.planInfo;
                 const now = new Date();
-                const latestTransaction = stats.transactions[0]?.transactionDate || now;
                 
-                // Convert hours to days for display
-                const durationInDays = plan.duration / 24;
-                
-                // Calculate progress based on time elapsed
-                const totalHours = plan.duration;
-                const elapsedHours = Math.min((now - latestTransaction) / (1000 * 60 * 60), totalHours);
-                const progress = Math.min(Math.max((elapsedHours / totalHours) * 100, 0), 100);
-                
-                // Calculate returns
-                const returns = (stats.totalInvestment * plan.roi) / 100;
-                const dailyReturn = returns / durationInDays;
-                
-                // Determine days remaining
-                const remainingHours = Math.max(0, totalHours - elapsedHours);
-                const remainingDays = Math.ceil(remainingHours / 24);
-                
-                const investmentCard = document.createElement('div');
-                investmentCard.className = 'investment-card p-6';
-                investmentCard.dataset.type = plan.type;
-                
-                investmentCard.innerHTML = `
-                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                        <div class="mb-4 md:mb-0">
-                            <div class="flex items-center gap-3 mb-2">
-                                <span class="text-2xl">${getIconForType(plan.type)}</span>
-                                <div>
-                                    <div class="flex items-center gap-2">
-                                        <span class="${plan.badge} investment-badge">${plan.type.toUpperCase()}</span>
-                                        <span class="text-sm text-gray-400">${stats.count} Active</span>
+                // For each transaction, create a separate card
+                stats.transactions.forEach((transaction, index) => {
+                    const transactionDate = transaction.parsedDate || new Date(transaction.timestamp) || now;
+                    const endDate = new Date(transactionDate);
+                    endDate.setHours(endDate.getHours() + plan.duration);
+                    
+                    // Calculate progress based on exact dates (in hours)
+                    const totalHours = plan.duration;
+                    const elapsedHours = Math.min((now - transactionDate) / (1000 * 60 * 60), totalHours);
+                    let progress = Math.min(Math.max((elapsedHours / totalHours) * 100, 0), 100);
+                    
+                    // If plan is completed, show 100%
+                    if (now >= endDate) {
+                        progress = 100;
+                    }
+                    
+                    // Calculate estimated returns for this transaction
+                    const returns = (parseFloat(transaction.amount) * plan.roi) / 100;
+                    const dailyReturn = returns / (plan.duration / 24);
+                    
+                    // Format dates for display
+                    const startDateStr = transactionDate.toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+                    
+                    const endDateStr = endDate.toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+                    
+                    // Calculate days/hours remaining
+                    const remainingHours = Math.max(0, totalHours - elapsedHours);
+                    const remainingDisplay = remainingHours >= 24 ? 
+                        `${Math.floor(remainingHours / 24)}d ${Math.round(remainingHours % 24)}h` : 
+                        `${Math.round(remainingHours)}h`;
+                    
+                    const investmentCard = document.createElement('div');
+                    investmentCard.className = 'investment-card p-6';
+                    investmentCard.dataset.type = plan.type;
+                    
+                    investmentCard.innerHTML = `
+                        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                            <div class="mb-4 md:mb-0">
+                                <div class="flex items-center gap-3 mb-2">
+                                    <span class="text-2xl">${getIconForType(plan.type)}</span>
+                                    <div>
+                                        <div class="flex items-center gap-2">
+                                            <span class="${plan.badge} investment-badge">${plan.type.toUpperCase()}</span>
+                                            <span class="text-sm text-gray-400">Transaction #${index + 1}</span>
+                                        </div>
+                                        <h3 class="text-lg font-semibold text-white mt-1">${plan.asset} Investment</h3>
+                                        <p class="text-sm text-gray-400">${getPlanName(planKey)} • ROI: ${plan.roi}%</p>
                                     </div>
-                                    <h3 class="text-lg font-semibold text-white mt-1">${plan.asset} Investment</h3>
-                                    <p class="text-sm text-gray-400">${getPlanName(planKey)} • ROI: ${plan.roi}%</p>
                                 </div>
-                            </div>
-                            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
-                                <div>
-                                    <p class="text-xs text-gray-500">Investment</p>
-                                    <p class="text-sm font-semibold text-white">${currencySymbol}${stats.totalInvestment.toLocaleString()}</p>
+                                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+                                    <div>
+                                        <p class="text-xs text-gray-500">Investment</p>
+                                        <p class="text-sm font-semibold text-white">${currencySymbol}${parseFloat(transaction.amount).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs text-gray-500">Daily Return</p>
+                                        <p class="text-sm font-semibold text-green-400">+${currencySymbol}${dailyReturn.toFixed(2)}</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs text-gray-500">Total Returns</p>
+                                        <p class="text-sm font-semibold text-cyan-400">${currencySymbol}${returns.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs text-gray-500">Status</p>
+                                        <span class="text-xs px-2 py-1 rounded-full ${progress >= 100 ? 'bg-blue-500/20 text-blue-400' : 'bg-green-500/20 text-green-400'}">${progress >= 100 ? 'Completed' : 'Active'}</span>
+                                    </div>
                                 </div>
-                                <div>
-                                    <p class="text-xs text-gray-500">Daily Return</p>
-                                    <p class="text-sm font-semibold text-green-400">+${currencySymbol}${dailyReturn.toFixed(2)}</p>
-                                </div>
-                                <div>
-                                    <p class="text-xs text-gray-500">Total Returns</p>
-                                    <p class="text-sm font-semibold text-cyan-400">${currencySymbol}${returns.toLocaleString()}</p>
-                                </div>
-                                <div>
-                                    <p class="text-xs text-gray-500">Status</p>
-                                    <span class="text-xs px-2 py-1 rounded-full bg-green-500/20 text-green-400">Active</span>
+                                
+                                <div class="mt-4">
+                                    <div class="flex justify-between text-sm mb-1">
+                                        <span class="text-gray-400">Progress</span>
+                                        <span class="text-white">${progress.toFixed(1)}% (${remainingDisplay} left)</span>
+                                    </div>
+                                    <div class="w-full bg-gray-700 rounded-full h-2.5">
+                                        <div class="progress-bar h-2.5 rounded-full" style="width: ${progress}%"></div>
+                                    </div>
                                 </div>
                             </div>
                             
-                            <div class="mt-4">
-                                <div class="flex justify-between text-sm mb-1">
-                                    <span class="text-gray-400">Progress</span>
-                                    <span class="text-white">${progress.toFixed(1)}%</span>
+                            <div class="md:text-right">
+                                <div class="mb-2">
+                                    <span class="text-gray-400">Duration</span>
+                                    <p class="text-xl font-bold bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text text-transparent">${plan.duration}h</p>
                                 </div>
-                                <div class="w-full bg-gray-700 rounded-full h-2.5">
-                                    <div class="progress-bar h-2.5 rounded-full" style="width: ${progress}%"></div>
+                                <div class="text-sm text-gray-400">
+                                    <div>Started: ${startDateStr}</div>
+                                    ${progress < 100 ? `<div>Ends: ${endDateStr}</div>` : ''}
                                 </div>
                             </div>
                         </div>
-                        
-                        <div class="md:text-right">
-                            <div class="mb-2">
-                                <span class="text-gray-400">Days Remaining</span>
-                                <p class="text-2xl font-bold bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text text-transparent">${remainingDays}</p>
-                            </div>
-                            <div class="text-sm text-gray-400">
-                                Started: ${latestTransaction.toLocaleDateString()}
-                            </div>
-                        </div>
-                    </div>
-                `;
-                
-                container.appendChild(investmentCard);
+                    `;
+                    
+                    container.appendChild(investmentCard);
+                });
             }
         }
         
@@ -1274,16 +1419,20 @@
             }
             
             // Sort by date (newest first)
-            transactions.sort((a, b) => new Date(b.date) - new Date(a.date));
+            transactions.sort((a, b) => {
+                const dateA = new Date(a.parsedDate || a.date || a.timestamp);
+                const dateB = new Date(b.parsedDate || b.date || b.timestamp);
+                return dateB - dateA;
+            });
             
             container.innerHTML = '';
             
-            transactions.slice(0, 10).forEach(transaction => {
+            transactions.slice(0, 10).forEach((transaction, index) => {
                 const row = document.createElement('tr');
                 row.className = 'border-b border-gray-800 hover:bg-gray-800/50';
                 
-                const date = new Date(transaction.date);
-                const formattedDate = date.toLocaleDateString('en-US', {
+                const transactionDate = transaction.parsedDate || new Date(transaction.date) || new Date(transaction.timestamp);
+                const formattedDate = transactionDate.toLocaleDateString('en-US', {
                     year: 'numeric',
                     month: 'short',
                     day: 'numeric',
@@ -1302,20 +1451,61 @@
                 let badge = 'badge-crypto';
                 
                 for (const [planKey, plan] of Object.entries(INVESTMENT_PLANS)) {
-                    if (transaction.type?.toLowerCase().includes(planKey) || 
-                        transaction.method?.toLowerCase().includes(planKey)) {
+                    const transactionText = (transaction.type?.toLowerCase() + ' ' + transaction.method?.toLowerCase()).toLowerCase();
+                    if (transactionText.includes(planKey)) {
                         planInfo = plan;
                         planName = getPlanName(planKey);
                         asset = plan.asset;
-                        duration = plan.duration < 24 ? `${plan.duration}h` : `${plan.duration/24}d`;
+                        duration = plan.duration + 'h';
                         type = plan.type;
                         badge = plan.badge;
                         break;
                     }
                 }
                 
+                if (!planInfo) {
+                    // Try to determine from transaction data
+                    const transactionText = (transaction.type?.toLowerCase() + ' ' + transaction.method?.toLowerCase()).toLowerCase();
+                    if (transactionText.includes('crypto')) {
+                        planInfo = INVESTMENT_PLANS['24 hours plan crypto'];
+                        type = 'crypto';
+                        badge = 'badge-crypto';
+                        asset = 'Bitcoin (BTC)';
+                        planName = '24 Hours Plan';
+                        duration = '24h';
+                    } else if (transactionText.includes('stock')) {
+                        planInfo = INVESTMENT_PLANS['24 hours plan stock'];
+                        type = 'stock';
+                        badge = 'badge-stock';
+                        asset = 'NVIDIA (NVDA)';
+                        planName = '24 Hours Plan';
+                        duration = '24h';
+                    } else if (transactionText.includes('etf')) {
+                        planInfo = INVESTMENT_PLANS['24 hours plan etf'];
+                        type = 'etf';
+                        badge = 'badge-etf';
+                        asset = 'SPY - SPDR S&P 500';
+                        planName = '24 Hours Plan';
+                        duration = '24h';
+                    } else if (transactionText.includes('metal') || transactionText.includes('gold')) {
+                        planInfo = INVESTMENT_PLANS['24 hours plan metal'];
+                        type = 'metal';
+                        badge = 'badge-metal';
+                        asset = 'Gold';
+                        planName = '24 Hours Plan';
+                        duration = '24h';
+                    }
+                }
+                
                 // Calculate returns
                 const returns = planInfo ? (amount * planInfo.roi) / 100 : amount * 0.2;
+                
+                // Calculate progress
+                const now = new Date();
+                const transactionDateObj = transaction.parsedDate || new Date(transaction.date) || new Date(transaction.timestamp);
+                const totalHours = planInfo?.duration || 24;
+                const elapsedHours = Math.min((now - transactionDateObj) / (1000 * 60 * 60), totalHours);
+                const progress = Math.min(Math.max((elapsedHours / totalHours) * 100, 0), 100);
                 
                 row.innerHTML = `
                     <td class="py-3 px-4 text-sm text-gray-300">${formattedDate}</td>
@@ -1327,7 +1517,9 @@
                     <td class="py-3 px-4 text-sm text-green-400 font-semibold">${currencySymbol}${amount.toFixed(2)}</td>
                     <td class="py-3 px-4 text-sm text-gray-300">${duration}</td>
                     <td class="py-3 px-4 text-sm">
-                        <span class="px-2 py-1 rounded-full text-xs bg-green-400/10 text-green-400">Active</span>
+                        <span class="px-2 py-1 rounded-full text-xs ${progress >= 100 ? 'bg-blue-400/10 text-blue-400' : 'bg-green-400/10 text-green-400'}">
+                            ${progress >= 100 ? 'Completed' : 'Active'}
+                        </span>
                     </td>
                     <td class="py-3 px-4 text-sm text-yellow-400 font-semibold">${currencySymbol}${returns.toFixed(2)}</td>
                 `;
@@ -1346,20 +1538,23 @@
             
             for (const [planKey, stats] of Object.entries(investmentStats)) {
                 const plan = stats.planInfo;
-                activePlans += stats.count;
+                activePlans += stats.transactions.length; // Count each transaction
                 totalInvestment += stats.totalInvestment;
                 
-                // Calculate returns for this plan
-                const returns = (stats.totalInvestment * plan.roi) / 100;
-                totalReturns += returns;
-                
-                // Track best performer
-                if (returns > bestPerformer.returns) {
-                    bestPerformer = {
-                        name: plan.asset,
-                        returns: returns
-                    };
-                }
+                // Calculate returns for all transactions in this plan
+                stats.transactions.forEach(transaction => {
+                    const amount = parseFloat(transaction.amount) || 0;
+                    const returns = (amount * plan.roi) / 100;
+                    totalReturns += returns;
+                    
+                    // Track best performer
+                    if (returns > bestPerformer.returns) {
+                        bestPerformer = {
+                            name: plan.asset,
+                            returns: returns
+                        };
+                    }
+                });
             }
             
             // Calculate portfolio value and growth
@@ -1368,14 +1563,14 @@
             const dailyAverage = totalReturns > 0 ? totalReturns / 30 : 0; // Average over 30 days
             
             // Update DOM
-            document.getElementById('totalInvestment').innerHTML = `<span class="currency-symbol">${currencySymbol}</span>${totalInvestment.toLocaleString()}`;
-            document.getElementById('totalReturns').innerHTML = `<span class="currency-symbol">${currencySymbol}</span>${totalReturns.toLocaleString()}`;
-            document.getElementById('portfolioValue').innerHTML = `<span class="currency-symbol">${currencySymbol}</span>${portfolioValue.toLocaleString()}`;
+            document.getElementById('totalInvestment').innerHTML = `<span class="currency-symbol">${currencySymbol}</span>${totalInvestment.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            document.getElementById('totalReturns').innerHTML = `<span class="currency-symbol">${currencySymbol}</span>${totalReturns.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            document.getElementById('portfolioValue').innerHTML = `<span class="currency-symbol">${currencySymbol}</span>${portfolioValue.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
             document.getElementById('growthPercentage').textContent = `${growthPercentage.toFixed(1)}%`;
             document.getElementById('activePlansCount').textContent = activePlans;
             document.getElementById('dailyAverage').innerHTML = `<span class="currency-symbol">${currencySymbol}</span>${dailyAverage.toFixed(2)}`;
             document.getElementById('bestPerformer').textContent = bestPerformer.name;
-            document.getElementById('bestPerformerReturns').innerHTML = `<span class="currency-symbol">${currencySymbol}</span>${bestPerformer.returns.toLocaleString()}`;
+            document.getElementById('bestPerformerReturns').innerHTML = `<span class="currency-symbol">${currencySymbol}</span>${bestPerformer.returns.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
         }
         
         function initializeCharts(investmentStats, transactions) {
@@ -1462,7 +1657,7 @@
             const typeLabels = ['Crypto', 'Stocks', 'ETFs', 'Metals'];
             const typeColors = ['#f59e0b', '#3b82f6', '#10b981', '#fbbf24'];
             
-            // Calculate distribution by type
+            // Calculate distribution by type from investmentStats
             const typeDistribution = [0, 0, 0, 0];
             let totalValue = 0;
             
@@ -1473,6 +1668,15 @@
                     typeDistribution[index] += stats.totalInvestment;
                     totalValue += stats.totalInvestment;
                 }
+            }
+            
+            // If we have no data, show sample data
+            if (totalValue === 0) {
+                typeDistribution[0] = 40;
+                typeDistribution[1] = 30;
+                typeDistribution[2] = 20;
+                typeDistribution[3] = 10;
+                totalValue = 100;
             }
             
             distributionChart = new Chart(distributionCtx, {
@@ -1640,6 +1844,9 @@
                     </td>
                 </tr>
             `;
+            
+            // Initialize charts with sample data
+            initializeCharts({}, []);
         }
         
         function refreshInvestments() {
@@ -1659,6 +1866,9 @@
                     </div>
                 </div>
             `;
+            
+            // Clear cache and reload
+            localStorage.removeItem(`${INVESTMENT_CACHE_KEY}_${userEmail}`);
             
             // Reload data
             setTimeout(() => {
