@@ -595,7 +595,7 @@
                         <div class="flex items-center justify-between">
                             <div>
                                 <p class="text-sm text-gray-400 mb-1">Total Earning Balance</p>
-                                <p id="totalEarningBalance" class="text-2xl font-bold text-white" data-amount="0" data-currency-symbol="$">$0.00</p>
+                                <p id="totalEarningBalance" class="text-2xl font-bold text-white" data-amount="0">$0.00</p>
                             </div>
                             <div class="text-3xl money-animation">💰</div>
                         </div>
@@ -614,7 +614,7 @@
                         <div class="flex items-center justify-between">
                             <div>
                                 <p class="text-sm text-gray-400 mb-1">Mining Earnings</p>
-                                <p id="miningEarnings" class="text-2xl font-bold text-white" data-amount="0" data-currency-symbol="$">$0.00</p>
+                                <p id="miningEarnings" class="text-2xl font-bold text-white" data-amount="0">$0.00</p>
                             </div>
                             <div class="text-3xl pulse">⛏️</div>
                         </div>
@@ -630,7 +630,7 @@
                         <div class="flex items-center justify-between">
                             <div>
                                 <p class="text-sm text-gray-400 mb-1">Investment Earnings</p>
-                                <p id="investmentEarnings" class="text-2xl font-bold text-white" data-amount="0" data-currency-symbol="$">$0.00</p>
+                                <p id="investmentEarnings" class="text-2xl font-bold text-white" data-amount="0">$0.00</p>
                             </div>
                             <div class="text-3xl">📈</div>
                         </div>
@@ -646,7 +646,7 @@
                         <div class="flex items-center justify-between">
                             <div>
                                 <p class="text-sm text-gray-400 mb-1">Referral Commissions</p>
-                                <p id="referralEarnings" class="text-2xl font-bold text-white" data-amount="0" data-currency-symbol="$">$0.00</p>
+                                <p id="referralEarnings" class="text-2xl font-bold text-white" data-amount="0">$0.00</p>
                             </div>
                             <div class="text-3xl">🎁</div>
                         </div>
@@ -692,7 +692,7 @@
                         <div class="flex items-center justify-between mb-4">
                             <div>
                                 <p class="text-sm text-gray-400 mb-1">Daily Average</p>
-                                <p id="dailyAverage" class="text-2xl font-bold text-white" data-amount="0" data-currency-symbol="$">$0.00</p>
+                                <p id="dailyAverage" class="text-2xl font-bold text-white" data-amount="0">$0.00</p>
                             </div>
                             <div class="text-3xl text-green-400">📅</div>
                         </div>
@@ -718,7 +718,7 @@
                         <div class="flex items-center justify-between mb-4">
                             <div>
                                 <p class="text-sm text-gray-400 mb-1">Monthly Projection</p>
-                                <p id="monthlyProjection" class="text-2xl font-bold text-white" data-amount="0" data-currency-symbol="$">$0.00</p>
+                                <p id="monthlyProjection" class="text-2xl font-bold text-white" data-amount="0">$0.00</p>
                             </div>
                             <div class="text-3xl text-yellow-400">🎯</div>
                         </div>
@@ -763,14 +763,14 @@
     <script>
         // Currency data
         const CURRENCIES = [
-            { code: 'USD', symbol: '$', name: 'US Dollar' },
-            { code: 'EUR', symbol: '€', name: 'Euro' },
-            { code: 'GBP', symbol: '£', name: 'British Pound' },
-            { code: 'ZAR', symbol: 'R', name: 'South African Rand' },
-            { code: 'INR', symbol: '₹', name: 'Indian Rupee' },
-            { code: 'JPY', symbol: '¥', name: 'Japanese Yen' },
-            { code: 'AUD', symbol: 'A$', name: 'Australian Dollar' },
-            { code: 'CAD', symbol: 'C$', name: 'Canadian Dollar' }
+            { code: 'USD', symbol: '$', name: 'US Dollar', format: (amount) => `$${amount.toFixed(2)}` },
+            { code: 'EUR', symbol: '€', name: 'Euro', format: (amount) => `€${amount.toFixed(2)}` },
+            { code: 'GBP', symbol: '£', name: 'British Pound', format: (amount) => `£${amount.toFixed(2)}` },
+            { code: 'ZAR', symbol: 'R', name: 'South African Rand', format: (amount) => `R${amount.toFixed(2)}` },
+            { code: 'INR', symbol: '₹', name: 'Indian Rupee', format: (amount) => `₹${amount.toFixed(2)}` },
+            { code: 'JPY', symbol: '¥', name: 'Japanese Yen', format: (amount) => `¥${amount.toFixed(2)}` },
+            { code: 'AUD', symbol: 'A$', name: 'Australian Dollar', format: (amount) => `A$${amount.toFixed(2)}` },
+            { code: 'CAD', symbol: 'C$', name: 'Canadian Dollar', format: (amount) => `C$${amount.toFixed(2)}` }
         ];
         
         // Constants
@@ -804,129 +804,107 @@
             return localStorage.getItem('v0trade_currency') || 'USD';
         }
         
-        function updateCurrencySymbols(currencyCode) {
-            const currency = CURRENCIES.find(c => c.code === currencyCode);
-            if (!currency) return;
+        function getCurrentCurrencyObject() {
+            const code = getCurrentCurrency();
+            return CURRENCIES.find(c => c.code === code) || CURRENCIES[0];
+        }
+        
+        function updateCurrencySymbols() {
+            const currency = getCurrentCurrencyObject();
             
-            // Update all elements with data-currency-symbol attribute
-            document.querySelectorAll('[data-currency-symbol]').forEach(el => {
+            // Update all currency selector displays
+            document.querySelectorAll('.current-symbol').forEach(el => {
                 el.textContent = currency.symbol;
             });
             
-            // Update currency display for wallet data
-            updateCurrencyDisplay();
+            document.querySelectorAll('.current-code').forEach(el => {
+                el.textContent = currency.code;
+            });
+            
+            document.querySelectorAll('.mobile-currency-symbol').forEach(el => {
+                el.textContent = currency.symbol;
+            });
+            
+            document.querySelectorAll('.mobile-currency-code').forEach(el => {
+                el.textContent = currency.code;
+            });
+            
+            // Update amount displays with current currency formatting
+            updateAmountDisplays();
+            
+            // Update charts with new currency symbol
+            if (chartsInitialized) {
+                updateChartsCurrencySymbol();
+            }
         }
         
-        function convertAmount(amount, fromCurrency, toCurrency) {
-            // Simple conversion rates (in a real app, you would fetch live rates)
-            const rates = {
-                'USD': 1,
-                'EUR': 0.92,
-                'GBP': 0.79,
-                'ZAR': 18.75,
-                'INR': 83.5,
-                'JPY': 150,
-                'AUD': 1.52,
-                'CAD': 1.36
-            };
+        function updateAmountDisplays() {
+            const currency = getCurrentCurrencyObject();
             
-            if (!rates[fromCurrency] || !rates[toCurrency]) return amount;
-            
-            const amountInUSD = amount / rates[fromCurrency];
-            return amountInUSD * rates[toCurrency];
-        }
-        
-        function updateCurrencyDisplay() {
-            const currentCurrency = getCurrentCurrency();
-            const currency = CURRENCIES.find(c => c.code === currentCurrency);
-            if (!currency) return;
-            
-            // Format money with currency symbol
-            const formatMoney = (amount) => {
-                if (isNaN(amount)) return `${currency.symbol}0.00`;
-                const convertedAmount = convertAmount(amount, 'USD', currentCurrency);
-                return `${currency.symbol}${convertedAmount.toFixed(2)}`;
-            };
-            
-            // Update all amount displays
+            // Get and format amounts
             const totalEarningBalanceEl = document.getElementById('totalEarningBalance');
             if (totalEarningBalanceEl) {
                 const amount = parseFloat(totalEarningBalanceEl.getAttribute('data-amount') || '0');
-                totalEarningBalanceEl.textContent = formatMoney(amount);
+                totalEarningBalanceEl.textContent = currency.format(amount);
             }
             
             const miningEarningsEl = document.getElementById('miningEarnings');
             if (miningEarningsEl) {
                 const amount = parseFloat(miningEarningsEl.getAttribute('data-amount') || '0');
-                miningEarningsEl.textContent = formatMoney(amount);
+                miningEarningsEl.textContent = currency.format(amount);
             }
             
             const investmentEarningsEl = document.getElementById('investmentEarnings');
             if (investmentEarningsEl) {
                 const amount = parseFloat(investmentEarningsEl.getAttribute('data-amount') || '0');
-                investmentEarningsEl.textContent = formatMoney(amount);
+                investmentEarningsEl.textContent = currency.format(amount);
             }
             
             const referralEarningsEl = document.getElementById('referralEarnings');
             if (referralEarningsEl) {
                 const amount = parseFloat(referralEarningsEl.getAttribute('data-amount') || '0');
-                referralEarningsEl.textContent = formatMoney(amount);
+                referralEarningsEl.textContent = currency.format(amount);
             }
             
             const dailyAverageEl = document.getElementById('dailyAverage');
             if (dailyAverageEl) {
                 const amount = parseFloat(dailyAverageEl.getAttribute('data-amount') || '0');
-                dailyAverageEl.textContent = formatMoney(amount);
+                dailyAverageEl.textContent = currency.format(amount);
             }
             
             const monthlyProjectionEl = document.getElementById('monthlyProjection');
             if (monthlyProjectionEl) {
                 const amount = parseFloat(monthlyProjectionEl.getAttribute('data-amount') || '0');
-                monthlyProjectionEl.textContent = formatMoney(amount);
-            }
-            
-            // Update charts with new currency
-            if (chartsInitialized) {
-                updateChartsCurrency();
+                monthlyProjectionEl.textContent = currency.format(amount);
             }
         }
         
-        function updateChartsCurrency() {
+        function updateChartsCurrencySymbol() {
             if (earningsChart) {
-                // Update earnings chart Y-axis format
-                const currentCurrency = getCurrentCurrency();
-                const currencySymbol = CURRENCIES.find(c => c.code === currentCurrency)?.symbol || '$';
-                
+                const currency = getCurrentCurrencyObject();
                 earningsChart.options.scales.y.ticks.callback = function(value) {
-                    return currencySymbol + value.toLocaleString();
+                    return currency.format(value);
                 };
                 earningsChart.update();
             }
             
             if (candlestickChart) {
-                // Update candlestick chart Y-axis format
-                const currentCurrency = getCurrentCurrency();
-                const currencySymbol = CURRENCIES.find(c => c.code === currentCurrency)?.symbol || '$';
-                
+                const currency = getCurrentCurrencyObject();
                 if (candlestickChart.options && candlestickChart.options.scales && candlestickChart.options.scales.y) {
                     candlestickChart.options.scales.y.ticks.callback = function(value) {
-                        return currencySymbol + value.toFixed(0);
+                        return currency.format(value);
                     };
                     candlestickChart.update();
                 }
             }
             
             if (distributionChart) {
-                // Update distribution chart tooltip format
-                const currentCurrency = getCurrentCurrency();
-                const currencySymbol = CURRENCIES.find(c => c.code === currentCurrency)?.symbol || '$';
-                
+                const currency = getCurrentCurrencyObject();
                 distributionChart.options.plugins.tooltip.callbacks.label = function(context) {
                     const value = context.raw;
                     const total = context.dataset.data.reduce((a, b) => a + b, 0);
                     const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
-                    const convertedValue = convertAmount(value, 'USD', currentCurrency);
-                    return `${context.label}: ${currencySymbol}${convertedValue.toFixed(2)} (${percentage}%)`;
+                    return `${context.label}: ${currency.format(value)} (${percentage}%)`;
                 };
                 distributionChart.update();
             }
@@ -971,34 +949,17 @@
         }
         
         function selectMobileCurrency(currencyCode) {
-            // Update mobile toggle display
-            const currency = CURRENCIES.find(c => c.code === currencyCode);
-            if (currency) {
-                document.querySelector('.mobile-currency-symbol').textContent = currency.symbol;
-                document.querySelector('.mobile-currency-code').textContent = currency.code;
-            }
-            
-            // Update desktop switcher if visible
-            const desktopSelector = document.querySelector('.currency-selector');
-            if (desktopSelector) {
-                desktopSelector.querySelector('.current-symbol').textContent = currency.symbol;
-                desktopSelector.querySelector('.current-code').textContent = currency.code;
-            }
-            
-            // Update all currency symbols on page
-            updateCurrencySymbols(currencyCode);
-            
-            // Save to localStorage
+            // Update localStorage
             localStorage.setItem('v0trade_currency', currencyCode);
+            
+            // Update currency symbols and displays
+            updateCurrencySymbols();
             
             // Close mobile menu
             closeMobileCurrencyMenu();
             
-            // Update currency display for wallet data
-            updateCurrencyDisplay();
-            
-            // Dispatch currency change event
-            document.dispatchEvent(new CustomEvent('currencyChanged', { detail: { code: currencyCode, symbol: currency.symbol } }));
+            // Update dropdowns
+            updateCurrencyDropdowns(currencyCode);
         }
         
         function toggleCurrencyDropdown() {
@@ -1027,31 +988,28 @@
         }
         
         function selectCurrency(currencyCode) {
-            const currency = CURRENCIES.find(c => c.code === currencyCode);
-            if (!currency) return;
-            
-            // Update desktop selector
-            const selector = document.querySelector('.currency-selector');
-            if (selector) {
-                selector.querySelector('.current-symbol').textContent = currency.symbol;
-                selector.querySelector('.current-code').textContent = currency.code;
-            }
-            
-            // Update mobile toggle
-            document.querySelector('.mobile-currency-symbol').textContent = currency.symbol;
-            document.querySelector('.mobile-currency-code').textContent = currency.code;
-            
-            // Save to localStorage
+            // Update localStorage
             localStorage.setItem('v0trade_currency', currencyCode);
             
-            // Update currency symbols
-            updateCurrencySymbols(currencyCode);
+            // Update currency symbols and displays
+            updateCurrencySymbols();
             
-            // Update currency display for wallet data
-            updateCurrencyDisplay();
+            // Update dropdowns
+            updateCurrencyDropdowns(currencyCode);
+        }
+        
+        function updateCurrencyDropdowns(currencyCode) {
+            // Update desktop dropdown options
+            document.querySelectorAll('.currency-option-dropdown').forEach(option => {
+                const code = option.querySelector('.code').textContent;
+                option.className = `currency-option-dropdown ${code === currencyCode ? 'active' : ''}`;
+            });
             
-            // Dispatch currency change event
-            document.dispatchEvent(new CustomEvent('currencyChanged', { detail: { code: currencyCode, symbol: currency.symbol } }));
+            // Update mobile dropdown options
+            document.querySelectorAll('.mobile-currency-option').forEach(option => {
+                const code = option.querySelector('.code').textContent;
+                option.className = `mobile-currency-option ${code === currencyCode ? 'active' : ''}`;
+            });
         }
         
         // Close dropdown when clicking outside
@@ -1080,22 +1038,7 @@
             }
             
             // Initialize currency system
-            const currentCurrency = getCurrentCurrency();
-            updateCurrencySymbols(currentCurrency);
-            
-            // Update mobile toggle display
-            const currency = CURRENCIES.find(c => c.code === currentCurrency);
-            if (currency) {
-                document.querySelector('.mobile-currency-symbol').textContent = currency.symbol;
-                document.querySelector('.mobile-currency-code').textContent = currency.code;
-                
-                // Update desktop switcher if exists
-                const desktopSelector = document.querySelector('.currency-selector');
-                if (desktopSelector) {
-                    desktopSelector.querySelector('.current-symbol').textContent = currency.symbol;
-                    desktopSelector.querySelector('.current-code').textContent = currency.code;
-                }
-            }
+            updateCurrencySymbols();
             
             // Load wallet data from Baserow
             loadWalletData(userEmail);
@@ -1194,7 +1137,7 @@
         
         function updateWalletUI() {
             try {
-                // Update data attributes for currency conversion
+                // Update data attributes with raw amounts (no conversion)
                 document.getElementById('totalEarningBalance').setAttribute('data-amount', walletData.totalEarningBalance);
                 document.getElementById('miningEarnings').setAttribute('data-amount', walletData.miningEarnings);
                 document.getElementById('investmentEarnings').setAttribute('data-amount', walletData.investmentEarnings);
@@ -1228,8 +1171,8 @@
                 // Update trend indicators
                 updateTrendIndicators(weeklyGrowth);
                 
-                // Update currency display
-                updateCurrencyDisplay();
+                // Update currency display with current formatting
+                updateAmountDisplays();
                 
             } catch (err) {
                 console.error("Error updating wallet UI:", err);
@@ -1276,28 +1219,30 @@
         }
         
         function updateUIWithEmptyData() {
-            document.getElementById('totalEarningBalance').textContent = '$0.00';
+            const currency = getCurrentCurrencyObject();
+            
             document.getElementById('totalEarningBalance').setAttribute('data-amount', '0');
+            document.getElementById('totalEarningBalance').textContent = currency.format(0);
             
-            document.getElementById('miningEarnings').textContent = '$0.00';
             document.getElementById('miningEarnings').setAttribute('data-amount', '0');
+            document.getElementById('miningEarnings').textContent = currency.format(0);
             
-            document.getElementById('investmentEarnings').textContent = '$0.00';
             document.getElementById('investmentEarnings').setAttribute('data-amount', '0');
+            document.getElementById('investmentEarnings').textContent = currency.format(0);
             
-            document.getElementById('referralEarnings').textContent = '$0.00';
             document.getElementById('referralEarnings').setAttribute('data-amount', '0');
+            document.getElementById('referralEarnings').textContent = currency.format(0);
             
             document.getElementById('miningPercentage').textContent = '0%';
             document.getElementById('investmentPercentage').textContent = '0%';
             document.getElementById('referralPercentage').textContent = '0%';
             
-            document.getElementById('dailyAverage').textContent = '$0.00';
             document.getElementById('dailyAverage').setAttribute('data-amount', '0');
+            document.getElementById('dailyAverage').textContent = currency.format(0);
             
             document.getElementById('weeklyGrowth').textContent = '0%';
-            document.getElementById('monthlyProjection').textContent = '$0.00';
             document.getElementById('monthlyProjection').setAttribute('data-amount', '0');
+            document.getElementById('monthlyProjection').textContent = currency.format(0);
             
             document.getElementById('dailyChange').textContent = '+0%';
             document.getElementById('weeklyStatus').textContent = 'No data';
@@ -1310,8 +1255,7 @@
             }
             
             try {
-                const currentCurrency = getCurrentCurrency();
-                const currencySymbol = CURRENCIES.find(c => c.code === currentCurrency)?.symbol || '$';
+                const currency = getCurrentCurrencyObject();
                 
                 // 1. Earnings Growth Line Chart
                 const earningsCanvas = document.getElementById('earningsChart');
@@ -1329,7 +1273,7 @@
                         // Simulate daily growth
                         const dailyGrowth = cumulativeEarnings * 0.03 * (0.8 + Math.random() * 0.4);
                         cumulativeEarnings += dailyGrowth;
-                        earningsData.push(convertAmount(cumulativeEarnings, 'USD', currentCurrency));
+                        earningsData.push(cumulativeEarnings); // Use raw amounts
                     }
                     
                     earningsChart = new Chart(earningsCanvas, {
@@ -1368,7 +1312,7 @@
                                     ticks: { 
                                         color: '#9ca3af',
                                         callback: function(value) {
-                                            return currencySymbol + value.toLocaleString();
+                                            return currency.format(value);
                                         }
                                     }
                                 }
@@ -1382,9 +1326,9 @@
                 if (distributionCanvas) {
                     const distributionLabels = ['Mining', 'Investments', 'Referrals'];
                     const distributionData = [
-                        convertAmount(walletData.miningEarnings, 'USD', currentCurrency),
-                        convertAmount(walletData.investmentEarnings, 'USD', currentCurrency),
-                        convertAmount(walletData.referralEarnings, 'USD', currentCurrency)
+                        walletData.miningEarnings, // Raw amounts
+                        walletData.investmentEarnings,
+                        walletData.referralEarnings
                     ];
                     const distributionColors = ['#f59e0b', '#3b82f6', '#10b981'];
                     
@@ -1413,7 +1357,7 @@
                                             const value = context.raw;
                                             const total = distributionData.reduce((a, b) => a + b, 0);
                                             const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
-                                            return `${context.label}: ${currencySymbol}${value.toFixed(2)} (${percentage}%)`;
+                                            return `${context.label}: ${currency.format(value)} (${percentage}%)`;
                                         }
                                     }
                                 }
@@ -1435,7 +1379,6 @@
                     const candlestickData = [];
                     
                     let baseValue = walletData.totalEarningBalance > 0 ? walletData.totalEarningBalance / 100 : 100; // Scale down for chart
-                    baseValue = convertAmount(baseValue, 'USD', currentCurrency);
                     
                     for (let i = 6; i >= 0; i--) {
                         const date = new Date();
@@ -1496,7 +1439,7 @@
                                         ticks: { 
                                             color: '#9ca3af',
                                             callback: function(value) {
-                                                return currencySymbol + value.toFixed(0);
+                                                return currency.format(value);
                                             }
                                         }
                                     }
@@ -1535,7 +1478,7 @@
                                         ticks: { 
                                             color: '#9ca3af',
                                             callback: function(value) {
-                                                return currencySymbol + value.toFixed(0);
+                                                return currency.format(value);
                                             }
                                         }
                                     }
@@ -1704,9 +1647,7 @@
         
         // Global refresh currency function
         window.refreshCurrency = function() {
-            const currentCurrency = getCurrentCurrency();
-            updateCurrencySymbols(currentCurrency);
-            updateCurrencyDisplay();
+            updateCurrencySymbols();
         };
     </script>
 
