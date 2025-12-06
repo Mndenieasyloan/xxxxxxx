@@ -707,7 +707,7 @@
             { code: 'CAD', symbol: 'C$', name: 'Canadian Dollar' }
         ];
         
-        // Constants
+        // Constants - Updated to match dashboard keys
         const TRANSACTIONS_DATA_KEY = "v0trade_transactions_data";
         const MINING_CACHE_KEY = "v0trade_mining_cache";
         const MINING_CACHE_EXPIRY = 5 * 60 * 1000; // 5 minutes cache
@@ -1081,11 +1081,11 @@
             try {
                 console.log("Loading mining data for:", email);
                 
-                // Get cached transactions from localStorage
+                // Get cached transactions from localStorage - using same key as dashboard
                 const cachedData = localStorage.getItem(`${TRANSACTIONS_DATA_KEY}_${email}`);
                 
                 if (!cachedData) {
-                    console.log("No cached data found");
+                    console.log("No cached transaction data found");
                     hideLoadingAndShowNoPlans();
                     updateSummaryStats([], {});
                     return;
@@ -1094,11 +1094,13 @@
                 const allTransactions = JSON.parse(cachedData);
                 console.log("Total transactions found:", allTransactions.length);
                 
-                // Filter to get only mining plan transactions
+                // Filter to get only mining plan transactions - FIXED FILTERING
                 const miningTransactions = allTransactions.filter(transaction => {
                     // Check transaction type or method for mining plans
-                    const type = (transaction.type || '').toLowerCase();
-                    const method = (transaction.method || '').toLowerCase();
+                    const type = (transaction.type || '').toString().toLowerCase();
+                    const method = (transaction.method || '').toString().toLowerCase();
+                    
+                    console.log("Checking transaction:", { type, method });
                     
                     // Check if transaction contains any mining plan keywords
                     const transactionText = (type + ' ' + method).toLowerCase();
@@ -1107,11 +1109,12 @@
                            transactionText.includes('gold') || 
                            transactionText.includes('silver') || 
                            transactionText.includes('diamond') ||
-                           transactionText.includes('btc miner') ||
+                           transactionText.includes('btc') ||
+                           transactionText.includes('miner') ||
                            transactionText.includes('mining');
                 });
                 
-                console.log("Mining transactions found:", miningTransactions);
+                console.log("Mining transactions found:", miningTransactions.length);
                 
                 if (miningTransactions.length === 0) {
                     console.log("No mining transactions found");
@@ -1136,6 +1139,39 @@
             }
         }
         
+        // FIXED: Improved date parsing function
+        function parseTransactionDate(transaction) {
+            const now = new Date();
+            
+            // Try multiple date parsing strategies
+            if (transaction.date) {
+                // Try parsing ISO date string
+                let date = new Date(transaction.date);
+                if (!isNaN(date.getTime())) return date;
+                
+                // Try parsing the dashboard date format (e.g., "Jan 15, 2024, 10:30 AM")
+                const dateStr = transaction.date.toString();
+                const parsedDate = new Date(dateStr);
+                if (!isNaN(parsedDate.getTime())) return parsedDate;
+                
+                // Try extracting from formatted string
+                const match = dateStr.match(/(\w{3}\s+\d{1,2},\s+\d{4},\s+\d{1,2}:\d{2}\s*(?:AM|PM)?)/i);
+                if (match) {
+                    const parsed = new Date(match[1]);
+                    if (!isNaN(parsed.getTime())) return parsed;
+                }
+            }
+            
+            // Fallback to timestamp
+            if (transaction.timestamp) {
+                const date = new Date(parseInt(transaction.timestamp));
+                if (!isNaN(date.getTime())) return date;
+            }
+            
+            // Last resort: use current date
+            return now;
+        }
+        
         function updateUIWithMiningData(miningStats) {
             // Hide loading skeleton
             document.getElementById('loadingSkeleton').classList.add('hidden');
@@ -1154,52 +1190,49 @@
             showNoPlansMessage();
         }
         
+        // FIXED: Improved transaction processing
         function processMiningTransactions(transactions) {
             const planStats = {};
             const now = new Date();
             
             transactions.forEach(transaction => {
-                const type = (transaction.type || '').toLowerCase();
-                const method = (transaction.method || '').toLowerCase();
+                const type = (transaction.type || '').toString().toLowerCase();
+                const method = (transaction.method || '').toString().toLowerCase();
                 const amount = parseFloat(transaction.amount) || 0;
                 
-                // Parse transaction date from dashboard format
-                let transactionDate;
-                try {
-                    // Try to parse the date string from dashboard
-                    if (transaction.date) {
-                        transactionDate = new Date(transaction.date);
-                        if (isNaN(transactionDate.getTime())) {
-                            // If parsing fails, use current date
-                            transactionDate = new Date(transaction.timestamp || now);
-                        }
-                    } else {
-                        transactionDate = new Date(transaction.timestamp || now);
-                    }
-                } catch (e) {
-                    transactionDate = now;
-                }
+                // Parse transaction date using improved function
+                const transactionDate = parseTransactionDate(transaction);
                 
-                console.log("Processing transaction:", { type, method, amount, date: transactionDate });
+                console.log("Processing transaction:", { 
+                    type, 
+                    method, 
+                    amount, 
+                    originalDate: transaction.date,
+                    parsedDate: transactionDate 
+                });
                 
-                // Find matching plan
+                // Find matching plan - FIXED PLAN MATCHING
                 let planKey = null;
                 const transactionText = (type + ' ' + method).toLowerCase();
                 
-                // Check for exact plan matches
+                // Check for exact plan matches first
                 for (const key in MINING_PLANS) {
-                    if (transactionText.includes(key)) {
+                    if (transactionText.includes(key.toLowerCase())) {
                         planKey = key;
                         break;
                     }
                 }
                 
-                // If no exact match, try partial matches
+                // If no exact match, try keyword matching
                 if (!planKey) {
                     if (transactionText.includes('micro')) planKey = 'micro plan btc miner';
                     else if (transactionText.includes('gold')) planKey = 'gold plan btc miner';
                     else if (transactionText.includes('silver')) planKey = 'silver plan btc miner';
                     else if (transactionText.includes('diamond')) planKey = 'diamond plan btc miner';
+                    else if (transactionText.includes('btc') || transactionText.includes('miner')) {
+                        // Default to micro plan if it's clearly a mining transaction
+                        planKey = 'micro plan btc miner';
+                    }
                 }
                 
                 if (!planKey) {
@@ -1281,13 +1314,13 @@
                 
                 // Format dates for display
                 const startDateStr = startDate.toLocaleDateString('en-US', {
-                    month: 'numeric',
+                    month: 'short',
                     day: 'numeric',
                     year: 'numeric'
                 });
                 
                 const endDateStr = endDate.toLocaleDateString('en-US', {
-                    month: 'numeric',
+                    month: 'short',
                     day: 'numeric',
                     year: 'numeric'
                 });
