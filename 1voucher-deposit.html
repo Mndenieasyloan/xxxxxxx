@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ETH Deposit - V0 Trade</title>
+    <title>1Voucher Deposit - V0 Trade</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         .sidebar-link {
@@ -66,34 +66,8 @@
         .dropdown-content { display: none; position: absolute; background-color: rgb(15 23 42 / 0.95); min-width: 12rem; border: 1px solid rgb(168 85 247 / 0.2); border-radius: 0.5rem; padding: 0.5rem; z-index: 1000; backdrop-filter: blur(10px); }
         .dropdown:hover .dropdown-content { display: block; }
         
-        /* File upload styles */
-        .file-upload-container {
-            border: 2px dashed rgb(168 85 247 / 0.3);
-            border-radius: 0.5rem;
-            padding: 2rem;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s;
-            background: rgb(168 85 247 / 0.05);
-        }
-        .file-upload-container:hover {
-            border-color: rgb(168 85 247);
-            background: rgb(168 85 247 / 0.1);
-        }
-        .file-upload-container.dragover {
-            border-color: rgb(168 85 247);
-            background: rgb(168 85 247 / 0.15);
-        }
-        .image-preview {
-            max-width: 300px;
-            max-height: 300px;
-            border-radius: 0.5rem;
-            border: 2px dashed rgb(168 85 247 / 0.3);
+        .hidden {
             display: none;
-            margin: 1rem auto;
-        }
-        .image-preview.show {
-            display: block;
         }
         
         /* Currency switcher styles */
@@ -294,161 +268,6 @@
             color: white;
         }
         
-        /* Investment modal styles */
-        .investment-modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.9);
-            backdrop-filter: blur(10px);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 2000;
-            opacity: 0;
-            visibility: hidden;
-            transition: all 0.3s ease;
-        }
-        
-        .investment-modal.show {
-            opacity: 1;
-            visibility: visible;
-        }
-        
-        .modal-content {
-            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
-            border: 1px solid rgba(168, 85, 247, 0.3);
-            border-radius: 16px;
-            padding: 24px;
-            width: 90%;
-            max-width: 500px;
-            max-height: 90vh;
-            overflow-y: auto;
-            transform: translateY(20px);
-            transition: transform 0.3s ease;
-            box-shadow: 0 20px 50px rgba(168, 85, 247, 0.2);
-        }
-        
-        .investment-modal.show .modal-content {
-            transform: translateY(0);
-        }
-        
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 24px;
-            padding-bottom: 16px;
-            border-bottom: 1px solid rgba(168, 85, 247, 0.2);
-        }
-        
-        .modal-title {
-            color: white;
-            font-size: 24px;
-            font-weight: 700;
-            background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-        
-        .close-modal {
-            background: rgba(168, 85, 247, 0.1);
-            border: 1px solid rgba(168, 85, 247, 0.3);
-            color: white;
-            width: 36px;
-            height: 36px;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            font-size: 20px;
-            transition: all 0.3s;
-        }
-        
-        .close-modal:hover {
-            background: rgba(168, 85, 247, 0.2);
-            transform: rotate(90deg);
-        }
-        
-        .modal-body {
-            color: #e2e8f0;
-        }
-        
-        .modal-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 12px 0;
-            border-bottom: 1px solid rgba(168, 85, 247, 0.1);
-        }
-        
-        .modal-row:last-child {
-            border-bottom: none;
-        }
-        
-        .modal-label {
-            color: #94a3b8;
-        }
-        
-        .modal-value {
-            color: white;
-            font-weight: 600;
-        }
-        
-        .modal-value.highlight {
-            color: #10b981;
-            font-size: 20px;
-            font-weight: 700;
-        }
-        
-        .modal-actions {
-            display: flex;
-            gap: 12px;
-            margin-top: 24px;
-        }
-        
-        .modal-btn {
-            flex: 1;
-            padding: 14px;
-            border-radius: 10px;
-            font-weight: 600;
-            font-size: 16px;
-            cursor: pointer;
-            transition: all 0.3s;
-            text-align: center;
-        }
-        
-        .modal-btn.cancel {
-            background: rgba(30, 41, 59, 0.8);
-            border: 1px solid rgba(168, 85, 247, 0.2);
-            color: #94a3b8;
-        }
-        
-        .modal-btn.cancel:hover {
-            background: rgba(30, 41, 59, 1);
-            color: white;
-        }
-        
-        .modal-btn.confirm {
-            background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%);
-            color: white;
-            border: none;
-        }
-        
-        .modal-btn.confirm:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(168, 85, 247, 0.3);
-        }
-        
-        .modal-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            transform: none !important;
-        }
-        
         @keyframes fadeIn {
             from { opacity: 0; transform: translate(-50%, -48%); }
             to { opacity: 1; transform: translate(-50%, -50%); }
@@ -516,12 +335,12 @@
                 <div class="hidden items-center gap-4 md:flex">
                     <!-- Desktop Currency Switcher -->
                     <div class="currency-switcher">
-                        <div class="currency-selector">
+                        <div class="currency-selector" onclick="toggleCurrencyDropdown(event)">
                             <span class="current-symbol">$</span>
                             <span class="current-code">USD</span>
                             <span>▼</span>
                         </div>
-                        <div class="currency-dropdown"></div>
+                        <div class="currency-dropdown" id="desktopCurrencyDropdown"></div>
                     </div>
                     
                     <a href="dashboard.html" class="text-sm text-purple-400 hover:text-purple-300 transition user-email-display"></a>
@@ -581,19 +400,14 @@
         </div>
     </div>
 
-    <!-- Investment Modal -->
-    <div class="investment-modal" id="investmentModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2 class="modal-title" id="modalTitle">Confirm ETH Deposit</h2>
-                <button class="close-modal" onclick="closeModal()">×</button>
-            </div>
-            <div class="modal-body" id="modalBody">
-                <!-- Content will be populated by JavaScript -->
-            </div>
-            <div class="modal-actions">
-                <button class="modal-btn cancel" onclick="closeModal()">Cancel</button>
-                <button class="modal-btn confirm" id="confirmButton">Confirm</button>
+    <!-- Modal -->
+    <div id="investmentModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-slate-800 rounded-xl p-6 m-4 max-w-md w-full border border-purple-500/30">
+            <h3 id="modalTitle" class="text-xl font-bold text-white mb-4"></h3>
+            <div id="modalContent" class="text-gray-300 mb-6"></div>
+            <div class="flex gap-3">
+                <button onclick="closeModal()" class="flex-1 bg-gray-600 hover:bg-gray-700 text-white py-2 px-4 rounded-lg transition">Cancel</button>
+                <button id="confirmButton" class="flex-1 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white py-2 px-4 rounded-lg transition">Confirm</button>
             </div>
         </div>
     </div>
@@ -670,8 +484,8 @@
         <main class="flex-1 p-4 md:p-8 bg-gradient-to-br from-slate-950 via-slate-950 to-slate-950">
             <div class="max-w-2xl mx-auto">
                 <div class="mb-8">
-                    <h1 class="text-3xl md:text-4xl font-bold text-white mb-2">Payment via Ethereum (ETH)</h1>
-                    <p class="text-gray-400">Complete your deposit using Ethereum</p>
+                    <h1 class="text-3xl md:text-4xl font-bold text-white mb-2">Payment via 1Voucher</h1>
+                    <p class="text-gray-400">Complete your deposit using 1Voucher</p>
                 </div>
 
                 <div class="bg-slate-900/80 backdrop-blur-sm rounded-xl border border-purple-500/20 p-6 md:p-8 mb-6">
@@ -681,45 +495,21 @@
                     </div>
 
                     <div class="mb-6">
-                        <p class="text-gray-400 text-sm mb-1">Please pay:</p>
-                        <p class="text-2xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent" id="payAmount"><span data-currency-symbol>$</span>0.00 USD worth of ETH</p>
-                    </div>
-
-                    <div class="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4 mb-6">
-                        <div class="flex gap-3">
-                            <span class="text-2xl">⚠️</span>
-                            <div>
-                                <p class="text-yellow-400 font-semibold mb-1">Warning</p>
-                                <p class="text-gray-300 text-sm">Only send ETH to this address. Sending any other asset will be lost forever.</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4 mb-6">
-                        <div class="flex gap-3">
-                            <span class="text-2xl">⚠️</span>
-                            <div>
-                                <p class="text-yellow-400 font-semibold mb-1">Important Reminder</p>
-                                <p class="text-gray-300 text-sm">Please make sure you deposit the exact amount shown above (<span id="reminderAmount" class="font-bold"><span data-currency-symbol>$</span>0.00 USD</span>). Depositing a different amount may cause delays in processing your transaction.</p>
-                            </div>
-                        </div>
+                        <label for="onePin" class="text-sm font-semibold text-gray-300 mb-2 block">Enter 1Voucher PIN</label>
+                        <p class="text-xs text-gray-400 mb-2">(1Voucher PIN must be 16 digits)</p>
+                        <input 
+                            type="text" 
+                            id="onePin" 
+                            maxlength="16"
+                            class="w-full bg-slate-950/50 border border-purple-500/30 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-purple-500 transition font-mono text-lg"
+                            placeholder="Enter 16-digit 1Voucher PIN"
+                            required
+                        >
+                        <p id="errorMessage" class="text-red-400 text-sm mt-2 hidden">Incorrect payment check and try again.</p>
                     </div>
 
                     <div class="mb-6">
-                        <label class="text-sm font-semibold text-gray-300 mb-2 block">Wallet Address</label>
-                        <div class="bg-slate-950/50 border border-purple-500/30 rounded-lg p-4 mb-4">
-                            <p class="text-white break-all font-mono text-sm" id="ethWallet">0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb</p>
-                        </div>
-                        
-                        <div class="flex justify-center mb-4">
-                            <div class="bg-white p-4 rounded-lg">
-                                <img src="/placeholder.svg?height=200&width=200" alt="ETH QR Code" class="w-48 h-48">
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="mb-6">
-                        <label for="userEmail" class="text-sm font-semibold text-gray-300 mb-2 block">Your V0 Trade Account Email</label>
+                        <label for="userEmail" class="text-sm font-semibold text-gray-300 mb-2 block">Enter Your V0 Trade Account Email</label>
                         <input 
                             type="email" 
                             id="userEmail" 
@@ -729,58 +519,29 @@
                         >
                     </div>
 
-                    <!-- Proof of Payment Upload -->
-                    <div class="mb-6">
-                        <label class="text-sm font-semibold text-gray-300 mb-2 block">Proof of Payment (Required)</label>
-                        <p class="text-gray-400 text-sm mb-4">Upload a screenshot or PDF of your transaction confirmation.</p>
-                        
-                        <div 
-                            id="fileUploadContainer" 
-                            class="file-upload-container"
-                            ondragover="handleDragOver(event)"
-                            ondragleave="handleDragLeave(event)"
-                            ondrop="handleDrop(event)"
-                            onclick="document.getElementById('proofFile').click()"
-                        >
-                            <div class="flex flex-col items-center justify-center gap-2">
-                                <svg class="w-12 h-12 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                                </svg>
-                                <p class="text-gray-300" id="uploadText">Click to upload or drag and drop</p>
-                                <p class="text-gray-400 text-xs">PNG, JPG, GIF, PDF up to 5MB</p>
-                                <p id="fileName" class="text-purple-300 font-medium mt-2"></p>
-                            </div>
-                            
-                            <input 
-                                type="file" 
-                                id="proofFile" 
-                                accept=".png,.jpg,.jpeg,.gif,.pdf"
-                                class="hidden"
-                                onchange="handleFileSelect(event)"
-                            >
-                        </div>
-                        
-                        <img id="imagePreview" class="image-preview" alt="Preview">
-                        
-                        <div id="fileError" class="text-red-400 text-sm mt-2 hidden">
-                            Please upload proof of payment
-                        </div>
-                    </div>
-
                     <div class="bg-slate-950/50 border border-purple-500/20 rounded-lg p-4 mb-6">
                         <p class="text-white font-semibold mb-2">Instructions</p>
                         <ol class="list-decimal list-inside space-y-2 text-gray-400 text-sm">
-                            <li>Send the ETH amount to the address above.</li>
-                            <li>Take a screenshot of your transaction confirmation.</li>
-                            <li>Upload the screenshot (required for verification).</li>
-                            <li>After sending, click Confirm Payment.</li>
+                            <li>Enter your 16-digit 1Voucher PIN.</li>
+                            <li>Enter your V0 Trade email.</li>
+                            <li>Click Confirm Payment.</li>
+                            <li>Redirect to Wallet → My Account.</li>
                         </ol>
+                    </div>
+
+                    <div class="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4 mb-6">
+                        <div class="flex gap-3">
+                            <span class="text-2xl">⚠️</span>
+                            <div>
+                                <p class="text-yellow-400 font-semibold mb-1">Important Reminder</p>
+                                <p class="text-gray-300 text-sm">Please make sure your 1Voucher has the exact amount shown above (<span id="reminderAmount" class="font-bold"><span data-currency-symbol>$</span>0.00 USD</span>). Using a voucher with a different amount may cause processing issues.</p>
+                            </div>
+                        </div>
                     </div>
 
                     <button 
                         onclick="confirmPayment()"
-                        id="confirmBtn"
-                        class="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold py-3 px-6 rounded-lg transition transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+                        class="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold py-3 px-6 rounded-lg transition transform hover:scale-105"
                     >
                         Confirm Payment
                     </button>
@@ -802,25 +563,140 @@
             { code: 'CAD', symbol: 'C$', name: 'Canadian Dollar' }
         ];
         
-        const DEPOSIT_API = "https://api.baserow.io/api/database/rows/table/756078/";
-        const FILE_UPLOAD_API = "https://api.baserow.io/api/user-files/upload-file/";
-        const BASEROW_TOKEN = "LG6hnTBxgBG78FueElsSwpHRd4Wep1oL";
-        
-        let currentUserEmail = '';
-        let proofFile = null;
+        const BASEROW_TOKEN = 'LG6hnTBxgBG78FueElsSwpHRd4Wep1oL';
+        const DEPOSIT_TABLE_ID = '756078';
+        const BASEROW_API_URL = 'https://api.baserow.io/api/database/rows/table';
 
-        // Mobile menu functions
-        function toggleMobileMenu() {
-            const menu = document.getElementById('mobileMenu');
-            if (menu) {
-                menu.classList.toggle('active');
+        // Check if user is logged in
+        function checkLogin() {
+            const userEmail = localStorage.getItem('v0trade_user_email');
+            return userEmail !== null && userEmail !== '';
+        }
+
+        // Get logged-in user email
+        function getUserEmail() {
+            return localStorage.getItem('v0trade_user_email') || '';
+        }
+
+        // Get current currency
+        function getCurrentCurrency() {
+            return localStorage.getItem('v0trade_currency') || 'USD';
+        }
+
+        // Update header with user info
+        function updateHeader() {
+            const userEmail = getUserEmail();
+            if (userEmail) {
+                // Update header account display
+                const headerAccount = document.querySelector('.md\\:flex a[href="dashboard.html"]');
+                if (headerAccount) {
+                    headerAccount.textContent = userEmail;
+                }
+                
+                // Update header email display
+                const headerEmailElements = document.querySelectorAll('#headerEmailDisplay, .user-email-display');
+                headerEmailElements.forEach(element => {
+                    if (element) {
+                        element.textContent = userEmail;
+                    }
+                });
             }
         }
-        
-        function closeMobileMenu() {
-            document.getElementById('mobileMenu').classList.remove('active');
+
+        // Auto-fill email if user is logged in
+        function autoFillUserEmail() {
+            const userEmail = getUserEmail();
+            if (userEmail) {
+                const emailInput = document.getElementById('userEmail');
+                if (emailInput) {
+                    emailInput.value = userEmail;
+                    emailInput.readOnly = true;
+                    emailInput.classList.add('bg-gray-100', 'cursor-not-allowed');
+                }
+            }
         }
-        
+
+        // Currency switcher functions
+        function toggleCurrencyDropdown(event) {
+            event.stopPropagation();
+            const dropdown = document.getElementById('desktopCurrencyDropdown');
+            dropdown.classList.toggle('show');
+            
+            // Populate dropdown if empty
+            if (dropdown.children.length === 0) {
+                populateDesktopCurrencyDropdown();
+            }
+        }
+
+        function populateDesktopCurrencyDropdown() {
+            const dropdown = document.getElementById('desktopCurrencyDropdown');
+            const currentCurrency = getCurrentCurrency();
+            
+            dropdown.innerHTML = '';
+            
+            CURRENCIES.forEach(currency => {
+                const option = document.createElement('div');
+                option.className = `currency-option-dropdown ${currency.code === currentCurrency ? 'active' : ''}`;
+                option.innerHTML = `
+                    <span class="symbol">${currency.symbol}</span>
+                    <span class="code">${currency.code}</span>
+                    <span class="name">${currency.name}</span>
+                `;
+                option.onclick = (e) => {
+                    e.stopPropagation();
+                    selectCurrency(currency.code);
+                };
+                dropdown.appendChild(option);
+            });
+        }
+
+        function selectCurrency(currencyCode) {
+            // Update desktop switcher display
+            const currency = CURRENCIES.find(c => c.code === currencyCode);
+            if (currency) {
+                document.querySelector('.current-symbol').textContent = currency.symbol;
+                document.querySelector('.current-code').textContent = currency.code;
+            }
+            
+            // Update mobile toggle display
+            document.querySelector('.mobile-currency-symbol').textContent = currency.symbol;
+            document.querySelector('.mobile-currency-code').textContent = currency.code;
+            
+            // Update all currency symbols on page
+            updateCurrencySymbols(currencyCode);
+            
+            // Save to localStorage
+            localStorage.setItem('v0trade_currency', currencyCode);
+            
+            // Close dropdowns
+            closeCurrencyDropdowns();
+            
+            // Dispatch currency change event
+            document.dispatchEvent(new CustomEvent('currencyChanged', { 
+                detail: { code: currencyCode, symbol: currency.symbol } 
+            }));
+        }
+
+        function updateCurrencySymbols(currencyCode) {
+            const currency = CURRENCIES.find(c => c.code === currencyCode);
+            if (!currency) return;
+            
+            // Update all elements with data-currency-symbol attribute
+            document.querySelectorAll('[data-currency-symbol]').forEach(el => {
+                el.textContent = currency.symbol;
+            });
+            
+            // Update amount displays
+            const amount = localStorage.getItem('deposit_amount') || '0.00';
+            document.getElementById('requestedAmount').innerHTML = `${currency.symbol}${amount} USD`;
+            document.getElementById('reminderAmount').innerHTML = `${currency.symbol}${amount} USD`;
+        }
+
+        function closeCurrencyDropdowns() {
+            document.getElementById('desktopCurrencyDropdown').classList.remove('show');
+            closeMobileCurrencyMenu();
+        }
+
         // Mobile currency menu functions
         function toggleMobileCurrencyMenu() {
             const overlay = document.getElementById('mobileCurrencyOverlay');
@@ -854,498 +730,207 @@
                     <span class="code" style="font-weight: 600; min-width: 50px;">${currency.code}</span>
                     <span class="name" style="color: #94a3b8; font-size: 14px; flex-grow: 1; text-align: right;">${currency.name}</span>
                 `;
-                option.onclick = () => selectMobileCurrency(currency.code);
+                option.onclick = () => selectCurrency(currency.code);
                 container.appendChild(option);
             });
         }
-        
-        function selectMobileCurrency(currencyCode) {
-            // Update mobile toggle display
-            const currency = CURRENCIES.find(c => c.code === currencyCode);
-            if (currency) {
-                document.querySelector('.mobile-currency-symbol').textContent = currency.symbol;
-                document.querySelector('.mobile-currency-code').textContent = currency.code;
-            }
-            
-            // Update desktop switcher if visible
-            const desktopSelector = document.querySelector('.currency-selector');
-            if (desktopSelector) {
-                desktopSelector.querySelector('.current-symbol').textContent = currency.symbol;
-                desktopSelector.querySelector('.current-code').textContent = currency.code;
-            }
-            
-            // Update all currency symbols on page
-            updateCurrencySymbols(currencyCode);
-            
-            // Save to localStorage
-            localStorage.setItem('v0trade_currency', currencyCode);
-            
-            // Close mobile menu
-            closeMobileCurrencyMenu();
-            
-            // Dispatch currency change event
-            document.dispatchEvent(new CustomEvent('currencyChanged', { detail: { code: currencyCode, symbol: currency.symbol } }));
-        }
-        
-        function getCurrentCurrency() {
-            return localStorage.getItem('v0trade_currency') || 'USD';
-        }
-        
-        function updateCurrencySymbols(currencyCode) {
-            const currency = CURRENCIES.find(c => c.code === currencyCode);
-            if (!currency) return;
-            
-            // Update all elements with data-currency-symbol attribute
-            document.querySelectorAll('[data-currency-symbol]').forEach(el => {
-                el.textContent = currency.symbol;
-            });
-            
-            // Also update the requested amount display
-            const amount = localStorage.getItem('deposit_amount') || '0.00';
-            document.getElementById('requestedAmount').innerHTML = `${currency.symbol}${amount} USD`;
-            document.getElementById('payAmount').innerHTML = `${currency.symbol}${amount} USD worth of ETH`;
-            document.getElementById('reminderAmount').innerHTML = `${currency.symbol}${amount} USD`;
-        }
-        
+
         // Modal functions
         function showModal(title, content, confirmCallback) {
             document.getElementById('modalTitle').textContent = title;
-            document.getElementById('modalBody').innerHTML = content;
-            document.getElementById('investmentModal').classList.add('show');
+            document.getElementById('modalContent').innerHTML = content;
+            document.getElementById('investmentModal').classList.remove('hidden');
             document.getElementById('confirmButton').onclick = confirmCallback;
-            document.getElementById('confirmButton').disabled = false;
-            
-            // Prevent body scrolling when modal is open
-            document.body.style.overflow = 'hidden';
         }
-        
+
         function closeModal() {
-            document.getElementById('investmentModal').classList.remove('show');
-            
-            // Re-enable body scrolling
-            document.body.style.overflow = '';
+            document.getElementById('investmentModal').classList.add('hidden');
         }
 
-        // Check if user is logged in
-        function checkAuth() {
-            const userEmail = localStorage.getItem("v0trade_user_email");
-            console.log('[ETH Deposit] Checking auth - user email:', userEmail);
-            
-            if (!userEmail) {
-                console.log('[ETH Deposit] No user logged in - allowing access');
-                return null;
-            }
-            
-            return userEmail;
-        }
-
-        // Update header email display
-        function updateHeaderEmail(email) {
-            const headerEmailElements = document.querySelectorAll('#headerEmailDisplay, .user-email-display');
-            headerEmailElements.forEach(element => {
-                if (element) {
-                    element.textContent = email;
-                }
-            });
-        }
-
-        // Auto-fill email if user is logged in
-        function autoFillUserEmail() {
-            if (currentUserEmail) {
-                const emailInput = document.getElementById('userEmail');
-                if (emailInput) {
-                    emailInput.value = currentUserEmail;
-                    emailInput.readOnly = true;
-                    emailInput.classList.add('bg-gray-100', 'cursor-not-allowed');
-                }
-            }
-        }
-
-        // File upload handling
-        function handleFileSelect(event) {
-            const file = event.target.files[0];
-            if (file) {
-                validateAndSetFile(file);
-            }
-        }
-
-        function handleDrop(event) {
-            event.preventDefault();
-            event.stopPropagation();
-            
-            const container = document.getElementById('fileUploadContainer');
-            container.classList.remove('dragover');
-            
-            const file = event.dataTransfer.files[0];
-            if (file) {
-                validateAndSetFile(file);
-            }
-        }
-
-        function handleDragOver(event) {
-            event.preventDefault();
-            event.stopPropagation();
-            const container = document.getElementById('fileUploadContainer');
-            container.classList.add('dragover');
-        }
-
-        function handleDragLeave(event) {
-            event.preventDefault();
-            event.stopPropagation();
-            const container = document.getElementById('fileUploadContainer');
-            container.classList.remove('dragover');
-        }
-
-        function validateAndSetFile(file) {
-            // Check file size (5MB max)
-            const maxSize = 5 * 1024 * 1024;
-            if (file.size > maxSize) {
-                showModal('File Too Large', 
-                    '<p class="text-gray-300 text-center py-4">File is too large. Maximum size is 5MB.</p>',
-                    closeModal);
-                return;
-            }
-
-            // Check file type
-            const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'application/pdf'];
-            if (!validTypes.includes(file.type)) {
-                showModal('Invalid File Type', 
-                    '<p class="text-gray-300 text-center py-4">Please upload a valid image or PDF file.</p>',
-                    closeModal);
-                return;
-            }
-
-            proofFile = file;
-            document.getElementById('fileName').textContent = file.name;
-            document.getElementById('uploadText').textContent = 'File selected:';
-            document.getElementById('fileError').classList.add('hidden');
-
-            // Show preview for images
-            if (file.type.startsWith('image/')) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const preview = document.getElementById('imagePreview');
-                    preview.src = e.target.result;
-                    preview.classList.add('show');
-                };
-                reader.readAsDataURL(file);
-            } else {
-                document.getElementById('imagePreview').classList.remove('show');
-            }
-        }
-
-        // Upload file to Baserow and get the uploaded file data
-        async function uploadFileToBaserow(file) {
-            console.log('[ETH Deposit] Starting file upload...');
-            
-            const formData = new FormData();
-            formData.append('file', file);
-
+        // Create deposit record in Baserow
+        async function createDeposit(email, amount, method, pin, status, transactionId) {
             try {
-                const response = await fetch(FILE_UPLOAD_API, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': 'Token ' + BASEROW_TOKEN
-                    },
-                    body: formData
-                });
-
-                if (!response.ok) {
-                    const errorText = await response.text();
-                    console.error('[ETH Deposit] File upload failed:', errorText);
-                    throw new Error(`File upload failed: ${response.status}`);
-                }
-
-                const result = await response.json();
-                console.log('[ETH Deposit] File uploaded successfully:', result);
-                
-                // Return the complete file object as shown in the API example
-                return {
-                    name: result.name
-                };
-                
-            } catch (error) {
-                console.error('[ETH Deposit] File upload error:', error);
-                throw error;
-            }
-        }
-
-        async function confirmPayment() {
-            const emailInput = document.getElementById('userEmail');
-            const email = emailInput.value.trim();
-            const amount = localStorage.getItem('deposit_amount') || '0.00';
-            const ethWallet = document.getElementById('ethWallet').textContent;
-
-            // Get current currency
-            const currentCurrency = getCurrentCurrency();
-            const currencySymbol = CURRENCIES.find(c => c.code === currentCurrency)?.symbol || '$';
-
-            // Validate required fields
-            if (!email) {
-                showModal('Email Required', 
-                    '<p class="text-gray-300 text-center py-4">Please enter your email address to continue.</p>', 
-                    closeModal);
-                return;
-            }
-
-            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            if (!emailRegex.test(email)) {
-                showModal('Invalid Email', 
-                    '<p class="text-gray-300 text-center py-4">Please enter a valid email address.</p>', 
-                    closeModal);
-                return;
-            }
-
-            if (!proofFile) {
-                document.getElementById('fileError').classList.remove('hidden');
-                showModal('Proof Required', 
-                    '<p class="text-gray-300 text-center py-4">Please upload proof of payment screenshot.</p>', 
-                    closeModal);
-                return;
-            }
-
-            // Show confirmation modal
-            showModal('Confirm ETH Deposit', `
-                <div class="space-y-3">
-                    <div class="modal-row">
-                        <span class="modal-label">Deposit Method:</span>
-                        <span class="modal-value">Ethereum (ETH)</span>
-                    </div>
-                    <div class="modal-row">
-                        <span class="modal-label">Amount:</span>
-                        <span class="modal-value">${currencySymbol}${amount}</span>
-                    </div>
-                    <div class="modal-row">
-                        <span class="modal-label">Email:</span>
-                        <span class="modal-value">${email}</span>
-                    </div>
-                    <div class="modal-row">
-                        <span class="modal-label">ETH Wallet:</span>
-                        <span class="modal-value text-sm font-mono">${ethWallet.substring(0, 10)}...${ethWallet.substring(ethWallet.length - 8)}</span>
-                    </div>
-                    ${proofFile ? `<div class="modal-row"><span class="modal-label">Proof File:</span><span class="modal-value text-sm">${proofFile.name}</span></div>` : ''}
-                    <div class="border-t border-gray-600 pt-3 mt-3">
-                        <p class="text-yellow-400 text-sm text-center">Your deposit will be processed and marked as "pending".</p>
-                    </div>
-                </div>
-            `, async () => await processDeposit(email, amount, ethWallet));
-        }
-
-        async function processDeposit(email, amount, ethWallet) {
-            const modalBody = document.getElementById('modalBody');
-            const confirmButton = document.getElementById('confirmButton');
-            
-            modalBody.innerHTML = '<p class="text-center text-gray-300 py-4">Processing ETH deposit...</p>';
-            confirmButton.disabled = true;
-            const confirmBtn = document.getElementById('confirmBtn');
-            if (confirmBtn) confirmBtn.disabled = true;
-
-            try {
-                console.log('[ETH Deposit] Starting deposit process...');
-                
-                // 1. Upload file to Baserow
-                console.log('[ETH Deposit] Uploading proof file...');
-                const uploadedFileData = await uploadFileToBaserow(proofFile);
-                console.log('[ETH Deposit] File uploaded data:', uploadedFileData);
-                
-                // 2. Generate transaction ID and timestamp
-                const transactionId = 'TXN-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9).toUpperCase();
                 const timestamp = new Date().toISOString();
-
-                // 3. Prepare the EXACT payload format from the API documentation
-                const depositPayload = {
-                    // Note: Using the actual field names as shown in the API docs
-                    "id 2": "",  // This is field_6394425 - optional string field
-                    "email": email,
-                    "method": "ETH",
-                    "amount": amount,
-                    "pin": "N/A",
-                    "wallet_address": ethWallet,
-                    "status": "pending",
-                    "transaction_id": transactionId,
-                    "timestamp": timestamp,
-                    "image": [
-                        {
-                            "name": uploadedFileData.name
-                        }
-                    ]
-                };
-
-                console.log('[ETH Deposit] Sending payload to Baserow:', JSON.stringify(depositPayload, null, 2));
-                console.log('[ETH Deposit] API URL:', DEPOSIT_API + '?user_field_names=true');
-
-                // 4. Send data to Baserow using the EXACT format from documentation
-                const response = await fetch(DEPOSIT_API + '?user_field_names=true', {
+                
+                const response = await fetch(`${BASEROW_API_URL}/${DEPOSIT_TABLE_ID}/?user_field_names=true`, {
                     method: "POST",
                     headers: {
                         "Authorization": "Token " + BASEROW_TOKEN,
                         "Content-Type": "application/json"
                     },
-                    body: JSON.stringify(depositPayload)
+                    body: JSON.stringify({
+                        "email": email,
+                        "method": method,
+                        "amount": amount,
+                        "pin": pin,
+                        "wallet_address": "N/A",
+                        "status": status,
+                        "transaction_id": transactionId,
+                        "timestamp": timestamp
+                    })
                 });
 
-                console.log('[ETH Deposit] Response status:', response.status);
-                
                 if (!response.ok) {
-                    const errorText = await response.text();
-                    console.error('[ETH Deposit] API Error:', errorText);
-                    
-                    // Try alternative format WITHOUT user_field_names=true
-                    console.log('[ETH Deposit] Trying alternative format without user_field_names...');
-                    
-                    // Try with field ID format
-                    const altPayload = {
-                        "field_6394425": "",  // id 2 field
-                        "field_6394426": email,
-                        "field_6394427": "ETH",
-                        "field_6394428": amount,
-                        "field_6394429": "N/A",
-                        "field_6394430": ethWallet,
-                        "field_6394431": "pending",
-                        "field_6394432": "TXN-" + Date.now(),
-                        "field_6394433": new Date().toISOString(),
-                        "field_6445160": [uploadedFileData.name]  // Use the actual uploaded file name
-                    };
-                    
-                    console.log('[ETH Deposit] Trying alternative payload:', altPayload);
-                    
-                    const altResponse = await fetch(DEPOSIT_API, {  // WITHOUT user_field_names
-                        method: "POST",
-                        headers: {
-                            "Authorization": "Token " + BASEROW_TOKEN,
-                            "Content-Type": "application/json"
-                        },
-                        body: JSON.stringify(altPayload)
-                    });
-                    
-                    if (altResponse.ok) {
-                        const altResult = await altResponse.json();
-                        console.log('[ETH Deposit] Alternative succeeded:', altResult);
-                        
-                        // Save to localStorage
-                        saveToLocalStorage(email, amount, ethWallet, transactionId, timestamp, uploadedFileData, altResult.id);
-                        
-                        showModal('Success!', `
-                            <div class="space-y-4 text-center">
-                                <div style="width: 60px; height: 60px; margin: 0 auto 20px; background: linear-gradient(135deg, #10b981, #06b6d4); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 28px; color: white;">
-                                    ✓
-                                </div>
-                                <p class="text-green-400 font-semibold text-lg">ETH deposit submitted successfully!</p>
-                                <p class="text-gray-300">Your deposit of $${amount} is being processed.</p>
-                                <p class="text-gray-400 text-sm">Transaction ID: ${transactionId}</p>
-                                <p class="text-gray-400 text-sm">Check your dashboard to track the status.</p>
-                            </div>`,
-                            () => {
-                                closeModal();
-                                setTimeout(() => {
-                                    window.location.href = 'payment-pending.html';
-                                }, 500);
-                            }
-                        );
-                        return;
-                    } else {
-                        const altError = await altResponse.text();
-                        console.error('[ETH Deposit] Alternative failed:', altError);
-                        throw new Error('Alternative format also failed: ' + altError);
-                    }
+                    throw new Error(`HTTP error! status: ${response.status}`);
                 }
 
                 const result = await response.json();
-                console.log('[ETH Deposit] Baserow response successful:', result);
-
-                // 5. Save to localStorage as backup
-                saveToLocalStorage(email, amount, ethWallet, transactionId, timestamp, uploadedFileData, result.id);
-
-                showModal('Success!', `
-                    <div class="space-y-4 text-center">
-                        <div style="width: 60px; height: 60px; margin: 0 auto 20px; background: linear-gradient(135deg, #10b981, #06b6d4); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 28px; color: white;">
-                            ✓
-                        </div>
-                        <p class="text-green-400 font-semibold text-lg">ETH deposit submitted successfully!</p>
-                        <p class="text-gray-300">Your deposit of $${amount} is being processed.</p>
-                        <p class="text-gray-400 text-sm">Transaction ID: ${transactionId}</p>
-                        <p class="text-gray-400 text-sm">Check your dashboard to track the status.</p>
-                    </div>`,
-                    () => {
-                        closeModal();
-                        setTimeout(() => {
-                            window.location.href = 'payment-pending.html';
-                        }, 500);
-                    }
-                );
-
+                console.log('[1Voucher Deposit] Baserow response:', result);
+                return { success: true, data: result };
             } catch (error) {
-                console.error('[ETH Deposit] Error processing deposit:', error);
-                
-                showModal('Deposit Failed', `
-                    <div class="space-y-4 text-center">
-                        <div style="width: 60px; height: 60px; margin: 0 auto 20px; background: linear-gradient(135deg, #ef4444, #dc2626); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 28px; color: white;">
-                            ✗
-                        </div>
-                        <p class="text-red-400 font-semibold text-lg">Failed to process ETH deposit.</p>
-                        <p class="text-gray-300">Error: ${error.message}</p>
-                        <p class="text-gray-400 text-sm">Please try again or contact support.</p>
-                    </div>`,
-                    closeModal
-                );
-                
-                // Re-enable button
-                const confirmBtn = document.getElementById('confirmBtn');
-                if (confirmBtn) {
-                    confirmBtn.disabled = false;
-                }
+                console.error('[1Voucher Deposit] Error creating deposit:', error);
+                return { success: false, error: error.message };
             }
         }
 
         // Save transaction to localStorage
-        function saveToLocalStorage(email, amount, ethWallet, transactionId, timestamp, uploadedFileData, baserowId) {
+        function saveTransactionToLocalStorage(transactionData) {
             try {
-                // Save to transactions array
-                const localDepositData = {
-                    id: transactionId,
-                    type: 'deposit',
-                    method: 'ETH',
-                    amount: amount,
-                    email: email,
-                    wallet: ethWallet,
-                    status: 'pending',
-                    timestamp: timestamp,
-                    proofFile: {
-                        name: proofFile.name,
-                        size: proofFile.size,
-                        type: proofFile.type,
-                        lastModified: proofFile.lastModified,
-                        baserowFileName: uploadedFileData.name
-                    },
-                    baserowId: baserowId,
-                    expiry: Date.now() + (24 * 60 * 60 * 1000)
-                };
-
-                // Save to transactions array
+                // Get existing transactions or initialize empty array
                 const existingTransactions = JSON.parse(localStorage.getItem('latest_transactions') || '[]');
-                existingTransactions.unshift(localDepositData);
+                
+                // Add new transaction
+                existingTransactions.unshift(transactionData);
+                
+                // Keep only last 10 transactions
                 const limitedTransactions = existingTransactions.slice(0, 10);
+                
+                // Save back to localStorage
                 localStorage.setItem('latest_transactions', JSON.stringify(limitedTransactions));
                 
-                // Save individual details
-                localStorage.setItem('deposit_method', 'ETH');
-                localStorage.setItem('deposit_amount', amount);
-                localStorage.setItem('deposit_wallet_address', ethWallet);
+                console.log('[1Voucher Deposit] Transaction saved locally:', transactionData);
+                return true;
+            } catch (error) {
+                console.error('[1Voucher Deposit] Error saving to localStorage:', error);
+                return false;
+            }
+        }
+
+        // Clean up expired transactions
+        function cleanupExpiredTransactions() {
+            try {
+                const transactions = JSON.parse(localStorage.getItem('latest_transactions') || '[]');
+                const now = Date.now();
+                const validTransactions = transactions.filter(tx => tx.expiry > now);
+                localStorage.setItem('latest_transactions', JSON.stringify(validTransactions));
+            } catch (error) {
+                console.error('[1Voucher Deposit] Error cleaning up transactions:', error);
+            }
+        }
+
+        function confirmPayment() {
+            const pin = document.getElementById('onePin').value;
+            const emailInput = document.getElementById('userEmail');
+            const email = emailInput.value.trim();
+            const amount = localStorage.getItem('deposit_amount') || '0.00';
+            const errorMsg = document.getElementById('errorMessage');
+            
+            // Get current currency
+            const currentCurrency = getCurrentCurrency();
+            const currencySymbol = CURRENCIES.find(c => c.code === currentCurrency)?.symbol || '$';
+
+            // Validate 1Voucher PIN (16 digits)
+            if (pin.length !== 16 || !/^\d{16}$/.test(pin)) {
+                errorMsg.classList.remove('hidden');
+                return;
+            }
+
+            if (!email) {
+                showModal('Email Required', '<p class="text-gray-300">Please enter your email address to continue.</p>', closeModal);
+                return;
+            }
+
+            // Validate email format
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                showModal('Invalid Email', '<p class="text-gray-300">Please enter a valid email address.</p>', closeModal);
+                return;
+            }
+
+            errorMsg.classList.add('hidden');
+
+            // Generate transaction ID
+            const transactionId = 'TXN-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9).toUpperCase();
+
+            // Show confirmation modal
+            showModal('Confirm 1Voucher Deposit', `
+                <div class="space-y-3">
+                    <div class="flex justify-between text-gray-300"><span>Deposit Method:</span><span class="text-white font-semibold">1Voucher</span></div>
+                    <div class="flex justify-between text-gray-300"><span>Amount:</span><span class="text-white font-semibold">${currencySymbol}${amount}</span></div>
+                    <div class="flex justify-between text-gray-300"><span>Email:</span><span class="text-white font-semibold">${email}</span></div>
+                    <div class="flex justify-between text-gray-300"><span>Voucher PIN:</span><span class="text-white font-mono">${pin.substring(0, 4)}****${pin.substring(12)}</span></div>
+                    <div class="border-t border-gray-600 pt-3 mt-3">
+                        <p class="text-yellow-400 text-sm">Your deposit will be processed and marked as "incoming".</p>
+                    </div>
+                </div>
+            `, async () => await processDeposit(email, amount, pin, transactionId));
+        }
+
+        async function processDeposit(email, amount, pin, transactionId) {
+            document.getElementById('modalContent').innerHTML = '<p class="text-center text-gray-300">Processing 1Voucher deposit...</p>';
+            document.getElementById('confirmButton').disabled = true;
+
+            // Create deposit record in Baserow
+            const depositResult = await createDeposit(
+                email,
+                amount,
+                '1Voucher',
+                pin,
+                'incoming',
+                transactionId
+            );
+
+            if (!depositResult.success) {
+                showModal('Deposit Failed', '<p class="text-gray-300">Failed to process 1Voucher deposit. Please try again.</p>', closeModal);
+                return;
+            }
+
+            // Save to localStorage for Latest Transactions (24 hours)
+            const timestamp = new Date().toISOString();
+            const transactionData = {
+                id: transactionId,
+                type: 'deposit',
+                method: '1Voucher',
+                amount: amount,
+                email: email,
+                pin: pin,
+                status: 'pending',
+                timestamp: timestamp,
+                expiry: Date.now() + (24 * 60 * 60 * 1000) // 24 hours from now
+            };
+
+            const saveSuccess = saveTransactionToLocalStorage(transactionData);
+
+            if (saveSuccess) {
+                // Also save individual transaction details
+                localStorage.setItem('deposit_method', '1Voucher');
+                localStorage.setItem('voucher_pin', pin);
                 localStorage.setItem('deposit_email', email);
+                localStorage.setItem('deposit_amount', amount);
                 localStorage.setItem('transaction_id', transactionId);
                 localStorage.setItem('deposit_timestamp', timestamp);
-                localStorage.setItem('deposit_status', 'pending');
-                localStorage.setItem('deposit_baserow_id', baserowId);
-                localStorage.setItem('deposit_proof_file', JSON.stringify(localDepositData.proofFile));
 
-                console.log('[ETH Deposit] Data saved to localStorage:', localDepositData);
-
-            } catch (error) {
-                console.error('[ETH Deposit] Error saving to localStorage:', error);
+                showModal('Success!', `<p class="text-green-400 font-semibold text-center">1Voucher deposit submitted successfully!</p>
+                     <p class="text-gray-300 text-center mt-4">Your deposit of $${amount} is being processed.</p>
+                     <p class="text-gray-400 text-sm text-center mt-2">Transaction ID: ${transactionId}</p>
+                     <p class="text-gray-400 text-sm text-center">Check your dashboard to track the status.</p>`, 
+                    () => window.location.href = 'dashboard.html');
+            } else {
+                showModal('Partial Success', `<p class="text-yellow-400 text-center">Deposit submitted but local save failed.</p>
+                     <p class="text-gray-300 text-center mt-4">Your deposit of $${amount} is being processed.</p>
+                     <p class="text-gray-400 text-sm text-center mt-2">Transaction ID: ${transactionId}</p>`, 
+                    () => window.location.href = 'dashboard.html');
             }
         }
 
         // Navigation functions
+        function toggleMobileMenu() {
+            const menu = document.getElementById('mobileMenu');
+            if (menu) {
+                menu.classList.toggle('active');
+            }
+        }
+        
         function toggleSidebar() {
             const sidebar = document.getElementById('sidebar');
             const overlay = document.getElementById('sidebarOverlay');
@@ -1368,74 +953,74 @@
             );
         }
 
-        // Clean up expired transactions
-        function cleanupExpiredTransactions() {
-            try {
-                const transactions = JSON.parse(localStorage.getItem('latest_transactions') || '[]');
-                const now = Date.now();
-                const validTransactions = transactions.filter(tx => tx.expiry > now);
-                localStorage.setItem('latest_transactions', JSON.stringify(validTransactions));
-            } catch (error) {
-                console.error('[ETH Deposit] Error cleaning up transactions:', error);
+        // Close dropdowns when clicking outside
+        document.addEventListener('click', function(event) {
+            // Close desktop currency dropdown
+            const currencySwitcher = document.querySelector('.currency-switcher');
+            const currencyDropdown = document.getElementById('desktopCurrencyDropdown');
+            if (currencySwitcher && currencyDropdown && 
+                !currencySwitcher.contains(event.target) && 
+                currencyDropdown.classList.contains('show')) {
+                currencyDropdown.classList.remove('show');
             }
-        }
-
-        window.addEventListener('DOMContentLoaded', () => {
-            // Check auth and get current user
-            const userEmail = checkAuth();
-            currentUserEmail = userEmail || '';
             
-            if (currentUserEmail) {
-                updateHeaderEmail(currentUserEmail);
+            // Close mobile menu when clicking outside
+            const mobileMenu = document.getElementById('mobileMenu');
+            const mobileMenuButton = document.querySelector('button[onclick="toggleMobileMenu()"]');
+            
+            if (mobileMenu && mobileMenu.classList.contains('active') && 
+                !mobileMenu.contains(event.target) && 
+                mobileMenuButton && !mobileMenuButton.contains(event.target)) {
+                mobileMenu.classList.remove('active');
             }
+        });
+
+        // Close modals with Escape key
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                closeCurrencyDropdowns();
+                closeModal();
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Update header with user info
+            updateHeader();
 
             // Initialize currency system
             const currentCurrency = getCurrentCurrency();
             updateCurrencySymbols(currentCurrency);
             
-            // Update mobile toggle display
+            // Update currency displays
             const currency = CURRENCIES.find(c => c.code === currentCurrency);
             if (currency) {
+                // Desktop
+                const desktopSymbol = document.querySelector('.current-symbol');
+                const desktopCode = document.querySelector('.current-code');
+                if (desktopSymbol) desktopSymbol.textContent = currency.symbol;
+                if (desktopCode) desktopCode.textContent = currency.code;
+                
+                // Mobile
                 document.querySelector('.mobile-currency-symbol').textContent = currency.symbol;
                 document.querySelector('.mobile-currency-code').textContent = currency.code;
-                
-                // Update desktop switcher if exists
-                const desktopSelector = document.querySelector('.currency-selector');
-                if (desktopSelector) {
-                    desktopSelector.querySelector('.current-symbol').textContent = currency.symbol;
-                    desktopSelector.querySelector('.current-code').textContent = currency.code;
-                }
             }
 
             // Load amount from localStorage
             const amount = localStorage.getItem('deposit_amount') || '0.00';
             const currencySymbol = CURRENCIES.find(c => c.code === currentCurrency)?.symbol || '$';
             document.getElementById('requestedAmount').innerHTML = `${currencySymbol}${amount} USD`;
-            document.getElementById('payAmount').innerHTML = `${currencySymbol}${amount} USD worth of ETH`;
             document.getElementById('reminderAmount').innerHTML = `${currencySymbol}${amount} USD`;
 
+            // Auto-fill email if user is logged in
             autoFillUserEmail();
+
+            // Clean up expired transactions
             cleanupExpiredTransactions();
-            
-            // Close mobile menu when clicking outside
-            document.addEventListener('click', function(event) {
-                const mobileMenu = document.getElementById('mobileMenu');
-                const mobileMenuButton = document.querySelector('button[onclick="toggleMobileMenu()"]');
-                
-                if (mobileMenu && mobileMenu.classList.contains('active') && 
-                    !mobileMenu.contains(event.target) && 
-                    mobileMenuButton && !mobileMenuButton.contains(event.target)) {
-                    closeMobileMenu();
-                }
-            });
-            
-            // Close modals with Escape key
-            document.addEventListener('keydown', function(event) {
-                if (event.key === 'Escape') {
-                    closeMobileCurrencyMenu();
-                    closeModal();
-                }
-            });
+
+            // Check login status
+            if (!checkLogin()) {
+                console.log('User not logged in - 1Voucher deposit available for all users');
+            }
         });
         
         // Global refresh currency function
