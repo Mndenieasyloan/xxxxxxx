@@ -707,12 +707,12 @@
             { code: 'CAD', symbol: 'C$', name: 'Canadian Dollar' }
         ];
         
-        // Constants - Updated to match dashboard keys
+        // Constants
         const TRANSACTIONS_DATA_KEY = "v0trade_transactions_data";
         const MINING_CACHE_KEY = "v0trade_mining_cache";
         const MINING_CACHE_EXPIRY = 5 * 60 * 1000; // 5 minutes cache
         
-        // Mining plan configurations - UPDATED WITH EXACT PLAN NAMES
+        // Mining plan configurations
         const MINING_PLANS = {
             'micro plan btc miner': {
                 name: 'Micro Plan',
@@ -777,7 +777,7 @@
         }
         
         function convertAmount(amount, fromCurrency, toCurrency) {
-            // Simple conversion rates (in a real app, you would fetch live rates)
+            // Simple conversion rates
             const rates = {
                 'USD': 1,
                 'EUR': 0.92,
@@ -805,7 +805,7 @@
             if (totalInvestmentEl) {
                 const amount = parseFloat(totalInvestmentEl.getAttribute('data-amount') || '0');
                 const convertedAmount = convertAmount(amount, 'USD', currentCurrency);
-                totalInvestmentEl.textContent = `${currency.symbol}${convertedAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                totalInvestmentEl.textContent = `${currency.symbol}${convertedAmount.toFixed(2)}`;
             }
             
             // Update estimated returns
@@ -813,7 +813,7 @@
             if (estimatedReturnsEl) {
                 const amount = parseFloat(estimatedReturnsEl.getAttribute('data-amount') || '0');
                 const convertedAmount = convertAmount(amount, 'USD', currentCurrency);
-                estimatedReturnsEl.textContent = `${currency.symbol}${convertedAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                estimatedReturnsEl.textContent = `${currency.symbol}${convertedAmount.toFixed(2)}`;
             }
             
             // Update mining plan cards
@@ -824,13 +824,13 @@
                 if (investmentEl) {
                     const amount = parseFloat(investmentEl.getAttribute('data-amount') || '0');
                     const convertedAmount = convertAmount(amount, 'USD', currentCurrency);
-                    investmentEl.textContent = `${currency.symbol}${convertedAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                    investmentEl.textContent = `${currency.symbol}${convertedAmount.toFixed(2)}`;
                 }
                 
                 if (totalEl) {
                     const amount = parseFloat(totalEl.getAttribute('data-amount') || '0');
                     const convertedAmount = convertAmount(amount, 'USD', currentCurrency);
-                    totalEl.textContent = `${currency.symbol}${convertedAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                    totalEl.textContent = `${currency.symbol}${convertedAmount.toFixed(2)}`;
                 }
             });
             
@@ -840,7 +840,7 @@
                 if (investmentCell) {
                     const amount = parseFloat(investmentCell.getAttribute('data-amount') || '0');
                     const convertedAmount = convertAmount(amount, 'USD', currentCurrency);
-                    investmentCell.textContent = `${currency.symbol}${convertedAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                    investmentCell.textContent = `${currency.symbol}${convertedAmount.toFixed(2)}`;
                 }
             });
         }
@@ -884,12 +884,12 @@
         }
         
         function selectMobileCurrency(currencyCode) {
-            // Update mobile toggle display
             const currency = CURRENCIES.find(c => c.code === currencyCode);
-            if (currency) {
-                document.querySelector('.mobile-currency-symbol').textContent = currency.symbol;
-                document.querySelector('.mobile-currency-code').textContent = currency.code;
-            }
+            if (!currency) return;
+            
+            // Update mobile toggle display
+            document.querySelector('.mobile-currency-symbol').textContent = currency.symbol;
+            document.querySelector('.mobile-currency-code').textContent = currency.code;
             
             // Update desktop switcher if visible
             const desktopSelector = document.querySelector('.currency-selector');
@@ -1010,18 +1010,8 @@
                 }
             }
             
-            // Check for cached mining data first
-            const cachedData = getCachedMiningData(userEmail);
-            if (cachedData) {
-                // Use cached data for instant display
-                updateUIWithMiningData(cachedData);
-                
-                // Still load fresh data in background
-                setTimeout(() => loadMiningData(userEmail, false), 100);
-            } else {
-                // No cache, load fresh data
-                loadMiningData(userEmail, true);
-            }
+            // Auto-load mining data on page load
+            loadMiningData(userEmail);
             
             // Initialize charts
             initializeCharts();
@@ -1071,63 +1061,78 @@
         }
 
         function loadMiningData(email, showLoading = true) {
+            console.log("Loading mining data for:", email);
+            
+            // Show loading skeleton
             if (showLoading) {
-                // Show loading skeleton
                 document.getElementById('loadingSkeleton').classList.remove('hidden');
                 document.getElementById('summaryStats').classList.add('hidden');
+                document.getElementById('activeMiningPlans').innerHTML = '';
                 document.getElementById('noPlansMessage').classList.add('hidden');
             }
             
             try {
-                console.log("Loading mining data for:", email);
-                
-                // Get cached transactions from localStorage - using same key as dashboard
-                const cachedData = localStorage.getItem(`${TRANSACTIONS_DATA_KEY}_${email}`);
-                
-                if (!cachedData) {
-                    console.log("No cached transaction data found");
-                    hideLoadingAndShowNoPlans();
-                    updateSummaryStats([], {});
+                // Check for cached mining data first
+                const cachedData = getCachedMiningData(email);
+                if (cachedData) {
+                    console.log("Using cached mining data");
+                    updateUIWithMiningData(cachedData);
                     return;
                 }
                 
-                const allTransactions = JSON.parse(cachedData);
+                // Get transactions from localStorage
+                const cachedTransactions = localStorage.getItem(`${TRANSACTIONS_DATA_KEY}_${email}`);
+                
+                if (!cachedTransactions) {
+                    console.log("No transaction data found");
+                    hideLoadingAndShowNoPlans();
+                    return;
+                }
+                
+                const allTransactions = JSON.parse(cachedTransactions);
                 console.log("Total transactions found:", allTransactions.length);
                 
-                // Filter to get only mining plan transactions - FIXED FILTERING
+                // Filter to get only mining plan transactions
                 const miningTransactions = allTransactions.filter(transaction => {
-                    // Check transaction type or method for mining plans
+                    // Get transaction details
                     const type = (transaction.type || '').toString().toLowerCase();
                     const method = (transaction.method || '').toString().toLowerCase();
+                    const amount = parseFloat(transaction.amount) || 0;
                     
-                    console.log("Checking transaction:", { type, method });
+                    // Skip if amount is too small or negative
+                    if (amount <= 0) return false;
                     
-                    // Check if transaction contains any mining plan keywords
-                    const transactionText = (type + ' ' + method).toLowerCase();
+                    // Combine all text fields for searching
+                    const searchText = (type + ' ' + method).toLowerCase();
                     
-                    return transactionText.includes('micro') || 
-                           transactionText.includes('gold') || 
-                           transactionText.includes('silver') || 
-                           transactionText.includes('diamond') ||
-                           transactionText.includes('btc') ||
-                           transactionText.includes('miner') ||
-                           transactionText.includes('mining');
+                    // Check for mining plan keywords
+                    const isMiningPlan = 
+                        searchText.includes('micro') || 
+                        searchText.includes('gold') || 
+                        searchText.includes('silver') || 
+                        searchText.includes('diamond') ||
+                        searchText.includes('btc') ||
+                        searchText.includes('miner') ||
+                        searchText.includes('mining') ||
+                        (searchText.includes('plan') && (amount === 600 || amount === 1850 || amount === 2450 || amount === 2200));
+                    
+                    return isMiningPlan;
                 });
                 
-                console.log("Mining transactions found:", miningTransactions.length);
+                console.log("Mining transactions found:", miningTransactions.length, miningTransactions);
                 
                 if (miningTransactions.length === 0) {
                     console.log("No mining transactions found");
                     hideLoadingAndShowNoPlans();
-                    updateSummaryStats([], {});
+                    cacheMiningData(email, {}); // Cache empty result
                     return;
                 }
                 
-                // Group transactions by plan type and calculate stats
+                // Process mining transactions
                 const miningStats = processMiningTransactions(miningTransactions);
                 console.log("Processed mining stats:", miningStats);
                 
-                // Cache the data for faster loading next time
+                // Cache the data
                 cacheMiningData(email, miningStats);
                 
                 // Update UI with mining data
@@ -1139,58 +1144,6 @@
             }
         }
         
-        // FIXED: Improved date parsing function
-        function parseTransactionDate(transaction) {
-            const now = new Date();
-            
-            // Try multiple date parsing strategies
-            if (transaction.date) {
-                // Try parsing ISO date string
-                let date = new Date(transaction.date);
-                if (!isNaN(date.getTime())) return date;
-                
-                // Try parsing the dashboard date format (e.g., "Jan 15, 2024, 10:30 AM")
-                const dateStr = transaction.date.toString();
-                const parsedDate = new Date(dateStr);
-                if (!isNaN(parsedDate.getTime())) return parsedDate;
-                
-                // Try extracting from formatted string
-                const match = dateStr.match(/(\w{3}\s+\d{1,2},\s+\d{4},\s+\d{1,2}:\d{2}\s*(?:AM|PM)?)/i);
-                if (match) {
-                    const parsed = new Date(match[1]);
-                    if (!isNaN(parsed.getTime())) return parsed;
-                }
-            }
-            
-            // Fallback to timestamp
-            if (transaction.timestamp) {
-                const date = new Date(parseInt(transaction.timestamp));
-                if (!isNaN(date.getTime())) return date;
-            }
-            
-            // Last resort: use current date
-            return now;
-        }
-        
-        function updateUIWithMiningData(miningStats) {
-            // Hide loading skeleton
-            document.getElementById('loadingSkeleton').classList.add('hidden');
-            document.getElementById('summaryStats').classList.remove('hidden');
-            
-            // Update all UI components
-            updateMiningPlansDisplay(miningStats);
-            updateSummaryStatsFromStats(miningStats);
-            updatePlanDetailsTable(miningStats);
-            updateCharts(miningStats);
-        }
-        
-        function hideLoadingAndShowNoPlans() {
-            document.getElementById('loadingSkeleton').classList.add('hidden');
-            document.getElementById('summaryStats').classList.remove('hidden');
-            showNoPlansMessage();
-        }
-        
-        // FIXED: Improved transaction processing
         function processMiningTransactions(transactions) {
             const planStats = {};
             const now = new Date();
@@ -1199,49 +1152,99 @@
                 const type = (transaction.type || '').toString().toLowerCase();
                 const method = (transaction.method || '').toString().toLowerCase();
                 const amount = parseFloat(transaction.amount) || 0;
+                const status = (transaction.status || '').toString().toLowerCase();
                 
-                // Parse transaction date using improved function
-                const transactionDate = parseTransactionDate(transaction);
-                
-                console.log("Processing transaction:", { 
-                    type, 
-                    method, 
-                    amount, 
-                    originalDate: transaction.date,
-                    parsedDate: transactionDate 
-                });
-                
-                // Find matching plan - FIXED PLAN MATCHING
-                let planKey = null;
-                const transactionText = (type + ' ' + method).toLowerCase();
-                
-                // Check for exact plan matches first
-                for (const key in MINING_PLANS) {
-                    if (transactionText.includes(key.toLowerCase())) {
-                        planKey = key;
-                        break;
-                    }
-                }
-                
-                // If no exact match, try keyword matching
-                if (!planKey) {
-                    if (transactionText.includes('micro')) planKey = 'micro plan btc miner';
-                    else if (transactionText.includes('gold')) planKey = 'gold plan btc miner';
-                    else if (transactionText.includes('silver')) planKey = 'silver plan btc miner';
-                    else if (transactionText.includes('diamond')) planKey = 'diamond plan btc miner';
-                    else if (transactionText.includes('btc') || transactionText.includes('miner')) {
-                        // Default to micro plan if it's clearly a mining transaction
-                        planKey = 'micro plan btc miner';
-                    }
-                }
-                
-                if (!planKey) {
-                    console.log("No plan match found for transaction");
+                // Skip failed/cancelled transactions
+                if (status.includes('fail') || status.includes('cancel') || status.includes('reject')) {
                     return;
                 }
                 
-                console.log("Matched plan:", planKey);
+                // Parse transaction date
+                let transactionDate = new Date();
+                try {
+                    if (transaction.date) {
+                        const dateStr = transaction.date.toString();
+                        transactionDate = new Date(dateStr);
+                        if (isNaN(transactionDate.getTime())) {
+                            // Try parsing different date formats
+                            const timestamp = parseInt(dateStr);
+                            if (!isNaN(timestamp)) {
+                                transactionDate = new Date(timestamp);
+                            } else {
+                                // Try to parse as locale date string
+                                const parts = dateStr.split(/[\s,]+/);
+                                if (parts.length >= 3) {
+                                    transactionDate = new Date(dateStr);
+                                }
+                            }
+                        }
+                    } else if (transaction.timestamp) {
+                        transactionDate = new Date(transaction.timestamp);
+                    }
+                } catch (e) {
+                    console.log("Error parsing date:", e, "using current date");
+                    transactionDate = new Date();
+                }
                 
+                // Ensure date is valid
+                if (isNaN(transactionDate.getTime())) {
+                    transactionDate = new Date();
+                }
+                
+                console.log("Processing transaction:", { 
+                    type, method, amount, 
+                    originalDate: transaction.date,
+                    parsedDate: transactionDate.toISOString() 
+                });
+                
+                // Determine which mining plan this transaction belongs to
+                let planKey = null;
+                const searchText = (type + ' ' + method).toLowerCase();
+                
+                // First try to match by amount
+                if (amount === 600) planKey = 'micro plan btc miner';
+                else if (amount === 1850) planKey = 'gold plan btc miner';
+                else if (amount === 2450) planKey = 'silver plan btc miner';
+                else if (amount === 2200) planKey = 'diamond plan btc miner';
+                
+                // If amount didn't match, try by text
+                if (!planKey) {
+                    if (searchText.includes('micro')) planKey = 'micro plan btc miner';
+                    else if (searchText.includes('gold')) planKey = 'gold plan btc miner';
+                    else if (searchText.includes('silver')) planKey = 'silver plan btc miner';
+                    else if (searchText.includes('diamond')) planKey = 'diamond plan btc miner';
+                    else if (searchText.includes('btc') || searchText.includes('miner') || searchText.includes('mining')) {
+                        // Assign to closest amount match
+                        const amounts = [600, 1850, 2200, 2450];
+                        let closestAmount = amounts[0];
+                        let minDiff = Math.abs(amount - closestAmount);
+                        
+                        for (let i = 1; i < amounts.length; i++) {
+                            const diff = Math.abs(amount - amounts[i]);
+                            if (diff < minDiff) {
+                                minDiff = diff;
+                                closestAmount = amounts[i];
+                            }
+                        }
+                        
+                        // Map amount to plan
+                        switch(closestAmount) {
+                            case 600: planKey = 'micro plan btc miner'; break;
+                            case 1850: planKey = 'gold plan btc miner'; break;
+                            case 2200: planKey = 'diamond plan btc miner'; break;
+                            case 2450: planKey = 'silver plan btc miner'; break;
+                        }
+                    }
+                }
+                
+                if (!planKey) {
+                    console.log("No plan match found for transaction:", { type, method, amount });
+                    return;
+                }
+                
+                console.log("Matched to plan:", planKey);
+                
+                // Initialize plan stats if not exists
                 if (!planStats[planKey]) {
                     planStats[planKey] = {
                         count: 0,
@@ -1251,17 +1254,43 @@
                     };
                 }
                 
+                // Add transaction to plan
                 planStats[planKey].count++;
                 planStats[planKey].totalInvestment += amount;
                 planStats[planKey].transactions.push({
                     ...transaction,
                     transactionDate: transactionDate,
                     originalDate: transaction.date,
-                    timestamp: transaction.timestamp
+                    timestamp: transaction.timestamp || transactionDate.getTime()
                 });
             });
             
             return planStats;
+        }
+        
+        function updateUIWithMiningData(planStats) {
+            // Hide loading skeleton
+            document.getElementById('loadingSkeleton').classList.add('hidden');
+            
+            if (!planStats || Object.keys(planStats).length === 0) {
+                showNoPlansMessage();
+                return;
+            }
+            
+            // Show summary stats
+            document.getElementById('summaryStats').classList.remove('hidden');
+            
+            // Update all UI components
+            updateMiningPlansDisplay(planStats);
+            updateSummaryStatsFromStats(planStats);
+            updatePlanDetailsTable(planStats);
+            updateCharts(planStats);
+        }
+        
+        function hideLoadingAndShowNoPlans() {
+            document.getElementById('loadingSkeleton').classList.add('hidden');
+            document.getElementById('summaryStats').classList.add('hidden');
+            showNoPlansMessage();
         }
         
         function updateMiningPlansDisplay(planStats) {
@@ -1339,7 +1368,7 @@
                             <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
                                 <div>
                                     <p class="text-sm text-gray-400">Investment</p>
-                                    <p class="text-lg font-bold text-white investment-amount" data-amount="${plan.investment}">$${plan.investment.toLocaleString()}</p>
+                                    <p class="text-lg font-bold text-white investment-amount" data-amount="${plan.investment}">$${plan.investment.toFixed(2)}</p>
                                 </div>
                                 <div>
                                     <p class="text-sm text-gray-400">Hashrate</p>
@@ -1351,7 +1380,7 @@
                                 </div>
                                 <div>
                                     <p class="text-sm text-gray-400">Est. Total</p>
-                                    <p class="text-lg font-bold text-amber-400 total-return-amount" data-amount="${totalReturn}">$${totalReturn.toLocaleString()}</p>
+                                    <p class="text-lg font-bold text-amber-400 total-return-amount" data-amount="${totalReturn}">$${totalReturn.toFixed(2)}</p>
                                 </div>
                             </div>
                             
@@ -1406,11 +1435,11 @@
             document.getElementById('activePlansCount').textContent = activePlansCount;
             
             const totalInvestmentEl = document.getElementById('totalInvestment');
-            totalInvestmentEl.textContent = `$${totalInvestment.toLocaleString()}`;
+            totalInvestmentEl.textContent = `$${totalInvestment.toFixed(2)}`;
             totalInvestmentEl.setAttribute('data-amount', totalInvestment);
             
             const estimatedReturnsEl = document.getElementById('estimatedReturns');
-            estimatedReturnsEl.textContent = `$${Math.round(totalEstimatedReturns).toLocaleString()}`;
+            estimatedReturnsEl.textContent = `$${totalEstimatedReturns.toFixed(2)}`;
             estimatedReturnsEl.setAttribute('data-amount', totalEstimatedReturns);
             
             document.getElementById('totalHashrate').textContent = `${totalHashrate.toLocaleString()} TH/s`;
@@ -1470,7 +1499,7 @@
                     <td class="py-3 px-4">
                         <span class="${plan.badgeClass} plan-badge">${plan.name}</span>
                     </td>
-                    <td class="py-3 px-4 text-white font-medium investment-cell" data-amount="${plan.investment}">$${plan.investment.toLocaleString()}</td>
+                    <td class="py-3 px-4 text-white font-medium investment-cell" data-amount="${plan.investment}">$${plan.investment.toFixed(2)}</td>
                     <td class="py-3 px-4 text-gray-300">${plan.duration} Days</td>
                     <td class="py-3 px-4 text-gray-300">${plan.hashrate}</td>
                     <td class="py-3 px-4 text-green-400 font-medium">${plan.dailyReturn}%</td>
@@ -1584,7 +1613,7 @@
                                 callback: function(value) {
                                     const currentCurrency = getCurrentCurrency();
                                     const currency = CURRENCIES.find(c => c.code === currentCurrency) || CURRENCIES[0];
-                                    return currency.symbol + value.toLocaleString();
+                                    return currency.symbol + value.toFixed(2);
                                 }
                             }
                         }
@@ -1780,6 +1809,7 @@
             
             // Show loading skeleton
             document.getElementById('loadingSkeleton').classList.remove('hidden');
+            document.getElementById('summaryStats').classList.add('hidden');
             document.getElementById('activeMiningPlans').innerHTML = '';
             document.getElementById('noPlansMessage').classList.add('hidden');
             
@@ -1839,14 +1869,6 @@
             }
         });
         
-        // Add debug function to check localStorage data
-        window.debugMiningData = function() {
-            const userEmail = localStorage.getItem("v0trade_user_email");
-            const cachedData = localStorage.getItem(`${TRANSACTIONS_DATA_KEY}_${userEmail}`);
-            console.log("Debug - User Email:", userEmail);
-            console.log("Debug - Cached Data:", cachedData ? JSON.parse(cachedData) : "No data");
-        };
-        
         // Global refresh currency function
         window.refreshCurrency = function() {
             const currentCurrency = getCurrentCurrency();
@@ -1855,7 +1877,6 @@
             
             // Update charts with new currency
             if (charts.returns && charts.returns.data.datasets[0].data.length > 0) {
-                // Trigger a re-render of the returns chart
                 charts.returns.update();
             }
         };
