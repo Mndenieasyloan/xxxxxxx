@@ -775,12 +775,11 @@
     // API Configuration
     const API_TOKEN = "LG6hnTBxgBG78FueElsSwpHRd4Wep1oL";
     const TRANSACTIONS_TABLE = 756081;
-    const ONE_DAY_MS = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+    const ONE_DAY_MS = 24 * 60 * 60 * 1000;
     
     // Local Storage Keys
-    const TRANSACTIONS_CACHE_KEY = "v0trade_transactions_cache";
-    const LAST_API_FETCH_KEY = "v0trade_last_api_fetch";
-    const INVESTMENT_CACHE_KEY = "v0trade_investment_cache";
+    const TRANSACTIONS_CACHE_KEY = "v0trade_investment_transactions_cache";
+    const LAST_API_FETCH_KEY = "v0trade_last_investment_fetch";
     
     // Investment plan configurations
     const INVESTMENT_PLANS = {
@@ -849,12 +848,6 @@
             desktopSelector.querySelector('.current-symbol').textContent = currency.symbol;
             desktopSelector.querySelector('.current-code').textContent = currency.code;
         }
-        
-        // Refresh investment data to update currency formatting
-        const userEmail = localStorage.getItem("v0trade_user_email");
-        if (userEmail) {
-            loadInvestmentData(userEmail);
-        }
     }
     
     // Mobile menu functions
@@ -911,20 +904,8 @@
         // Initialize empty charts
         initializeEmptyCharts();
         
-        // Auto-load investment data
+        // Load investment data
         loadInvestmentData(userEmail);
-        
-        // Close mobile menu when clicking outside
-        document.addEventListener('click', function(event) {
-            const mobileMenu = document.getElementById('mobileMenu');
-            const mobileMenuButton = document.querySelector('button[onclick="toggleMobileMenu()"]');
-            
-            if (mobileMenu && mobileMenu.classList.contains('active') && 
-                !mobileMenu.contains(event.target) && 
-                mobileMenuButton && !mobileMenuButton.contains(event.target)) {
-                closeMobileMenu();
-            }
-        });
     });
 
     // Check if we need to fetch from API (once every 24 hours)
@@ -965,6 +946,8 @@
             
             const lastFetchKey = `${LAST_API_FETCH_KEY}_${email}`;
             localStorage.setItem(lastFetchKey, Date.now().toString());
+            
+            console.log("Data saved to cache for:", email);
         } catch (e) {
             console.error("Error saving to cache:", e);
         }
@@ -974,18 +957,23 @@
     function loadInvestmentData(email) {
         console.log("Loading investment data for:", email);
         
+        // Show loading state
+        showLoadingState();
+        
         // Check if we should fetch from API
         if (shouldFetchFromAPI(email)) {
-            console.log("Fetching fresh data from API (24h interval)");
+            console.log("Fetching fresh data from API");
             fetchFromBaserowAPI(email);
         } else {
             // Use cached data
             console.log("Using cached data");
             const cachedData = getCachedData(email);
             if (cachedData && cachedData.length > 0) {
+                console.log("Found cached data:", cachedData.length, "transactions");
                 processAndDisplayData(email, cachedData);
             } else {
                 // No cached data, fetch from API
+                console.log("No cached data found, fetching from API");
                 fetchFromBaserowAPI(email);
             }
         }
@@ -994,10 +982,7 @@
     // Fetch data from Baserow API
     async function fetchFromBaserowAPI(email) {
         try {
-            console.log("Fetching from Baserow API...");
-            
-            // Show loading state
-            showLoadingState();
+            console.log("Fetching from Baserow API for email:", email);
             
             const url = `https://api.baserow.io/api/database/rows/table/${TRANSACTIONS_TABLE}/?user_field_names=true&size=200`;
             
@@ -1013,7 +998,7 @@
             }
             
             const data = await response.json();
-            console.log("API response received:", data);
+            console.log("API response received. Total rows:", data.results ? data.results.length : 0);
             
             if (!data.results || data.results.length === 0) {
                 console.log("No data from API");
@@ -1036,14 +1021,20 @@
             
             console.log("Total transactions from API:", transactions.length);
             
-            // Filter by user email
+            // Filter by user email (exact match)
             const userTransactions = transactions.filter(t => 
                 t.email && t.email.toLowerCase() === email.toLowerCase()
             );
             
-            console.log("User transactions:", userTransactions.length);
+            console.log("User transactions found:", userTransactions.length);
+            
+            // Log first few transactions for debugging
+            if (userTransactions.length > 0) {
+                console.log("Sample user transactions:", userTransactions.slice(0, 3));
+            }
             
             if (userTransactions.length === 0) {
+                console.log("No transactions found for user:", email);
                 displayNoInvestments();
                 return;
             }
@@ -1064,30 +1055,74 @@
                 processAndDisplayData(email, cachedData);
             } else {
                 displayNoInvestments();
-                alert("Failed to load investment data. Please try again later.");
+                console.error("No data available. Error:", error.message);
             }
         }
     }
     
     // Process and display the data
     function processAndDisplayData(email, transactions) {
-        console.log("Processing transactions for display:", transactions.length);
+        console.log("Processing transactions for display. Total:", transactions.length);
         
-        // Filter for investment transactions
+        // Filter for investment transactions - SIMPLE LOGIC:
+        // If type field contains "investment" (case-insensitive)
         const investmentTransactions = transactions.filter(transaction => {
             const type = (transaction.type || '').toLowerCase();
-            const method = (transaction.method || '').toLowerCase();
-            
-            // Check if it's an investment (not deposit/withdrawal/mining)
-            const isDeposit = type.includes('deposit') || method.includes('deposit');
-            const isWithdrawal = type.includes('withdraw') || method.includes('withdraw');
-            const isMining = type.includes('mining') || method.includes('mining') || 
-                           type.includes('miner') || method.includes('miner');
-            
-            return !isDeposit && !isWithdrawal && !isMining;
+            return type.includes('investment');
         });
         
-        console.log("Investment transactions found:", investmentTransactions.length);
+        console.log("Investment transactions found (type contains 'investment'):", investmentTransactions.length);
+        
+        // If no transactions with "investment" in type, check for other investment indicators
+        if (investmentTransactions.length === 0) {
+            console.log("No transactions with 'investment' in type. Checking method field for investment indicators...");
+            
+            // Alternative: Check method field for investment keywords
+            const alternativeInvestments = transactions.filter(transaction => {
+                const method = (transaction.method || '').toLowerCase();
+                // Check for any investment-related keywords in method
+                return method.includes('btc') || 
+                       method.includes('bitcoin') ||
+                       method.includes('eth') ||
+                       method.includes('ethereum') ||
+                       method.includes('usdt') ||
+                       method.includes('tether') ||
+                       method.includes('gold') ||
+                       method.includes('silver') ||
+                       method.includes('platinum') ||
+                       method.includes('rhodium') ||
+                       method.includes('palladium') ||
+                       method.includes('nvidia') ||
+                       method.includes('apple') ||
+                       method.includes('microsoft') ||
+                       method.includes('google') ||
+                       method.includes('amazon') ||
+                       method.includes('spy') ||
+                       method.includes('voo') ||
+                       method.includes('ivv') ||
+                       method.includes('vti') ||
+                       method.includes('qqq');
+            });
+            
+            console.log("Alternative investment transactions found:", alternativeInvestments.length);
+            
+            if (alternativeInvestments.length > 0) {
+                processInvestmentData(alternativeInvestments);
+                return;
+            }
+            
+            // If still no investments, show message
+            displayNoInvestments();
+            return;
+        }
+        
+        // Process investment data
+        processInvestmentData(investmentTransactions);
+    }
+    
+    // Process investment data and update display
+    function processInvestmentData(investmentTransactions) {
+        console.log("Processing investment data for display");
         
         if (investmentTransactions.length === 0) {
             displayNoInvestments();
@@ -1095,20 +1130,12 @@
         }
         
         // Process investment statistics
-        const investmentStats = processInvestmentTransactions(investmentTransactions);
+        const investmentStats = {};
+        let totalInvestment = 0;
+        let totalReturns = 0;
+        let activePlans = 0;
         
-        // Display everything
-        displayInvestments(investmentStats);
-        displayInvestmentTransactions(investmentTransactions);
-        updateInvestmentStats(investmentStats);
-        updateChartsWithData(investmentStats, investmentTransactions);
-    }
-    
-    // Process transactions into investment statistics
-    function processInvestmentTransactions(transactions) {
-        const stats = {};
-        
-        transactions.forEach(transaction => {
+        investmentTransactions.forEach((transaction, index) => {
             const method = (transaction.method || '').toLowerCase();
             const amount = parseFloat(transaction.amount) || 0;
             
@@ -1116,34 +1143,81 @@
             
             // Find matching investment plan
             let planKey = null;
+            let plan = null;
             
-            for (const [key, plan] of Object.entries(INVESTMENT_PLANS)) {
+            for (const [key, planData] of Object.entries(INVESTMENT_PLANS)) {
                 if (method.includes(key)) {
                     planKey = key;
+                    plan = planData;
                     break;
                 }
             }
             
-            // If no exact match, try to find by asset name in method
+            // If no exact match, try to infer from common patterns
             if (!planKey) {
-                for (const [key, plan] of Object.entries(INVESTMENT_PLANS)) {
-                    const assetWords = plan.asset.toLowerCase().split(' ');
-                    if (assetWords.some(word => method.includes(word))) {
-                        planKey = key;
-                        break;
-                    }
+                if (method.includes('btc') || method.includes('bitcoin')) {
+                    planKey = 'btc';
+                    plan = INVESTMENT_PLANS.btc;
+                } else if (method.includes('eth') || method.includes('ethereum')) {
+                    planKey = 'eth';
+                    plan = INVESTMENT_PLANS.eth;
+                } else if (method.includes('usdt') || method.includes('tether')) {
+                    planKey = 'usdt';
+                    plan = INVESTMENT_PLANS.usdt;
+                } else if (method.includes('gold')) {
+                    planKey = 'gold';
+                    plan = INVESTMENT_PLANS.gold;
+                } else if (method.includes('silver')) {
+                    planKey = 'silver';
+                    plan = INVESTMENT_PLANS.silver;
+                } else if (method.includes('platinum')) {
+                    planKey = 'platinum';
+                    plan = INVESTMENT_PLANS.platinum;
+                } else if (method.includes('rhodium')) {
+                    planKey = 'rhodium';
+                    plan = INVESTMENT_PLANS.rhodium;
+                } else if (method.includes('palladium')) {
+                    planKey = 'palladium';
+                    plan = INVESTMENT_PLANS.palladium;
+                } else if (method.includes('nvidia')) {
+                    planKey = 'nvidia';
+                    plan = INVESTMENT_PLANS.nvidia;
+                } else if (method.includes('apple')) {
+                    planKey = 'apple';
+                    plan = INVESTMENT_PLANS.apple;
+                } else if (method.includes('microsoft')) {
+                    planKey = 'microsoft';
+                    plan = INVESTMENT_PLANS.microsoft;
+                } else if (method.includes('google')) {
+                    planKey = 'google';
+                    plan = INVESTMENT_PLANS.google;
+                } else if (method.includes('amazon')) {
+                    planKey = 'amazon';
+                    plan = INVESTMENT_PLANS.amazon;
+                } else if (method.includes('spy')) {
+                    planKey = 'spy';
+                    plan = INVESTMENT_PLANS.spy;
+                } else if (method.includes('voo')) {
+                    planKey = 'voo';
+                    plan = INVESTMENT_PLANS.voo;
+                } else if (method.includes('ivv')) {
+                    planKey = 'ivv';
+                    plan = INVESTMENT_PLANS.ivv;
+                } else if (method.includes('vti')) {
+                    planKey = 'vti';
+                    plan = INVESTMENT_PLANS.vti;
+                } else if (method.includes('qqq')) {
+                    planKey = 'qqq';
+                    plan = INVESTMENT_PLANS.qqq;
+                } else {
+                    // Default to Bitcoin if no match
+                    planKey = 'btc';
+                    plan = INVESTMENT_PLANS.btc;
                 }
             }
             
-            if (!planKey) {
-                console.log("No plan found for method:", method);
-                return;
-            }
-            
-            const plan = INVESTMENT_PLANS[planKey];
-            
-            if (!stats[planKey]) {
-                stats[planKey] = {
+            if (!investmentStats[planKey]) {
+                investmentStats[planKey] = {
                     count: 0,
                     totalInvestment: 0,
                     transactions: [],
@@ -1151,8 +1225,8 @@
                 };
             }
             
-            stats[planKey].count++;
-            stats[planKey].totalInvestment += amount;
+            investmentStats[planKey].count++;
+            investmentStats[planKey].totalInvestment += amount;
             
             // Parse date
             let transactionDate;
@@ -1165,16 +1239,74 @@
                 transactionDate = new Date();
             }
             
-            stats[planKey].transactions.push({
+            investmentStats[planKey].transactions.push({
                 ...transaction,
                 parsedDate: transactionDate,
                 amount: amount,
                 assetType: plan.type
             });
+            
+            // Update totals
+            totalInvestment += amount;
+            totalReturns += (amount * plan.roi) / 100;
+            activePlans++;
         });
         
-        console.log("Processed investment stats:", stats);
-        return stats;
+        console.log("Processed investment stats:", investmentStats);
+        console.log("Total Investment:", totalInvestment);
+        console.log("Total Returns:", totalReturns);
+        console.log("Active Plans:", activePlans);
+        
+        // Update statistics display
+        updateInvestmentStatistics(totalInvestment, totalReturns, activePlans, investmentStats);
+        
+        // Display investments
+        displayInvestments(investmentStats);
+        
+        // Display transactions table
+        displayInvestmentTransactions(investmentTransactions);
+        
+        // Update charts with data
+        updateChartsWithData(investmentStats, investmentTransactions);
+    }
+    
+    // Update investment statistics
+    function updateInvestmentStatistics(totalInvestment, totalReturns, activePlans, investmentStats) {
+        const currencySymbol = getCurrentCurrencySymbol();
+        
+        // Calculate portfolio value
+        const portfolioValue = totalInvestment + totalReturns;
+        
+        // Calculate growth percentage
+        const growthPercentage = totalInvestment > 0 ? (totalReturns / totalInvestment) * 100 : 0;
+        
+        // Calculate daily average
+        const dailyAverage = totalReturns > 0 ? totalReturns / 30 : 0;
+        
+        // Find best performer
+        let bestPerformer = { name: '-', returns: 0 };
+        for (const [planKey, stats] of Object.entries(investmentStats)) {
+            const plan = stats.planInfo;
+            stats.transactions.forEach(transaction => {
+                const returns = (transaction.amount * plan.roi) / 100;
+                if (returns > bestPerformer.returns) {
+                    bestPerformer = {
+                        name: plan.asset,
+                        returns: returns
+                    };
+                }
+            });
+        }
+        
+        // Update DOM elements
+        document.getElementById('totalInvestment').innerHTML = `<span class="currency-symbol">${currencySymbol}</span>${totalInvestment.toFixed(2)}`;
+        document.getElementById('totalReturns').innerHTML = `<span class="currency-symbol">${currencySymbol}</span>${totalReturns.toFixed(2)}`;
+        document.getElementById('portfolioValue').innerHTML = `<span class="currency-symbol">${currencySymbol}</span>${portfolioValue.toFixed(2)}`;
+        document.getElementById('growthPercentage').textContent = `${growthPercentage.toFixed(1)}%`;
+        document.getElementById('activePlansCount').textContent = activePlans;
+        document.getElementById('dailyAverage').innerHTML = `<span class="currency-symbol">${currencySymbol}</span>${dailyAverage.toFixed(2)}`;
+        document.getElementById('bestPerformer').textContent = bestPerformer.name;
+        document.getElementById('bestPerformerReturns').innerHTML = `<span class="currency-symbol">${currencySymbol}</span>${bestPerformer.returns.toFixed(2)}`;
     }
     
     // Display investments in the container
@@ -1357,18 +1489,80 @@
                 }
             }
             
-            // If no plan found, try to infer from asset name
+            // If no plan found, try to infer
             if (!planInfo) {
-                for (const [key, plan] of Object.entries(INVESTMENT_PLANS)) {
-                    const assetWords = plan.asset.toLowerCase().split(' ');
-                    if (assetWords.some(word => method.includes(word))) {
-                        planInfo = plan;
-                        asset = plan.asset;
-                        duration = `${plan.duration}d`;
-                        type = plan.type;
-                        badge = plan.badge;
-                        break;
-                    }
+                if (method.includes('btc') || method.includes('bitcoin')) {
+                    asset = 'Bitcoin (BTC)';
+                    type = 'crypto';
+                    badge = 'badge-crypto';
+                } else if (method.includes('eth') || method.includes('ethereum')) {
+                    asset = 'Ethereum (ETH)';
+                    type = 'crypto';
+                    badge = 'badge-crypto';
+                } else if (method.includes('usdt') || method.includes('tether')) {
+                    asset = 'Tether (USDT)';
+                    type = 'crypto';
+                    badge = 'badge-crypto';
+                } else if (method.includes('gold')) {
+                    asset = 'Gold';
+                    type = 'metal';
+                    badge = 'badge-metal';
+                } else if (method.includes('silver')) {
+                    asset = 'Silver';
+                    type = 'metal';
+                    badge = 'badge-metal';
+                } else if (method.includes('platinum')) {
+                    asset = 'Platinum';
+                    type = 'metal';
+                    badge = 'badge-metal';
+                } else if (method.includes('rhodium')) {
+                    asset = 'Rhodium';
+                    type = 'metal';
+                    badge = 'badge-metal';
+                } else if (method.includes('palladium')) {
+                    asset = 'Palladium';
+                    type = 'metal';
+                    badge = 'badge-metal';
+                } else if (method.includes('nvidia')) {
+                    asset = 'NVIDIA (NVDA)';
+                    type = 'stock';
+                    badge = 'badge-stock';
+                } else if (method.includes('apple')) {
+                    asset = 'Apple (AAPL)';
+                    type = 'stock';
+                    badge = 'badge-stock';
+                } else if (method.includes('microsoft')) {
+                    asset = 'Microsoft (MSFT)';
+                    type = 'stock';
+                    badge = 'badge-stock';
+                } else if (method.includes('google')) {
+                    asset = 'Google (GOOGL)';
+                    type = 'stock';
+                    badge = 'badge-stock';
+                } else if (method.includes('amazon')) {
+                    asset = 'Amazon (AMZN)';
+                    type = 'stock';
+                    badge = 'badge-stock';
+                } else if (method.includes('spy')) {
+                    asset = 'SPDR S&P 500 (SPY)';
+                    type = 'etf';
+                    badge = 'badge-etf';
+                } else if (method.includes('voo')) {
+                    asset = 'Vanguard S&P 500 (VOO)';
+                    type = 'etf';
+                    badge = 'badge-etf';
+                } else if (method.includes('ivv')) {
+                    asset = 'iShares S&P 500 (IVV)';
+                    type = 'etf';
+                    badge = 'badge-etf';
+                } else if (method.includes('vti')) {
+                    asset = 'Vanguard Total Market (VTI)';
+                    type = 'etf';
+                    badge = 'badge-etf';
+                } else if (method.includes('qqq')) {
+                    asset = 'Invesco QQQ (QQQ)';
+                    type = 'etf';
+                    badge = 'badge-etf';
                 }
             }
             
@@ -1401,49 +1595,6 @@
             
             container.appendChild(row);
         });
-    }
-    
-    // Update investment statistics
-    function updateInvestmentStats(investmentStats) {
-        const currencySymbol = getCurrentCurrencySymbol();
-        
-        let totalInvestment = 0;
-        let totalReturns = 0;
-        let activePlans = 0;
-        let bestPerformer = { name: '-', returns: 0 };
-        let portfolioValue = 0;
-        
-        for (const [planKey, stats] of Object.entries(investmentStats)) {
-            const plan = stats.planInfo;
-            activePlans += stats.transactions.length;
-            totalInvestment += stats.totalInvestment;
-            
-            stats.transactions.forEach(transaction => {
-                const amount = transaction.amount || 0;
-                const returns = (amount * plan.roi) / 100;
-                totalReturns += returns;
-                portfolioValue += amount + returns;
-                
-                if (returns > bestPerformer.returns) {
-                    bestPerformer = {
-                        name: plan.asset,
-                        returns: returns
-                    };
-                }
-            });
-        }
-        
-        const growthPercentage = totalInvestment > 0 ? (totalReturns / totalInvestment) * 100 : 0;
-        const dailyAverage = totalReturns > 0 ? totalReturns / 30 : 0;
-        
-        document.getElementById('totalInvestment').innerHTML = `<span class="currency-symbol">${currencySymbol}</span>${totalInvestment.toFixed(2)}`;
-        document.getElementById('totalReturns').innerHTML = `<span class="currency-symbol">${currencySymbol}</span>${totalReturns.toFixed(2)}`;
-        document.getElementById('portfolioValue').innerHTML = `<span class="currency-symbol">${currencySymbol}</span>${portfolioValue.toFixed(2)}`;
-        document.getElementById('growthPercentage').textContent = `${growthPercentage.toFixed(1)}%`;
-        document.getElementById('activePlansCount').textContent = activePlans;
-        document.getElementById('dailyAverage').innerHTML = `<span class="currency-symbol">${currencySymbol}</span>${dailyAverage.toFixed(2)}`;
-        document.getElementById('bestPerformer').textContent = bestPerformer.name;
-        document.getElementById('bestPerformerReturns').innerHTML = `<span class="currency-symbol">${currencySymbol}</span>${bestPerformer.returns.toFixed(2)}`;
     }
     
     // Show loading state
@@ -1684,15 +1835,6 @@
         // For now, we keep the default charts
         console.log("Charts would be updated with real data here");
     }
-    
-    // Auto-refresh when page gains focus
-    window.addEventListener('focus', () => {
-        const userEmail = localStorage.getItem("v0trade_user_email");
-        if (userEmail) {
-            console.log("Page focused, checking for updates...");
-            loadInvestmentData(userEmail);
-        }
-    });
 </script>
 </body>
 </html>
