@@ -760,7 +760,7 @@
     </div>
 
     <script>
-    // Currency data - SAME AS MINING PAGE
+    // Currency data
     const CURRENCIES = [
         { code: 'USD', symbol: '$', name: 'US Dollar' },
         { code: 'EUR', symbol: '€', name: 'Euro' },
@@ -772,14 +772,13 @@
         { code: 'CAD', symbol: 'C$', name: 'Canadian Dollar' }
     ];
     
-    // USE THE SAME KEYS AS MINING PAGE
+    // Keys for localStorage
     const TRANSACTIONS_DATA_KEY = "v0trade_transactions_data";
     const INVESTMENT_CACHE_KEY = "v0trade_investment_tracks_cache";
     const INVESTMENT_CACHE_EXPIRY = 24 * 60 * 60 * 1000; // 24 hours cache
     
-    // Investment plan configurations with durations from Method field
+    // Investment plan configurations
     const INVESTMENT_PLANS = {
-        // Cryptocurrencies
         'bitcoin': { 
             type: 'crypto', 
             asset: 'Bitcoin (BTC)', 
@@ -928,7 +927,7 @@
     let distributionChart = null;
     let candlestickChart = null;
     
-    // Currency functions - SAME AS MINING PAGE
+    // Currency functions
     function getCurrentCurrency() {
         return localStorage.getItem('v0trade_currency') || 'USD';
     }
@@ -959,12 +958,11 @@
         // Refresh investment data to update currency formatting
         const userEmail = localStorage.getItem("v0trade_user_email");
         if (userEmail) {
-            loadInvestmentData(userEmail);
+            updateCurrencyDisplay();
         }
     }
     
     function convertAmount(amount, fromCurrency, toCurrency) {
-        // Simple conversion rates (in a real app, you would fetch live rates)
         const rates = {
             'USD': 1,
             'EUR': 0.92,
@@ -999,7 +997,6 @@
                        el.id === 'bestPerformerReturns') {
                 el.innerHTML = `<span class="currency-symbol">${currency.symbol}</span>${convertedAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
             } else {
-                // For investment cards and table cells
                 const currentText = el.textContent;
                 if (currentText.startsWith('$') || currentText.startsWith('€') || 
                     currentText.startsWith('£') || currentText.startsWith('R') ||
@@ -1008,105 +1005,6 @@
                     el.textContent = currency.symbol + convertedAmount.toFixed(2);
                 }
             }
-        });
-    }
-    
-    // Currency dropdown functions
-    function toggleCurrencyDropdown(event) {
-        event.stopPropagation();
-        const dropdown = document.getElementById('currencyDropdown');
-        if (!dropdown) return;
-        
-        dropdown.classList.toggle('show');
-        
-        if (!dropdown.hasChildNodes()) {
-            populateCurrencyDropdown();
-        }
-    }
-    
-    function toggleMobileCurrencyMenu() {
-        const overlay = document.getElementById('mobileCurrencyOverlay');
-        const menu = document.getElementById('mobileCurrencyMenu');
-        
-        overlay.classList.add('show');
-        menu.classList.add('show');
-        
-        if (!document.querySelector('.mobile-currency-options').hasChildNodes()) {
-            populateMobileCurrencyDropdown();
-        }
-    }
-    
-    function closeMobileCurrencyMenu() {
-        const overlay = document.getElementById('mobileCurrencyOverlay');
-        const menu = document.getElementById('mobileCurrencyMenu');
-        
-        overlay.classList.remove('show');
-        menu.classList.remove('show');
-    }
-    
-    function populateCurrencyDropdown() {
-        const dropdown = document.getElementById('currencyDropdown');
-        if (!dropdown) return;
-        
-        dropdown.innerHTML = '';
-        const currentCurrency = getCurrentCurrency();
-        
-        CURRENCIES.forEach(currency => {
-            const option = document.createElement('div');
-            option.className = `currency-option-dropdown ${currency.code === currentCurrency ? 'active' : ''}`;
-            option.setAttribute('data-currency', currency.code);
-            option.onclick = () => selectCurrency(currency.code);
-            
-            option.innerHTML = `
-                <span class="symbol">${currency.symbol}</span>
-                <span class="code">${currency.code}</span>
-                <span class="name">${currency.name}</span>
-            `;
-            
-            dropdown.appendChild(option);
-        });
-    }
-    
-    function populateMobileCurrencyDropdown() {
-        const container = document.querySelector('.mobile-currency-options');
-        if (!container) return;
-        
-        container.innerHTML = '';
-        const currentCurrency = getCurrentCurrency();
-        
-        CURRENCIES.forEach(currency => {
-            const option = document.createElement('div');
-            option.className = `mobile-currency-option ${currency.code === currentCurrency ? 'active' : ''}`;
-            option.setAttribute('data-currency', currency.code);
-            option.onclick = () => {
-                selectCurrency(currency.code);
-                closeMobileCurrencyMenu();
-            };
-            
-            option.innerHTML = `
-                <span class="symbol">${currency.symbol}</span>
-                <span class="code">${currency.code}</span>
-                <span class="name">${currency.name}</span>
-            `;
-            
-            container.appendChild(option);
-        });
-    }
-    
-    function selectCurrency(currencyCode) {
-        localStorage.setItem('v0trade_currency', currencyCode);
-        updateCurrencySymbols(currencyCode);
-        
-        // Close dropdowns
-        const desktopDropdown = document.getElementById('currencyDropdown');
-        if (desktopDropdown) {
-            desktopDropdown.classList.remove('show');
-        }
-        
-        // Update active states
-        document.querySelectorAll('.currency-option-dropdown, .mobile-currency-option').forEach(option => {
-            const isActive = option.getAttribute('data-currency') === currencyCode;
-            option.classList.toggle('active', isActive);
         });
     }
     
@@ -1141,31 +1039,8 @@
         }
     }
     
-    // Close dropdowns when clicking outside
-    document.addEventListener('click', function(event) {
-        // Close currency dropdown
-        const currencyDropdown = document.getElementById('currencyDropdown');
-        const currencySelector = document.querySelector('.currency-selector');
-        
-        if (currencyDropdown && currencySelector && 
-            !currencyDropdown.contains(event.target) && 
-            !currencySelector.contains(event.target)) {
-            currencyDropdown.classList.remove('show');
-        }
-        
-        // Close mobile menu when clicking outside
-        const mobileMenu = document.getElementById('mobileMenu');
-        const mobileMenuButton = document.querySelector('button[onclick="toggleMobileMenu()"]');
-        
-        if (mobileMenu && mobileMenu.classList.contains('active') && 
-            !mobileMenu.contains(event.target) && 
-            mobileMenuButton && !mobileMenuButton.contains(event.target)) {
-            closeMobileMenu();
-        }
-    });
-    
-    // INITIALIZATION - LOAD DATA IMMEDIATELY
-    document.addEventListener('DOMContentLoaded', function() {
+    // MAIN LOAD FUNCTION - Called immediately when page loads
+    window.addEventListener('DOMContentLoaded', function() {
         const userEmail = localStorage.getItem("v0trade_user_email");
         
         if (!userEmail) {
@@ -1184,21 +1059,20 @@
         const currentCurrency = getCurrentCurrency();
         updateCurrencySymbols(currentCurrency);
         
-        // Populate currency dropdowns
-        populateCurrencyDropdown();
-        populateMobileCurrencyDropdown();
-        
-        // Auto-load investment data on page visit
+        // Auto-load investment data IMMEDIATELY on page visit
         loadInvestmentData(userEmail);
         
-        // Set up auto-refresh every 30 seconds
-        setInterval(() => {
-            const currentUser = localStorage.getItem("v0trade_user_email");
-            if (currentUser) {
-                console.log("Auto-refreshing investment data...");
-                loadFreshInvestmentData(currentUser);
+        // Close mobile menu when clicking outside
+        document.addEventListener('click', function(event) {
+            const mobileMenu = document.getElementById('mobileMenu');
+            const mobileMenuButton = document.querySelector('button[onclick="toggleMobileMenu()"]');
+            
+            if (mobileMenu && mobileMenu.classList.contains('active') && 
+                !mobileMenu.contains(event.target) && 
+                mobileMenuButton && !mobileMenuButton.contains(event.target)) {
+                closeMobileMenu();
             }
-        }, 30000);
+        });
     });
 
     function getCachedInvestmentData(email) {
@@ -1246,26 +1120,21 @@
         try {
             console.log("Loading investment data for:", email);
             
-            // Check for cached investment data first
+            // Show loading state
+            showLoadingState();
+            
+            // Check for cached investment data first for INSTANT display
             const cachedData = getCachedInvestmentData(email);
             if (cachedData) {
-                // Use cached data for INSTANT display
                 console.log("Using cached investment data for instant display");
+                // Use cached data for INSTANT display
                 displayInvestments(cachedData.processedInvestments);
                 displayInvestmentTransactions(cachedData.investmentTransactions);
                 updateInvestmentStats(cachedData.processedInvestments);
                 updateChartsWithData(cachedData.processedInvestments);
-                
-                // Still load fresh data in background (but don't wait for it)
-                setTimeout(() => {
-                    console.log("Loading fresh data in background...");
-                    loadFreshInvestmentData(email);
-                }, 500);
-                return;
             }
             
-            // No cache, load fresh data immediately
-            console.log("No cache found, loading fresh data immediately");
+            // ALWAYS load fresh data from localStorage
             loadFreshInvestmentData(email);
             
         } catch (err) {
@@ -1274,28 +1143,43 @@
         }
     }
     
+    function showLoadingState() {
+        const container = document.getElementById('investmentContainer');
+        container.innerHTML = `
+            <div class="investment-card p-6 text-center">
+                <div class="flex flex-col items-center justify-center">
+                    <svg class="animate-spin h-12 w-12 text-purple-500 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <p class="text-gray-400">Loading investment data...</p>
+                </div>
+            </div>
+        `;
+    }
+    
     function loadFreshInvestmentData(email) {
         try {
-            console.log("Loading fresh investment data for:", email);
+            console.log("Loading FRESH investment data from localStorage for:", email);
             
             // Get cached transactions from localStorage
             const cachedData = localStorage.getItem(`${TRANSACTIONS_DATA_KEY}_${email}`);
             
             if (!cachedData) {
-                console.log("No cached transactions found.");
+                console.log("No cached transactions found in localStorage.");
                 displayNoInvestments();
                 return;
             }
             
             const allTransactions = JSON.parse(cachedData);
-            console.log("Total transactions found in cache:", allTransactions.length);
+            console.log("Total transactions found in localStorage:", allTransactions.length);
             
             if (allTransactions.length === 0) {
                 displayNoInvestments();
                 return;
             }
             
-            // Filter to get ONLY investment transactions (Type contains "Investment")
+            // Filter to get ONLY investment transactions
             const investmentTransactions = allTransactions.filter(transaction => {
                 const type = (transaction.type || '').toLowerCase();
                 const method = (transaction.method || '').toLowerCase();
@@ -1319,7 +1203,7 @@
                 return isInvestment || hasInvestmentKeyword;
             });
             
-            console.log("Filtered investment transactions:", investmentTransactions.length);
+            console.log("Filtered investment transactions from localStorage:", investmentTransactions.length);
             
             if (investmentTransactions.length === 0) {
                 displayNoInvestments();
@@ -1332,26 +1216,24 @@
             // Calculate investment stats
             const investmentStats = calculateInvestmentStats(processedInvestments);
             
-            // Cache the data for next load
+            // Cache the data for future instant loading
             cacheInvestmentData(email, investmentStats, investmentTransactions, processedInvestments);
             
-            // Display investments (update existing display)
+            // Display investments (REAL DATA)
             displayInvestments(processedInvestments);
             
-            // Display transactions
+            // Display transactions (REAL DATA)
             displayInvestmentTransactions(investmentTransactions);
             
-            // Update summary statistics
+            // Update summary statistics (REAL DATA)
             updateInvestmentStats(processedInvestments);
             
-            // Initialize/update charts
+            // Initialize charts with REAL DATA
             updateChartsWithData(processedInvestments);
-            
-            console.log("Fresh investment data loaded successfully");
             
         } catch (err) {
             console.error("Error loading fresh investment data:", err);
-            // Don't clear display if we have cached data
+            displayNoInvestments();
         }
     }
     
@@ -1432,7 +1314,6 @@
     }
     
     function parseROIFromMethod(method, planName) {
-        // ROI based on plan name
         const roiMap = {
             '1 Hour Plan': 20,
             '5 Hours Plan': 30,
@@ -1459,7 +1340,6 @@
             let transactionDate;
             try {
                 if (transaction.date) {
-                    // Try to parse date in format "Month Day, Year" like "December 12, 2025"
                     const dateStr = transaction.date.replace(/,/g, '');
                     transactionDate = new Date(dateStr);
                     
@@ -2212,13 +2092,13 @@
         }
     });
     
-    // Listen for storage changes (in case transactions are updated from other tabs)
-    window.addEventListener('storage', (e) => {
-        if (e.key && e.key.includes('transactions_data')) {
+    // Load data when page becomes visible
+    document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) {
             const userEmail = localStorage.getItem("v0trade_user_email");
             if (userEmail) {
-                console.log("Transactions data changed, refreshing...");
-                loadFreshInvestmentData(userEmail);
+                console.log("Page visible, refreshing investment data...");
+                loadInvestmentData(userEmail);
             }
         }
     });
