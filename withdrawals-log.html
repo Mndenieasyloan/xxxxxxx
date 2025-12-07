@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Withdrawals Log - V0 Trade</title>
+    <title>Transactions - V0 Trade</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         .sidebar-link { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1rem; color: rgb(107 114 128); border-radius: 0.5rem; transition: all 0.2s; }
@@ -29,14 +29,220 @@
         .dropdown:hover .dropdown-content { display: block; }
         
         /* Status badge styles */
-        .status-completed { background-color: #d1fae5; color: #065f46; }
-        .status-pending { background-color: #fef3c7; color: #92400e; }
-        .status-failed { background-color: #fee2e2; color: #991b1b; }
-        .status-processing { background-color: #dbeafe; color: #1e40af; }
-        .status-cancelled { background-color: #f3f4f6; color: #374151; }
+        .status-completed { background-color: #d1fae5; color: #065f46; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; }
+        .status-pending { background-color: #fef3c7; color: #92400e; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; }
+        .status-failed { background-color: #fee2e2; color: #991b1b; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; }
+        .status-processing { background-color: #dbeafe; color: #1e40af; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; }
+        
+        /* Type colors */
+        .type-deposit { color: #059669; }
+        .type-withdrawal { color: #dc2626; }
+        .type-earning { color: #7c3aed; }
+        .type-commission { color: #d97706; }
+        .type-investment { color: #2563eb; }
+        
+        /* Currency switcher styles */
+        .currency-switcher {
+            position: relative;
+            display: inline-block;
+        }
+        
+        .currency-selector {
+            padding: 6px 12px;
+            border: 1px solid rgba(249, 115, 22, 0.3);
+            border-radius: 6px;
+            background: rgba(249, 115, 22, 0.1);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: rgb(249 115 22);
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        
+        .currency-selector:hover {
+            border-color: rgb(249, 115, 22);
+            background: rgba(249, 115, 22, 0.2);
+        }
+        
+        .currency-dropdown {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: white;
+            border: 1px solid rgb(229, 231, 235);
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            min-width: 200px;
+            z-index: 1000;
+            display: none;
+            margin-top: 5px;
+            padding: 8px;
+        }
+        
+        .currency-dropdown.show {
+            display: block;
+            animation: fadeIn 0.2s ease;
+        }
+        
+        .currency-option-dropdown {
+            padding: 10px 12px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border-radius: 6px;
+            color: rgb(55 65 81);
+            font-size: 14px;
+        }
+        
+        .currency-option-dropdown:hover {
+            background: rgba(249, 115, 22, 0.1);
+        }
+        
+        .currency-option-dropdown.active {
+            background: rgba(249, 115, 22, 0.15);
+            color: rgb(249 115 22);
+            font-weight: 600;
+        }
+        
+        .currency-option-dropdown .symbol {
+            font-size: 18px;
+            width: 24px;
+            text-align: center;
+        }
+        
+        .currency-option-dropdown .code {
+            font-weight: 600;
+            min-width: 40px;
+        }
+        
+        .currency-option-dropdown .name {
+            color: rgb(107 114 128);
+            font-size: 12px;
+            flex-grow: 1;
+            text-align: right;
+        }
+        
+        /* Mobile currency selector - always visible */
+        .mobile-currency-toggle {
+            padding: 8px 12px;
+            border: 1px solid rgba(249, 115, 22, 0.3);
+            border-radius: 6px;
+            background: rgba(249, 115, 22, 0.1);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: rgb(249 115 22);
+            font-size: 14px;
+            transition: all 0.3s;
+            margin-left: auto;
+            margin-right: 12px;
+        }
+        
+        .mobile-currency-dropdown {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            border: 1px solid rgb(229, 231, 235);
+            border-radius: 12px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            width: 90%;
+            max-width: 320px;
+            z-index: 1100;
+            display: none;
+            padding: 16px;
+        }
+        
+        .mobile-currency-dropdown.show {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        .mobile-currency-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1099;
+            display: none;
+        }
+        
+        .mobile-currency-overlay.show {
+            display: block;
+        }
+        
+        .mobile-currency-option {
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border-radius: 8px;
+            color: rgb(55 65 81);
+            font-size: 16px;
+            margin-bottom: 8px;
+        }
+        
+        .mobile-currency-option:hover {
+            background: rgba(249, 115, 22, 0.1);
+        }
+        
+        .mobile-currency-option.active {
+            background: rgba(249, 115, 22, 0.15);
+            color: rgb(249 115 22);
+            font-weight: 600;
+        }
+        
+        .mobile-currency-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid rgb(229, 231, 235);
+        }
+        
+        .mobile-currency-header h3 {
+            color: rgb(17 24 39);
+            font-size: 18px;
+            font-weight: 600;
+        }
+        
+        .close-currency-menu {
+            background: none;
+            border: none;
+            color: rgb(107 114 128);
+            font-size: 24px;
+            cursor: pointer;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+        }
+        
+        .close-currency-menu:hover {
+            background: rgba(249, 115, 22, 0.1);
+            color: rgb(249 115 22);
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translate(-50%, -48%); }
+            to { opacity: 1; transform: translate(-50%, -50%); }
+        }
     </style>
 </head>
-<body class="bg-gray-50" onload="loadWithdrawals()">
+<body class="bg-gray-50" onload="loadTransactions()">
     
     <!-- Added mobile sidebar toggle button -->
     <button onclick="toggleSidebar()" class="sidebar-toggle fixed left-4 top-20 z-50 bg-orange-500 hover:bg-orange-600 text-white p-2 rounded-lg shadow-lg transition">
@@ -47,7 +253,7 @@
     
     <div id="sidebarOverlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
     
-    <!-- Replaced header with full navigation menu from index.html -->
+    <!-- Updated header with currency switcher -->
     <header class="sticky top-0 z-50 border-b border-purple-500/20 bg-slate-950/80 backdrop-blur-md">
         <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div class="flex items-center justify-between py-4">
@@ -70,6 +276,7 @@
                     <span class="text-xl font-bold bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent">V0 Trade</span>
                 </a>
 
+                <!-- Desktop Navigation -->
                 <nav class="hidden items-center gap-8 md:flex">
                     <a href="index.html" class="text-sm text-gray-300 hover:text-white transition">Home</a>
                     <div class="dropdown">
@@ -93,19 +300,42 @@
                     </div>
                 </nav>
 
+                <!-- Right Side - Auth with Currency Switcher -->
                 <div class="hidden items-center gap-4 md:flex">
+                    <!-- Desktop Currency Switcher -->
+                    <div class="currency-switcher">
+                        <div class="currency-selector" onclick="toggleDesktopCurrencyMenu()">
+                            <span class="current-symbol">$</span>
+                            <span class="current-code">USD</span>
+                            <span>▼</span>
+                        </div>
+                        <div class="currency-dropdown" id="desktopCurrencyMenu"></div>
+                    </div>
+                    
                     <a href="dashboard.html" class="text-sm text-purple-400 hover:text-purple-300 transition">Dashboard</a>
-                    <span class="text-sm text-gray-400" id="userEmail">user@email.com</span>
+                    <span class="text-sm text-gray-400" id="headerEmailDisplay">user@email.com</span>
                     <a href="index.html" class="text-sm text-gray-300 hover:text-white transition">Logout</a>
                 </div>
 
-                <button class="md:hidden" onclick="toggleMobileMenu()">
-                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
-                    </svg>
-                </button>
+                <!-- Mobile header section with currency toggle and menu button -->
+                <div class="flex items-center gap-2 md:hidden">
+                    <!-- Mobile Currency Toggle (always visible) -->
+                    <button class="mobile-currency-toggle" onclick="toggleMobileCurrencyMenu()">
+                        <span class="mobile-currency-symbol">$</span>
+                        <span class="mobile-currency-code">USD</span>
+                        <span>▼</span>
+                    </button>
+
+                    <!-- Mobile Menu Button -->
+                    <button class="md:hidden" onclick="toggleMobileMenu()">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                        </svg>
+                    </button>
+                </div>
             </div>
 
+            <!-- Mobile Menu (without currency selector) -->
             <div id="mobileMenu" class="mobile-menu border-t border-purple-500/20 py-4 md:hidden">
                 <nav class="flex flex-col gap-3">
                     <a href="index.html" class="text-sm text-gray-300 hover:text-white">Home</a>
@@ -125,551 +355,967 @@
         </div>
     </header>
 
+    <!-- Mobile Currency Menu Overlay -->
+    <div class="mobile-currency-overlay" id="mobileCurrencyOverlay" onclick="closeMobileCurrencyMenu()"></div>
+    
+    <!-- Mobile Currency Menu -->
+    <div class="mobile-currency-dropdown" id="mobileCurrencyMenu">
+        <div class="mobile-currency-header">
+            <h3>Select Currency</h3>
+            <button class="close-currency-menu" onclick="closeMobileCurrencyMenu()">×</button>
+        </div>
+        <div class="mobile-currency-options">
+            <!-- Options will be populated by JavaScript -->
+        </div>
+    </div>
+
     <div class="flex min-h-screen">
         <aside id="sidebar" class="sidebar w-64 bg-white border-r border-gray-200 p-4">
             <div class="space-y-1 mb-6">
                 <a href="deposit.html" class="sidebar-link">💰 Deposit</a>
                 <a href="withdraw.html" class="sidebar-link">💸 Withdraw</a>
             </div>
+            <div class="mb-6">
+                <a href="dashboard.html" class="sidebar-link">📊 Dashboard</a>
+                <a href="coin-wallets.html" class="sidebar-link">🪙 Coin Wallets</a>
+                <a href="mining-tracks.html" class="sidebar-link">⛏️ Mining Tracks</a>
+            </div>
             <div class="mb-2">
                 <p class="text-xs font-semibold text-gray-400 uppercase px-4 mb-2">Report</p>
                 <a href="referral-commissions.html" class="sidebar-link">🎁 Ref. Commissions</a>
                 <a href="deposit-history.html" class="sidebar-link">📥 Deposit History</a>
                 <a href="order-history.html" class="sidebar-link">📋 Order History</a>
-                <a href="withdrawals-log.html" class="sidebar-link active">📤 Withdrawals Log</a>
+                <a href="withdrawals-log.html" class="sidebar-link">📤 Withdrawals Log</a>
+                <a href="transactions.html" class="sidebar-link active">💳 Transactions</a>
             </div>
         </aside>
 
         <main class="flex-1 p-4 md:p-8">
             <div class="max-w-6xl">
                 <div class="flex justify-between items-center mb-8">
-                    <h1 class="text-3xl font-bold text-gray-900">Withdrawal History</h1>
-                    <button onclick="refreshWithdrawals()" class="flex items-center gap-2 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
-                        </svg>
-                        Refresh
-                    </button>
+                    <div>
+                        <h1 class="text-3xl font-bold text-gray-900">All Transactions</h1>
+                        <p class="text-gray-500 mt-2" id="transactionCount">Loading transactions...</p>
+                    </div>
+                    <div class="flex gap-3">
+                        <button onclick="refreshTransactions()" class="flex items-center gap-2 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                            </svg>
+                            Refresh
+                        </button>
+                        <button onclick="exportTransactions()" class="flex items-center gap-2 px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg transition">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                            </svg>
+                            Export
+                        </button>
+                    </div>
                 </div>
 
-                <div id="loadingState" class="bg-white rounded-xl border border-gray-200 p-12 text-center">
-                    <div class="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-orange-500 mb-4"></div>
-                    <p class="text-gray-600">Loading withdrawal history...</p>
-                </div>
-
-                <div id="contentState" class="hidden">
-                    <div id="withdrawalStats" class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                        <div class="bg-gray-50 p-4 rounded-lg">
-                            <p class="text-sm text-gray-500">Total Withdrawals</p>
-                            <p id="totalWithdrawals" class="text-2xl font-bold text-gray-900">$0.00</p>
-                        </div>
-                        <div class="bg-gray-50 p-4 rounded-lg">
-                            <p class="text-sm text-gray-500">Completed</p>
-                            <p id="completedWithdrawals" class="text-2xl font-bold text-green-600">0</p>
-                        </div>
-                        <div class="bg-gray-50 p-4 rounded-lg">
-                            <p class="text-sm text-gray-500">Pending</p>
-                            <p id="pendingWithdrawals" class="text-2xl font-bold text-yellow-600">0</p>
-                        </div>
-                        <div class="bg-gray-50 p-4 rounded-lg">
-                            <p class="text-sm text-gray-500">This Month</p>
-                            <p id="monthWithdrawals" class="text-2xl font-bold text-blue-600">$0.00</p>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                    <div class="bg-white rounded-xl border border-gray-200 p-4">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-500">Total Amount</p>
+                                <p id="totalAmount" class="text-2xl font-bold text-gray-900"><span data-currency-symbol>$</span>0.00</p>
+                            </div>
+                            <div class="text-green-500 bg-green-50 p-2 rounded-lg">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                            </div>
                         </div>
                     </div>
-
-                    <div class="bg-white rounded-xl border border-gray-200 p-6">
-                        <div class="overflow-x-auto">
-                            <table class="w-full">
-                                <thead class="bg-gray-50">
-                                    <tr>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Amount</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Method</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fee</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Net Amount</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="withdrawalsTableBody">
-                                    <!-- Transactions will be loaded here -->
-                                </tbody>
-                            </table>
+                    <div class="bg-white rounded-xl border border-gray-200 p-4">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-500">Deposits</p>
+                                <p id="totalDeposits" class="text-2xl font-bold text-green-600"><span data-currency-symbol>$</span>0.00</p>
+                            </div>
+                            <div class="text-green-500 bg-green-50 p-2 rounded-lg">
+                                <span class="text-lg">📥</span>
+                            </div>
                         </div>
-                        
-                        <div id="noWithdrawalsMessage" class="hidden text-center py-12">
-                            <div class="text-gray-500">
-                                <svg class="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                </svg>
-                                <p class="text-lg font-medium mb-2">No withdrawals yet</p>
-                                <p class="text-sm mb-4">Your withdrawal history will appear here once you make a withdrawal</p>
-                                <a href="withdraw.html" class="inline-flex items-center px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition">
-                                    Make Your First Withdrawal
-                                </a>
+                    </div>
+                    <div class="bg-white rounded-xl border border-gray-200 p-4">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-500">Withdrawals</p>
+                                <p id="totalWithdrawals" class="text-2xl font-bold text-red-600"><span data-currency-symbol>$</span>0.00</p>
+                            </div>
+                            <div class="text-red-500 bg-red-50 p-2 rounded-lg">
+                                <span class="text-lg">📤</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-xl border border-gray-200 p-4">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-500">Earnings</p>
+                                <p id="totalEarnings" class="text-2xl font-bold text-purple-600"><span data-currency-symbol>$</span>0.00</p>
+                            </div>
+                            <div class="text-purple-500 bg-purple-50 p-2 rounded-lg">
+                                <span class="text-lg">💰</span>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <div id="errorState" class="hidden bg-white rounded-xl border border-red-200 p-8 text-center">
-                    <svg class="w-16 h-16 mx-auto mb-4 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                    </svg>
-                    <h3 class="text-lg font-medium text-gray-900 mb-2">Unable to load withdrawals</h3>
-                    <p class="text-gray-600 mb-4" id="errorMessage">There was an error fetching your withdrawal history.</p>
-                    <button onclick="loadWithdrawals()" class="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition">
-                        Try Again
-                    </button>
+                <div class="bg-white rounded-xl border border-gray-200 p-6 mb-6">
+                    <div class="flex flex-col md:flex-row md:items-center gap-4 mb-6">
+                        <div class="flex-1">
+                            <input type="text" id="searchInput" placeholder="Search transactions by ID, type, or method..." 
+                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                                   onkeyup="filterTransactions()">
+                        </div>
+                        <div class="flex gap-2">
+                            <select id="typeFilter" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500" onchange="filterTransactions()">
+                                <option value="all">All Types</option>
+                                <option value="deposit">Deposit</option>
+                                <option value="withdrawal">Withdrawal</option>
+                                <option value="earning">Earnings</option>
+                                <option value="commission">Commissions</option>
+                                <option value="investment">Investment</option>
+                            </select>
+                            <select id="statusFilter" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500" onchange="filterTransactions()">
+                                <option value="all">All Status</option>
+                                <option value="completed">Completed</option>
+                                <option value="pending">Pending</option>
+                                <option value="processing">Processing</option>
+                                <option value="failed">Failed</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div id="loadingState" class="text-center py-12">
+                        <div class="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-orange-500 mb-4"></div>
+                        <p class="text-gray-600">Loading transactions...</p>
+                    </div>
+
+                    <div id="contentState" class="hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer" onclick="sortTable('date')">
+                                            Date <span id="dateSortIcon" class="ml-1">↓</span>
+                                        </th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer" onclick="sortTable('type')">
+                                            Type <span id="typeSortIcon" class="ml-1"></span>
+                                        </th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer" onclick="sortTable('amount')">
+                                            Amount <span id="amountSortIcon" class="ml-1"></span>
+                                        </th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Method</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer" onclick="sortTable('status')">
+                                            Status <span id="statusSortIcon" class="ml-1"></span>
+                                        </th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="transactionsTableBody">
+                                    <!-- Transactions will be loaded here -->
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <div id="noTransactionsMessage" class="hidden text-center py-12">
+                            <div class="text-gray-500">
+                                <svg class="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                                <p class="text-lg font-medium mb-2">No transactions found</p>
+                                <p class="text-sm mb-4">Your transactions will appear here once you make deposits, withdrawals, or earn commissions</p>
+                                <div class="flex gap-3 justify-center">
+                                    <a href="deposit.html" class="inline-flex items-center px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition">
+                                        Make Deposit
+                                    </a>
+                                    <a href="withdraw.html" class="inline-flex items-center px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition">
+                                        Make Withdrawal
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="errorState" class="hidden bg-red-50 border border-red-200 rounded-lg p-8 text-center">
+                        <svg class="w-16 h-16 mx-auto mb-4 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <h3 class="text-lg font-medium text-gray-900 mb-2">Unable to load transactions</h3>
+                        <p class="text-gray-600 mb-4" id="errorMessage">There was an error fetching your transaction history.</p>
+                        <button onclick="loadTransactions()" class="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition">
+                            Try Again
+                        </button>
+                    </div>
                 </div>
             </div>
         </main>
     </div>
 
-  <script>
-    // Currency data
-    const CURRENCIES = [
-        { code: 'USD', symbol: '$', name: 'US Dollar' },
-        { code: 'EUR', symbol: '€', name: 'Euro' },
-        { code: 'GBP', symbol: '£', name: 'British Pound' },
-        { code: 'ZAR', symbol: 'R', name: 'South African Rand' },
-        { code: 'INR', symbol: '₹', name: 'Indian Rupee' },
-        { code: 'JPY', symbol: '¥', name: 'Japanese Yen' },
-        { code: 'AUD', symbol: 'A$', name: 'Australian Dollar' },
-        { code: 'CAD', symbol: 'C$', name: 'Canadian Dollar' }
-    ];
-
-    // Baserow API Configuration
-    const BASEROW_API_TOKEN = 'LG6hnTBxgBG78FueElsSwpHRd4Wep1oL';
-    const BASEROW_TABLE_ID = '756079';
-    const BASEROW_API_URL = `https://api.baserow.io/api/database/rows/table/${BASEROW_TABLE_ID}/`;
-    
-    // Get current currency
-    function getCurrentCurrency() {
-        return localStorage.getItem('v0trade_currency') || 'USD';
-    }
-    
-    // Get currency symbol
-    function getCurrencySymbol(currencyCode = null) {
-        const code = currencyCode || getCurrentCurrency();
-        const currency = CURRENCIES.find(c => c.code === code);
-        return currency ? currency.symbol : '$';
-    }
-    
-    // Update currency symbols on page
-    function updateCurrencySymbols(currencyCode = null) {
-        const symbol = getCurrencySymbol(currencyCode);
+    <script>
+        // Currency data
+        const CURRENCIES = [
+            { code: 'USD', symbol: '$', name: 'US Dollar' },
+            { code: 'EUR', symbol: '€', name: 'Euro' },
+            { code: 'GBP', symbol: '£', name: 'British Pound' },
+            { code: 'ZAR', symbol: 'R', name: 'South African Rand' },
+            { code: 'INR', symbol: '₹', name: 'Indian Rupee' },
+            { code: 'JPY', symbol: '¥', name: 'Japanese Yen' },
+            { code: 'AUD', symbol: 'A$', name: 'Australian Dollar' },
+            { code: 'CAD', symbol: 'C$', name: 'Canadian Dollar' }
+        ];
         
-        // Update all data-currency-symbol elements
-        document.querySelectorAll('[data-currency-symbol]').forEach(el => {
-            el.textContent = symbol;
-        });
+        // Baserow API Configuration (same as dashboard)
+        const API_TOKEN = "LG6hnTBxgBG78FueElsSwpHRd4Wep1oL";
+        const TRANSACTIONS_TABLE = 756081;
+        const TRANSACTIONS_SYNC_INTERVAL = 24 * 60 * 60 * 1000; // 24 hours
         
-        // Update withdrawal statistics with correct symbol
-        updateStatsDisplay();
+        // Local storage keys
+        const LAST_TRANSACTION_SYNC_KEY = "v0trade_last_transaction_sync";
+        const TRANSACTIONS_DATA_KEY = "v0trade_transactions_data";
         
-        // Refresh displayed withdrawals if they exist
-        const tableBody = document.getElementById('withdrawalsTableBody');
-        if (tableBody.children.length > 0) {
-            const rows = tableBody.querySelectorAll('tr');
-            if (rows.length > 0) {
-                // Re-display withdrawals with new currency symbol
-                const withdrawals = getCurrentWithdrawals();
-                if (withdrawals && withdrawals.length > 0) {
-                    displayWithdrawals(withdrawals);
-                }
+        // State variables
+        let allTransactions = [];
+        let filteredTransactions = [];
+        let currentSort = { field: 'date', direction: 'desc' };
+        
+        // Mobile menu functions
+        function toggleMobileMenu() {
+            const menu = document.getElementById('mobileMenu');
+            if (menu) {
+                menu.classList.toggle('active');
             }
         }
-    }
-    
-    // Initialize currency switcher in header
-    function initCurrencySwitcher() {
-        const currentCurrency = getCurrentCurrency();
-        const currency = CURRENCIES.find(c => c.code === currentCurrency);
         
-        // Create currency switcher element
-        const currencySwitcher = document.createElement('div');
-        currencySwitcher.className = 'dropdown';
-        currencySwitcher.innerHTML = `
-            <button class="text-sm text-gray-300 hover:text-white transition flex items-center gap-1">
-                <span class="currency-symbol">${currency?.symbol || '$'}</span>
-                <span class="currency-code">${currentCurrency}</span>
-                <span>▼</span>
-            </button>
-            <div class="dropdown-content" style="min-width: 10rem;">
-                ${CURRENCIES.map(curr => `
-                    <a href="javascript:void(0)" onclick="changeCurrency('${curr.code}')" 
-                       class="block px-3 py-2 text-sm text-gray-300 hover:text-white hover:bg-purple-500/10 rounded flex items-center gap-2 ${curr.code === currentCurrency ? 'bg-purple-500/10' : ''}">
-                        <span class="text-lg">${curr.symbol}</span>
-                        <span class="flex-1">${curr.name}</span>
-                        <span class="text-xs opacity-70">${curr.code}</span>
-                    </a>
-                `).join('')}
-            </div>
-        `;
-        
-        // Find the header navigation and add currency switcher before logout
-        const headerNav = document.querySelector('header .hidden.items-center.gap-4.md\\:flex');
-        if (headerNav) {
-            const logoutLink = headerNav.querySelector('a[href="index.html"]:last-child');
-            if (logoutLink) {
-                headerNav.insertBefore(currencySwitcher, logoutLink);
-            }
-        }
-    }
-    
-    // Change currency
-    function changeCurrency(currencyCode) {
-        const currency = CURRENCIES.find(c => c.code === currencyCode);
-        if (!currency) return;
-        
-        // Update display
-        const currencySymbolElement = document.querySelector('.currency-symbol');
-        const currencyCodeElement = document.querySelector('.currency-code');
-        
-        if (currencySymbolElement) {
-            currencySymbolElement.textContent = currency.symbol;
-        }
-        if (currencyCodeElement) {
-            currencyCodeElement.textContent = currency.code;
+        function closeMobileMenu() {
+            document.getElementById('mobileMenu').classList.remove('active');
         }
         
-        // Save to localStorage
-        localStorage.setItem('v0trade_currency', currencyCode);
-        
-        // Update all currency symbols on page
-        updateCurrencySymbols(currencyCode);
-        
-        // Dispatch event for other pages if needed
-        document.dispatchEvent(new CustomEvent('currencyChanged', { 
-            detail: { code: currencyCode, symbol: currency.symbol } 
-        }));
-    }
-    
-    // Global variable to store current withdrawals
-    let currentWithdrawals = [];
-
-    // Load withdrawals with user data
-    async function loadWithdrawals() {
-        const userEmail = localStorage.getItem("v0trade_user_email");
-        
-        if (!userEmail) {
-            window.location.href = "login.html";
-            return;
-        }
-
-        document.getElementById("userEmail").textContent = userEmail;
-        
-        // Initialize currency switcher
-        initCurrencySwitcher();
-        
-        // Show loading state
-        document.getElementById('loadingState').classList.remove('hidden');
-        document.getElementById('contentState').classList.add('hidden');
-        document.getElementById('errorState').classList.add('hidden');
-        
-        // Fetch withdrawals
-        const withdrawals = await fetchWithdrawals();
-        
-        // Hide loading state
-        document.getElementById('loadingState').classList.add('hidden');
-        
-        if (withdrawals.length > 0) {
-            document.getElementById('contentState').classList.remove('hidden');
-            currentWithdrawals = withdrawals;
-            displayWithdrawals(withdrawals);
-            updateStats(withdrawals);
-        } else {
-            document.getElementById('contentState').classList.remove('hidden');
-            document.getElementById('noWithdrawalsMessage').classList.remove('hidden');
-            document.getElementById('withdrawalsTableBody').innerHTML = '';
+        // Mobile currency menu functions
+        function toggleMobileCurrencyMenu() {
+            const overlay = document.getElementById('mobileCurrencyOverlay');
+            const menu = document.getElementById('mobileCurrencyMenu');
             
-            // Reset stats
-            document.getElementById('totalWithdrawals').textContent = '$0.00';
-            document.getElementById('completedWithdrawals').textContent = '0';
-            document.getElementById('pendingWithdrawals').textContent = '0';
-            document.getElementById('monthWithdrawals').textContent = '$0.00';
-        }
-    }
-    
-    // Get current withdrawals (for re-display after currency change)
-    function getCurrentWithdrawals() {
-        return currentWithdrawals;
-    }
-    
-    // Update stats display with correct currency symbol
-    function updateStatsDisplay() {
-        const symbol = getCurrencySymbol();
-        
-        // Update stats display elements
-        const totalEl = document.getElementById('totalWithdrawals');
-        const monthEl = document.getElementById('monthWithdrawals');
-        
-        if (totalEl && totalEl.textContent !== '$0.00' && totalEl.textContent.startsWith('$')) {
-            totalEl.textContent = symbol + totalEl.textContent.substring(1);
+            overlay.classList.toggle('show');
+            menu.classList.toggle('show');
+            
+            // Populate currency options if not already done
+            if (menu.querySelector('.mobile-currency-options').children.length === 0) {
+                populateMobileCurrencyOptions();
+            }
         }
         
-        if (monthEl && monthEl.textContent !== '$0.00' && monthEl.textContent.startsWith('$')) {
-            monthEl.textContent = symbol + monthEl.textContent.substring(1);
+        function closeMobileCurrencyMenu() {
+            document.getElementById('mobileCurrencyOverlay').classList.remove('show');
+            document.getElementById('mobileCurrencyMenu').classList.remove('show');
         }
-    }
-    
-    // Fetch withdrawals from Baserow filtered by user email
-    async function fetchWithdrawals() {
-        try {
+        
+        function populateMobileCurrencyOptions() {
+            const container = document.querySelector('.mobile-currency-options');
+            const currentCurrency = getCurrentCurrency();
+            
+            container.innerHTML = '';
+            
+            CURRENCIES.forEach(currency => {
+                const option = document.createElement('div');
+                option.className = `mobile-currency-option ${currency.code === currentCurrency ? 'active' : ''}`;
+                option.innerHTML = `
+                    <span class="symbol" style="font-size: 20px; width: 30px;">${currency.symbol}</span>
+                    <span class="code" style="font-weight: 600; min-width: 50px;">${currency.code}</span>
+                    <span class="name" style="color: #94a3b8; font-size: 14px; flex-grow: 1; text-align: right;">${currency.name}</span>
+                `;
+                option.onclick = () => selectMobileCurrency(currency.code);
+                container.appendChild(option);
+            });
+        }
+        
+        // Desktop currency menu functions
+        function toggleDesktopCurrencyMenu() {
+            const menu = document.getElementById('desktopCurrencyMenu');
+            menu.classList.toggle('show');
+            
+            // Populate currency options if not already done
+            if (menu.children.length === 0) {
+                populateDesktopCurrencyOptions();
+            }
+        }
+        
+        function populateDesktopCurrencyOptions() {
+            const container = document.getElementById('desktopCurrencyMenu');
+            const currentCurrency = getCurrentCurrency();
+            
+            container.innerHTML = '';
+            
+            CURRENCIES.forEach(currency => {
+                const option = document.createElement('div');
+                option.className = `currency-option-dropdown ${currency.code === currentCurrency ? 'active' : ''}`;
+                option.innerHTML = `
+                    <span class="symbol">${currency.symbol}</span>
+                    <span class="code">${currency.code}</span>
+                    <span class="name">${currency.name}</span>
+                `;
+                option.onclick = () => selectDesktopCurrency(currency.code);
+                container.appendChild(option);
+            });
+        }
+        
+        function selectDesktopCurrency(currencyCode) {
+            // Update desktop selector display
+            const currency = CURRENCIES.find(c => c.code === currencyCode);
+            if (currency) {
+                document.querySelector('.current-symbol').textContent = currency.symbol;
+                document.querySelector('.current-code').textContent = currency.code;
+            }
+            
+            // Update mobile toggle display
+            document.querySelector('.mobile-currency-symbol').textContent = currency.symbol;
+            document.querySelector('.mobile-currency-code').textContent = currency.code;
+            
+            // Update all currency symbols on page
+            updateCurrencySymbols(currencyCode);
+            
+            // Save to localStorage
+            localStorage.setItem('v0trade_currency', currencyCode);
+            
+            // Close desktop menu
+            document.getElementById('desktopCurrencyMenu').classList.remove('show');
+            
+            // Update transactions display with new currency
+            if (allTransactions.length > 0) {
+                displayTransactions();
+                updateStats(allTransactions);
+            }
+        }
+        
+        function selectMobileCurrency(currencyCode) {
+            // Update mobile toggle display
+            const currency = CURRENCIES.find(c => c.code === currencyCode);
+            if (currency) {
+                document.querySelector('.mobile-currency-symbol').textContent = currency.symbol;
+                document.querySelector('.mobile-currency-code').textContent = currency.code;
+            }
+            
+            // Update desktop switcher if visible
+            const desktopSelector = document.querySelector('.currency-selector');
+            if (desktopSelector) {
+                desktopSelector.querySelector('.current-symbol').textContent = currency.symbol;
+                desktopSelector.querySelector('.current-code').textContent = currency.code;
+            }
+            
+            // Update all currency symbols on page
+            updateCurrencySymbols(currencyCode);
+            
+            // Save to localStorage
+            localStorage.setItem('v0trade_currency', currencyCode);
+            
+            // Close mobile menu
+            closeMobileCurrencyMenu();
+            
+            // Update transactions display with new currency
+            if (allTransactions.length > 0) {
+                displayTransactions();
+                updateStats(allTransactions);
+            }
+        }
+        
+        function getCurrentCurrency() {
+            return localStorage.getItem('v0trade_currency') || 'USD';
+        }
+        
+        function updateCurrencySymbols(currencyCode) {
+            const currency = CURRENCIES.find(c => c.code === currencyCode);
+            if (!currency) return;
+            
+            // Update all elements with data-currency-symbol attribute
+            document.querySelectorAll('[data-currency-symbol]').forEach(el => {
+                el.textContent = currency.symbol;
+            });
+        }
+        
+        // Load user email and transactions
+        function loadTransactions() {
             const userEmail = localStorage.getItem("v0trade_user_email");
             
             if (!userEmail) {
-                showError('Please log in to view your withdrawal history.');
-                return [];
+                window.location.href = "login.html";
+                return;
             }
             
-            // Create filter object to filter by email
-            const filterParams = new URLSearchParams({
-                'user_field_names': 'true',
-                'size': '200',
-                'filters': JSON.stringify({
-                    'filter_type': 'AND',
-                    'filters': [{
-                        'field': 'email',
-                        'type': 'equal',
-                        'value': userEmail
-                    }]
-                })
-            });
+            document.getElementById("headerEmailDisplay").textContent = userEmail;
             
-            // Fetch filtered rows
-            const response = await fetch(`${BASEROW_API_URL}?${filterParams.toString()}`, {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Token ${BASEROW_API_TOKEN}`,
-                    'Content-Type': 'application/json'
+            // Initialize currency system
+            const currentCurrency = getCurrentCurrency();
+            const currency = CURRENCIES.find(c => c.code === currentCurrency);
+            
+            if (currency) {
+                // Update desktop switcher
+                const desktopSelector = document.querySelector('.currency-selector');
+                if (desktopSelector) {
+                    desktopSelector.querySelector('.current-symbol').textContent = currency.symbol;
+                    desktopSelector.querySelector('.current-code').textContent = currency.code;
                 }
-            });
-            
-            if (!response.ok) {
-                throw new Error(`API Error: ${response.status} ${response.statusText}`);
+                
+                // Update mobile toggle
+                document.querySelector('.mobile-currency-symbol').textContent = currency.symbol;
+                document.querySelector('.mobile-currency-code').textContent = currency.code;
+                
+                // Update currency symbols
+                updateCurrencySymbols(currentCurrency);
             }
             
-            const data = await response.json();
+            // Show loading state
+            document.getElementById("loadingState").classList.remove("hidden");
+            document.getElementById("contentState").classList.add("hidden");
+            document.getElementById("errorState").classList.add("hidden");
             
-            // Return the filtered results
-            return data.results || [];
-            
-        } catch (error) {
-            console.error('Error fetching withdrawals:', error);
-            
-            // If filtering by email fails, fall back to fetching all and filtering client-side
+            // Try to load from Baserow
+            fetchTransactionsFromBaserow(userEmail);
+        }
+        
+        // Fetch transactions from Baserow
+        async function fetchTransactionsFromBaserow(email, forceRefresh = false) {
             try {
-                console.log('Falling back to client-side filtering...');
-                const fallbackResponse = await fetch(`${BASEROW_API_URL}?user_field_names=true&size=200`, {
-                    method: 'GET',
-                    headers: {
-                        'Authorization': `Token ${BASEROW_API_TOKEN}`,
-                        'Content-Type': 'application/json'
+                const now = Date.now();
+                const lastSync = localStorage.getItem(`${LAST_TRANSACTION_SYNC_KEY}_${email}`);
+                const cachedData = localStorage.getItem(`${TRANSACTIONS_DATA_KEY}_${email}`);
+                
+                // Check if we should use cached data or fetch new
+                if (!forceRefresh && cachedData && lastSync) {
+                    const timeSinceLastSync = now - parseInt(lastSync);
+                    
+                    if (timeSinceLastSync < TRANSACTIONS_SYNC_INTERVAL) {
+                        // Use cached data
+                        allTransactions = JSON.parse(cachedData);
+                        processAndDisplayTransactions();
+                        return;
                     }
+                }
+                
+                // Fetch ALL transactions from Baserow
+                const url = `https://api.baserow.io/api/database/rows/table/${TRANSACTIONS_TABLE}/?user_field_names=true&size=200`;
+                
+                console.log("Fetching transactions from Baserow...");
+                
+                const res = await fetch(url, {
+                    headers: { Authorization: `Token ${API_TOKEN}` }
                 });
                 
-                if (!fallbackResponse.ok) {
-                    throw new Error(`Fallback API Error: ${fallbackResponse.status}`);
+                if (!res.ok) {
+                    throw new Error(`API Error: ${res.status}`);
                 }
                 
-                const fallbackData = await fallbackResponse.json();
-                const userEmail = localStorage.getItem("v0trade_user_email");
+                const data = await res.json();
                 
-                // Filter client-side by email
-                const filteredResults = fallbackData.results.filter(row => 
-                    row.email && row.email.toLowerCase() === userEmail?.toLowerCase()
-                );
-                
-                return filteredResults;
-                
-            } catch (fallbackError) {
-                console.error('Fallback also failed:', fallbackError);
-                showError('Failed to load withdrawal history. Please check your connection and try again.');
-                return [];
-            }
-        }
-    }
-    
-    // Display withdrawals in the table
-    function displayWithdrawals(withdrawals) {
-        const tableBody = document.getElementById('withdrawalsTableBody');
-        const noWithdrawalsMessage = document.getElementById('noWithdrawalsMessage');
-        
-        if (withdrawals.length === 0) {
-            tableBody.innerHTML = '';
-            noWithdrawalsMessage.classList.remove('hidden');
-            return;
-        }
-        
-        noWithdrawalsMessage.classList.add('hidden');
-        
-        // Get current currency symbol
-        const currencySymbol = getCurrencySymbol();
-        
-        // Sort by date (newest first)
-        withdrawals.sort((a, b) => {
-            const dateA = new Date(a.date || a.created_at || Date.now());
-            const dateB = new Date(b.date || b.created_at || Date.now());
-            return dateB - dateA;
-        });
-        
-        let html = '';
-        withdrawals.forEach((withdrawal) => {
-            const amount = parseFloat(withdrawal.amount || 0);
-            const fee = parseFloat(withdrawal.fee || 0);
-            const netAmount = amount - fee;
-            const method = withdrawal.method || 'Bank Transfer';
-            const status = withdrawal.status || 'pending';
-            const date = withdrawal.date || withdrawal.created_at;
-            const transactionId = withdrawal.transaction_id || `W${String(withdrawal.id).padStart(4, '0')}`;
-            const id = withdrawal['id 2'] || transactionId;
-            
-            // Format date
-            let formattedDate = 'N/A';
-            if (date) {
-                try {
-                    formattedDate = new Date(date).toLocaleDateString('en-US', {
-                        year: 'numeric',
-                        month: 'short',
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
+                if (!data.results || data.results.length === 0) {
+                    console.log("No transactions found in Baserow table");
+                    // Try to use cached data if available
+                    if (cachedData) {
+                        allTransactions = JSON.parse(cachedData);
+                    } else {
+                        allTransactions = [];
+                    }
+                } else {
+                    // Filter transactions by user email
+                    const userTransactions = data.results.filter(row => {
+                        const rowEmail = row["email"] || row["field_6394448"] || "";
+                        return rowEmail.toLowerCase() === email.toLowerCase();
                     });
-                } catch (e) {
-                    formattedDate = date;
+                    
+                    console.log(`Found ${userTransactions.length} transactions for user ${email}`);
+                    
+                    // Process transactions data
+                    allTransactions = userTransactions.map(row => {
+                        const transaction = {
+                            id: row.id,
+                            email: row["email"] || row["field_6394448"] || "",
+                            amount: row["amount"] || row["field_6394449"] || "0.00",
+                            type: row["type"] || row["field_6394450"] || "",
+                            method: row["method"] || row["field_6394451"] || "",
+                            status: row["status"] || row["field_6394452"] || "",
+                            date: row["date"] || row["field_6394453"] || new Date().toISOString(),
+                            timestamp: 0
+                        };
+                        
+                        // Parse date to timestamp for sorting
+                        try {
+                            transaction.timestamp = new Date(transaction.date).getTime();
+                            if (isNaN(transaction.timestamp)) {
+                                transaction.timestamp = now;
+                            }
+                        } catch (e) {
+                            transaction.timestamp = now;
+                        }
+                        
+                        return transaction;
+                    });
+                    
+                    // Get existing cached transactions
+                    let combinedTransactions = [];
+                    if (cachedData && !forceRefresh) {
+                        const cachedTransactions = JSON.parse(cachedData);
+                        combinedTransactions = [...cachedTransactions];
+                    }
+                    
+                    // Add new transactions from Baserow
+                    allTransactions.forEach(newTransaction => {
+                        // Check if transaction already exists in cache
+                        const exists = combinedTransactions.some(t => t.id === newTransaction.id);
+                        if (!exists) {
+                            combinedTransactions.push(newTransaction);
+                        }
+                    });
+                    
+                    // Filter out transactions older than 90 days (extended for full view)
+                    const ninetyDaysAgo = now - (90 * 24 * 60 * 60 * 1000);
+                    allTransactions = combinedTransactions.filter(t => t.timestamp > ninetyDaysAgo);
+                    
+                    // Sort by date (newest first)
+                    allTransactions.sort((a, b) => b.timestamp - a.timestamp);
+                    
+                    // Save to localStorage
+                    localStorage.setItem(`${TRANSACTIONS_DATA_KEY}_${email}`, JSON.stringify(allTransactions));
+                    localStorage.setItem(`${LAST_TRANSACTION_SYNC_KEY}_${email}`, now.toString());
+                }
+                
+                processAndDisplayTransactions();
+                
+            } catch (err) {
+                console.error("TRANSACTIONS LOAD ERROR:", err);
+                
+                // Try to show cached data if available
+                const userEmail = localStorage.getItem("v0trade_user_email");
+                const cachedData = localStorage.getItem(`${TRANSACTIONS_DATA_KEY}_${userEmail}`);
+                
+                if (cachedData) {
+                    allTransactions = JSON.parse(cachedData);
+                    processAndDisplayTransactions();
+                } else {
+                    showError("Failed to load transactions. Please check your connection and try again.");
                 }
             }
+        }
+        
+        // Process and display transactions
+        function processAndDisplayTransactions() {
+            // Hide loading state
+            document.getElementById("loadingState").classList.add("hidden");
             
-            // Status badge
-            let statusClass = '';
-            let statusText = '';
-            switch(status.toLowerCase()) {
-                case 'completed':
-                case 'success':
-                case 'approved':
-                    statusClass = 'status-completed';
-                    statusText = 'Completed';
-                    break;
-                case 'pending':
-                    statusClass = 'status-pending';
-                    statusText = 'Pending';
-                    break;
-                case 'processing':
-                    statusClass = 'status-processing';
-                    statusText = 'Processing';
-                    break;
-                case 'failed':
-                case 'rejected':
-                case 'declined':
-                    statusClass = 'status-failed';
-                    statusText = 'Failed';
-                    break;
-                case 'cancelled':
-                case 'canceled':
-                    statusClass = 'status-cancelled';
-                    statusText = 'Cancelled';
-                    break;
-                default:
-                    statusClass = 'status-pending';
-                    statusText = 'Pending';
+            if (allTransactions.length === 0) {
+                document.getElementById("contentState").classList.remove("hidden");
+                document.getElementById("noTransactionsMessage").classList.remove("hidden");
+                updateStats([]);
+                return;
             }
             
-            html += `
-                <tr class="border-b border-gray-100 hover:bg-gray-50">
-                    <td class="px-6 py-4 text-sm font-mono text-gray-900">${id}</td>
-                    <td class="px-6 py-4 text-sm font-medium text-gray-900">${currencySymbol}${amount.toFixed(2)}</td>
-                    <td class="px-6 py-4 text-sm text-gray-600">${method}</td>
-                    <td class="px-6 py-4 text-sm text-red-600">${currencySymbol}${fee.toFixed(2)}</td>
-                    <td class="px-6 py-4 text-sm font-medium text-green-600">${currencySymbol}${netAmount.toFixed(2)}</td>
-                    <td class="px-6 py-4">
-                        <span class="px-3 py-1 text-xs font-semibold rounded-full ${statusClass}">${statusText}</span>
-                    </td>
-                    <td class="px-6 py-4 text-sm text-gray-500">${formattedDate}</td>
-                </tr>
-            `;
+            document.getElementById("contentState").classList.remove("hidden");
+            document.getElementById("noTransactionsMessage").classList.add("hidden");
+            
+            // Initial filter (show all)
+            filteredTransactions = [...allTransactions];
+            
+            // Sort transactions
+            sortTransactions();
+            
+            // Update statistics
+            updateStats(allTransactions);
+            
+            // Display transactions
+            displayTransactions();
+        }
+        
+        // Display transactions in the table
+        function displayTransactions() {
+            const tableBody = document.getElementById("transactionsTableBody");
+            const transactionCount = document.getElementById("transactionCount");
+            
+            // Update count
+            transactionCount.textContent = `Showing ${filteredTransactions.length} of ${allTransactions.length} transactions`;
+            
+            if (filteredTransactions.length === 0) {
+                tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="px-6 py-12 text-center text-gray-500">
+                            No transactions match your filters. Try changing your search criteria.
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            let html = '';
+            const currentCurrency = getCurrentCurrency();
+            const currencySymbol = CURRENCIES.find(c => c.code === currentCurrency)?.symbol || '$';
+            
+            filteredTransactions.forEach(transaction => {
+                // Format date
+                let formattedDate = 'Unknown date';
+                try {
+                    const date = new Date(transaction.date);
+                    if (!isNaN(date.getTime())) {
+                        formattedDate = date.toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        });
+                    } else {
+                        formattedDate = transaction.date || 'Unknown date';
+                    }
+                } catch (e) {
+                    formattedDate = transaction.date || 'Unknown date';
+                }
+                
+                // Format amount
+                const amount = parseFloat(transaction.amount) || 0;
+                const formattedAmount = `${currencySymbol}${Math.abs(amount).toFixed(2)}`;
+                
+                // Determine amount color based on type
+                const type = transaction.type?.toLowerCase() || '';
+                let amountClass = 'type-investment';
+                if (type.includes('deposit')) {
+                    amountClass = 'type-deposit';
+                } else if (type.includes('withdrawal') || type.includes('withdraw')) {
+                    amountClass = 'type-withdrawal';
+                } else if (type.includes('earning') || type.includes('commission')) {
+                    amountClass = 'type-commission';
+                } else if (type.includes('investment')) {
+                    amountClass = 'type-investment';
+                }
+                
+                // Get status class
+                let statusClass = 'status-pending';
+                const status = transaction.status?.toLowerCase() || '';
+                if (status.includes('complete') || status.includes('success')) {
+                    statusClass = 'status-completed';
+                } else if (status.includes('fail') || status.includes('error')) {
+                    statusClass = 'status-failed';
+                } else if (status.includes('process')) {
+                    statusClass = 'status-processing';
+                }
+                
+                // Get transaction type icon and formatted text
+                let typeIcon = '💳';
+                if (type.includes('deposit')) {
+                    typeIcon = '📥';
+                } else if (type.includes('withdrawal') || type.includes('withdraw')) {
+                    typeIcon = '📤';
+                } else if (type.includes('earning')) {
+                    typeIcon = '💰';
+                } else if (type.includes('commission')) {
+                    typeIcon = '🎁';
+                } else if (type.includes('investment')) {
+                    typeIcon = '📈';
+                }
+                
+                // Format type text
+                let typeText = transaction.type || 'Transaction';
+                if (typeText) {
+                    typeText = typeText.charAt(0).toUpperCase() + typeText.slice(1).toLowerCase();
+                }
+                
+                // Format method
+                let methodText = transaction.method || 'N/A';
+                if (methodText) {
+                    methodText = methodText.charAt(0).toUpperCase() + methodText.slice(1).toLowerCase();
+                }
+                
+                // Format status text
+                let statusText = transaction.status || 'Pending';
+                if (statusText) {
+                    statusText = statusText.charAt(0).toUpperCase() + statusText.slice(1).toLowerCase();
+                }
+                
+                html += `
+                    <tr class="border-b border-gray-100 hover:bg-gray-50">
+                        <td class="px-6 py-4 text-sm text-gray-700 whitespace-nowrap">${formattedDate}</td>
+                        <td class="px-6 py-4 text-sm">
+                            <div class="flex items-center gap-2">
+                                <span class="text-lg">${typeIcon}</span>
+                                <span class="font-medium">${typeText}</span>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 text-sm font-semibold ${amountClass}">${formattedAmount}</td>
+                        <td class="px-6 py-4 text-sm text-gray-700">${methodText}</td>
+                        <td class="px-6 py-4 text-sm">
+                            <span class="${statusClass}">${statusText}</span>
+                        </td>
+                        <td class="px-6 py-4 text-sm text-gray-500 font-mono">${transaction.id}</td>
+                    </tr>
+                `;
+            });
+            
+            tableBody.innerHTML = html;
+        }
+        
+        // Update statistics
+        function updateStats(transactions) {
+            let totalAmount = 0;
+            let totalDeposits = 0;
+            let totalWithdrawals = 0;
+            let totalEarnings = 0;
+            
+            transactions.forEach(transaction => {
+                const amount = parseFloat(transaction.amount) || 0;
+                const type = transaction.type?.toLowerCase() || '';
+                
+                totalAmount += Math.abs(amount);
+                
+                if (type.includes('deposit')) {
+                    totalDeposits += amount;
+                } else if (type.includes('withdrawal') || type.includes('withdraw')) {
+                    totalWithdrawals += Math.abs(amount);
+                } else if (type.includes('earning') || type.includes('commission') || type.includes('investment')) {
+                    totalEarnings += amount;
+                }
+            });
+            
+            const currentCurrency = getCurrentCurrency();
+            const currencySymbol = CURRENCIES.find(c => c.code === currentCurrency)?.symbol || '$';
+            
+            document.getElementById("totalAmount").innerHTML = `${currencySymbol}${totalAmount.toFixed(2)}`;
+            document.getElementById("totalDeposits").innerHTML = `${currencySymbol}${totalDeposits.toFixed(2)}`;
+            document.getElementById("totalWithdrawals").innerHTML = `${currencySymbol}${totalWithdrawals.toFixed(2)}`;
+            document.getElementById("totalEarnings").innerHTML = `${currencySymbol}${totalEarnings.toFixed(2)}`;
+        }
+        
+        // Filter transactions based on search and filters
+        function filterTransactions() {
+            const searchInput = document.getElementById("searchInput").value.toLowerCase();
+            const typeFilter = document.getElementById("typeFilter").value;
+            const statusFilter = document.getElementById("statusFilter").value;
+            
+            filteredTransactions = allTransactions.filter(transaction => {
+                // Search filter
+                const matchesSearch = !searchInput || 
+                    (transaction.id && transaction.id.toString().toLowerCase().includes(searchInput)) ||
+                    (transaction.type && transaction.type.toLowerCase().includes(searchInput)) ||
+                    (transaction.method && transaction.method.toLowerCase().includes(searchInput)) ||
+                    (transaction.amount && transaction.amount.toString().toLowerCase().includes(searchInput));
+                
+                // Type filter
+                const transactionType = transaction.type?.toLowerCase() || '';
+                let matchesType = true;
+                if (typeFilter !== 'all') {
+                    if (typeFilter === 'deposit') {
+                        matchesType = transactionType.includes('deposit');
+                    } else if (typeFilter === 'withdrawal') {
+                        matchesType = transactionType.includes('withdrawal') || transactionType.includes('withdraw');
+                    } else if (typeFilter === 'earning') {
+                        matchesType = transactionType.includes('earning');
+                    } else if (typeFilter === 'commission') {
+                        matchesType = transactionType.includes('commission');
+                    } else if (typeFilter === 'investment') {
+                        matchesType = transactionType.includes('investment');
+                    }
+                }
+                
+                // Status filter
+                const transactionStatus = transaction.status?.toLowerCase() || '';
+                let matchesStatus = true;
+                if (statusFilter !== 'all') {
+                    if (statusFilter === 'completed') {
+                        matchesStatus = transactionStatus.includes('complete') || transactionStatus.includes('success');
+                    } else if (statusFilter === 'pending') {
+                        matchesStatus = transactionStatus.includes('pending');
+                    } else if (statusFilter === 'processing') {
+                        matchesStatus = transactionStatus.includes('process');
+                    } else if (statusFilter === 'failed') {
+                        matchesStatus = transactionStatus.includes('fail') || transactionStatus.includes('error');
+                    }
+                }
+                
+                return matchesSearch && matchesType && matchesStatus;
+            });
+            
+            // Re-sort filtered transactions
+            sortTransactions();
+            displayTransactions();
+        }
+        
+        // Sort table by field
+        function sortTable(field) {
+            if (currentSort.field === field) {
+                // Toggle direction
+                currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+            } else {
+                // New field, default to descending
+                currentSort.field = field;
+                currentSort.direction = 'desc';
+            }
+            
+            // Update sort icons
+            updateSortIcons();
+            
+            // Sort transactions
+            sortTransactions();
+            displayTransactions();
+        }
+        
+        // Update sort icons
+        function updateSortIcons() {
+            // Reset all icons
+            ['date', 'type', 'amount', 'status'].forEach(field => {
+                document.getElementById(`${field}SortIcon`).textContent = '';
+            });
+            
+            // Set current sort icon
+            const icon = currentSort.direction === 'asc' ? '↑' : '↓';
+            document.getElementById(`${currentSort.field}SortIcon`).textContent = icon;
+        }
+        
+        // Sort transactions based on current sort settings
+        function sortTransactions() {
+            filteredTransactions.sort((a, b) => {
+                let aValue, bValue;
+                
+                switch(currentSort.field) {
+                    case 'date':
+                        aValue = a.timestamp;
+                        bValue = b.timestamp;
+                        break;
+                    case 'type':
+                        aValue = a.type?.toLowerCase() || '';
+                        bValue = b.type?.toLowerCase() || '';
+                        break;
+                    case 'amount':
+                        aValue = parseFloat(a.amount) || 0;
+                        bValue = parseFloat(b.amount) || 0;
+                        break;
+                    case 'status':
+                        aValue = a.status?.toLowerCase() || '';
+                        bValue = b.status?.toLowerCase() || '';
+                        break;
+                    default:
+                        aValue = a.timestamp;
+                        bValue = b.timestamp;
+                }
+                
+                if (currentSort.direction === 'asc') {
+                    return aValue > bValue ? 1 : -1;
+                } else {
+                    return aValue < bValue ? 1 : -1;
+                }
+            });
+        }
+        
+        // Refresh transactions
+        function refreshTransactions() {
+            const userEmail = localStorage.getItem("v0trade_user_email");
+            if (!userEmail) return;
+            
+            // Show loading state
+            document.getElementById("loadingState").classList.remove("hidden");
+            document.getElementById("contentState").classList.add("hidden");
+            document.getElementById("errorState").classList.add("hidden");
+            
+            // Force refresh from Baserow
+            fetchTransactionsFromBaserow(userEmail, true);
+            
+            // Show temporary success indicator
+            setTimeout(() => {
+                const refreshBtn = document.querySelector('button[onclick="refreshTransactions()"]');
+                const originalText = refreshBtn.innerHTML;
+                refreshBtn.innerHTML = `
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                    </svg>
+                    Refreshed
+                `;
+                refreshBtn.classList.remove('bg-orange-500', 'hover:bg-orange-600');
+                refreshBtn.classList.add('bg-green-500', 'hover:bg-green-600');
+                
+                setTimeout(() => {
+                    refreshBtn.innerHTML = originalText;
+                    refreshBtn.classList.remove('bg-green-500', 'hover:bg-green-600');
+                    refreshBtn.classList.add('bg-orange-500', 'hover:bg-orange-600');
+                }, 2000);
+            }, 1000);
+        }
+        
+        // Export transactions to CSV
+        function exportTransactions() {
+            if (filteredTransactions.length === 0) {
+                alert("No transactions to export.");
+                return;
+            }
+            
+            const currentCurrency = getCurrentCurrency();
+            const currencySymbol = CURRENCIES.find(c => c.code === currentCurrency)?.symbol || '$';
+            
+            // Create CSV content
+            let csv = "Date,Type,Amount,Method,Status,ID\n";
+            
+            filteredTransactions.forEach(transaction => {
+                const date = new Date(transaction.date).toLocaleDateString();
+                const type = transaction.type || '';
+                const amount = parseFloat(transaction.amount) || 0;
+                const method = transaction.method || '';
+                const status = transaction.status || '';
+                const id = transaction.id;
+                
+                csv += `"${date}","${type}","${currencySymbol}${amount}","${method}","${status}","${id}"\n`;
+            });
+            
+            // Create download link
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `v0trade-transactions-${new Date().toISOString().split('T')[0]}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+        }
+        
+        // Show error message
+        function showError(message) {
+            document.getElementById("loadingState").classList.add("hidden");
+            document.getElementById("contentState").classList.add("hidden");
+            document.getElementById("errorState").classList.remove("hidden");
+            document.getElementById("errorMessage").textContent = message;
+        }
+        
+        // Mobile menu and sidebar functions
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            sidebar.classList.toggle('active');
+            overlay.classList.toggle('active');
+        }
+        
+        // Close currency menus when clicking outside
+        document.addEventListener('click', function(event) {
+            const desktopCurrencyMenu = document.getElementById('desktopCurrencyMenu');
+            const desktopCurrencySelector = document.querySelector('.currency-selector');
+            
+            if (desktopCurrencyMenu && desktopCurrencyMenu.classList.contains('show') && 
+                desktopCurrencySelector && !desktopCurrencySelector.contains(event.target) &&
+                desktopCurrencyMenu && !desktopCurrencyMenu.contains(event.target)) {
+                desktopCurrencyMenu.classList.remove('show');
+            }
+            
+            const mobileMenu = document.getElementById('mobileMenu');
+            const mobileMenuButton = document.querySelector('button[onclick="toggleMobileMenu()"]');
+            
+            if (mobileMenu && mobileMenu.classList.contains('active') && 
+                !mobileMenu.contains(event.target) && 
+                mobileMenuButton && !mobileMenuButton.contains(event.target)) {
+                closeMobileMenu();
+            }
         });
         
-        tableBody.innerHTML = html;
-    }
-    
-    // Update statistics
-    function updateStats(withdrawals) {
-        const totalWithdrawals = withdrawals.reduce((sum, w) => sum + parseFloat(w.amount || 0), 0);
-        
-        const completed = withdrawals.filter(w => 
-            w.status && ['completed', 'success', 'approved'].includes(w.status.toLowerCase())
-        ).length;
-        
-        const pending = withdrawals.filter(w => 
-            w.status && ['pending', 'processing'].includes(w.status.toLowerCase())
-        ).length;
-        
-        // Calculate this month's withdrawals
-        const currentMonth = new Date().getMonth();
-        const currentYear = new Date().getFullYear();
-        
-        const monthWithdrawals = withdrawals.reduce((sum, w) => {
-            if (!w.date) return sum;
-            try {
-                const date = new Date(w.date);
-                if (date.getMonth() === currentMonth && date.getFullYear() === currentYear) {
-                    return sum + parseFloat(w.amount || 0);
-                }
-            } catch (e) {
-                // Ignore invalid dates
+        // Close modals with Escape key
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                closeMobileCurrencyMenu();
+                document.getElementById('desktopCurrencyMenu').classList.remove('show');
             }
-            return sum;
-        }, 0);
-        
-        const currencySymbol = getCurrencySymbol();
-        
-        document.getElementById('totalWithdrawals').textContent = `${currencySymbol}${totalWithdrawals.toFixed(2)}`;
-        document.getElementById('completedWithdrawals').textContent = completed;
-        document.getElementById('pendingWithdrawals').textContent = pending;
-        document.getElementById('monthWithdrawals').textContent = `${currencySymbol}${monthWithdrawals.toFixed(2)}`;
-    }
-    
-    // Show error message
-    function showError(message) {
-        document.getElementById('loadingState').classList.add('hidden');
-        document.getElementById('contentState').classList.add('hidden');
-        document.getElementById('errorState').classList.remove('hidden');
-        document.getElementById('errorMessage').textContent = message;
-    }
-    
-    // Refresh withdrawals
-    function refreshWithdrawals() {
-        loadWithdrawals();
-        
-        // Show refresh animation
-        const refreshBtn = document.querySelector('button[onclick="refreshWithdrawals()"]');
-        const originalText = refreshBtn.innerHTML;
-        refreshBtn.innerHTML = `
-            <svg class="w-5 h-5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
-            </svg>
-            Refreshing...
-        `;
-        
-        setTimeout(() => {
-            refreshBtn.innerHTML = originalText;
-        }, 1000);
-    }
-    
-    // Mobile menu and sidebar functions
-    function toggleMobileMenu() {
-        const menu = document.getElementById('mobileMenu');
-        menu.classList.toggle('active');
-    }
-    
-    function toggleSidebar() {
-        const sidebar = document.getElementById('sidebar');
-        const overlay = document.getElementById('sidebarOverlay');
-        sidebar.classList.toggle('active');
-        overlay.classList.toggle('active');
-    }
-</script>
+        });
+    </script>
+
 </body>
 </html>
