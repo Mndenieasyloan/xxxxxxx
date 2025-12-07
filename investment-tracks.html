@@ -7,7 +7,6 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
-    <style>
     <!-- Add currency config script -->
     <script src="/js/currency-config.js"></script>
     <style>
@@ -760,7 +759,7 @@
         </main>
     </div>
 
-   <script>
+    <script>
     // Currency data
     const CURRENCIES = [
         { code: 'USD', symbol: '$', name: 'US Dollar' },
@@ -773,7 +772,7 @@
         { code: 'CAD', symbol: 'C$', name: 'Canadian Dollar' }
     ];
     
-    // API Configuration - CORRECTED
+    // API Configuration
     const API_TOKEN = "LG6hnTBxgBG78FueElsSwpHRd4Wep1oL";
     const TRANSACTIONS_TABLE = 756081;
     const ONE_DAY_MS = 24 * 60 * 60 * 1000;
@@ -784,22 +783,29 @@
     
     // Investment plan configurations
     const INVESTMENT_PLANS = {
+        // Cryptocurrencies
         'btc': { type: 'crypto', roi: 20, duration: 30, asset: 'Bitcoin (BTC)', badge: 'badge-crypto', color: '#f59e0b' },
         'bitcoin': { type: 'crypto', roi: 20, duration: 30, asset: 'Bitcoin (BTC)', badge: 'badge-crypto', color: '#f59e0b' },
         'eth': { type: 'crypto', roi: 18, duration: 30, asset: 'Ethereum (ETH)', badge: 'badge-crypto', color: '#8b5cf6' },
         'ethereum': { type: 'crypto', roi: 18, duration: 30, asset: 'Ethereum (ETH)', badge: 'badge-crypto', color: '#8b5cf6' },
         'usdt': { type: 'crypto', roi: 15, duration: 30, asset: 'Tether (USDT)', badge: 'badge-crypto', color: '#26a17b' },
         'tether': { type: 'crypto', roi: 15, duration: 30, asset: 'Tether (USDT)', badge: 'badge-crypto', color: '#26a17b' },
+        
+        // Precious Metals
         'gold': { type: 'metal', roi: 12, duration: 60, asset: 'Gold', badge: 'badge-metal', color: '#fbbf24' },
         'silver': { type: 'metal', roi: 15, duration: 60, asset: 'Silver', badge: 'badge-metal', color: '#9ca3af' },
         'platinum': { type: 'metal', roi: 10, duration: 60, asset: 'Platinum', badge: 'badge-metal', color: '#e5e7eb' },
         'rhodium': { type: 'metal', roi: 8, duration: 60, asset: 'Rhodium', badge: 'badge-metal', color: '#a78bfa' },
         'palladium': { type: 'metal', roi: 9, duration: 60, asset: 'Palladium', badge: 'badge-metal', color: '#f472b6' },
+        
+        // Stocks
         'nvidia': { type: 'stock', roi: 25, duration: 30, asset: 'NVIDIA (NVDA)', badge: 'badge-stock', color: '#3b82f6' },
         'apple': { type: 'stock', roi: 18, duration: 30, asset: 'Apple (AAPL)', badge: 'badge-stock', color: '#1d4ed8' },
         'microsoft': { type: 'stock', roi: 20, duration: 30, asset: 'Microsoft (MSFT)', badge: 'badge-stock', color: '#1e40af' },
         'google': { type: 'stock', roi: 22, duration: 30, asset: 'Google (GOOGL)', badge: 'badge-stock', color: '#0ea5e9' },
         'amazon': { type: 'stock', roi: 19, duration: 30, asset: 'Amazon (AMZN)', badge: 'badge-stock', color: '#f97316' },
+        
+        // ETFs
         'spy': { type: 'etf', roi: 15, duration: 30, asset: 'SPDR S&P 500 (SPY)', badge: 'badge-etf', color: '#10b981' },
         'voo': { type: 'etf', roi: 15, duration: 30, asset: 'Vanguard S&P 500 (VOO)', badge: 'badge-etf', color: '#047857' },
         'ivv': { type: 'etf', roi: 15, duration: 30, asset: 'iShares S&P 500 (IVV)', badge: 'badge-etf', color: '#065f46' },
@@ -951,16 +957,15 @@
         }
     }
     
-    // Fetch data from Baserow API - CORRECTED ENDPOINT
+    // Fetch data from Baserow API
     async function fetchFromBaserowAPI(email) {
         try {
             console.log("Fetching from Baserow API for email:", email);
             
-            // CORRECT ENDPOINT: List all rows in table
-            // Use ?user_field_names=true to get field names instead of field IDs
-            const url = `https://api.baserow.io/api/database/rows/table/${TRANSACTIONS_TABLE}/?user_field_names=true`;
+            // CORRECT ENDPOINT for getting ALL rows from table
+            const url = `https://api.baserow.io/api/database/rows/table/${TRANSACTIONS_TABLE}/?user_field_names=true&size=200`;
             
-            console.log("API URL:", url);
+            console.log("Fetching from URL:", url);
             
             const response = await fetch(url, {
                 headers: { 
@@ -970,11 +975,14 @@
             });
             
             if (!response.ok) {
+                const errorText = await response.text();
+                console.error("API Error Response:", errorText);
                 throw new Error(`API error: ${response.status} ${response.statusText}`);
             }
             
             const data = await response.json();
-            console.log("API response received:", data);
+            console.log("API Response data structure:", Object.keys(data));
+            console.log("Total results:", data.results ? data.results.length : 0);
             
             if (!data.results || data.results.length === 0) {
                 console.log("No data from API");
@@ -982,13 +990,14 @@
                 return;
             }
             
-            console.log("Total rows from API:", data.results.length);
+            // DEBUG: Log first few rows to see structure
+            console.log("First few rows from API:", data.results.slice(0, 3));
             
-            // Process the API response with CORRECT field names
+            // Process the API response - handle both field names and field IDs
             const transactions = data.results.map(row => {
-                return {
+                // Try field names first, then fall back to field IDs
+                const transaction = {
                     id: row.id,
-                    // Using actual field names from API response
                     email: row.email || row.field_6394448 || "",
                     amount: row.amount || row.field_6394449 || "0",
                     type: row.type || row.field_6394450 || "",
@@ -996,25 +1005,29 @@
                     status: row.status || row.field_6394452 || "",
                     date: row.date || row.field_6394453 || new Date().toISOString()
                 };
+                
+                console.log("Processed transaction:", transaction);
+                return transaction;
             });
             
-            console.log("Processed transactions:", transactions.length);
+            console.log("Total processed transactions:", transactions.length);
             
-            // Filter by user email
-            const userTransactions = transactions.filter(t => 
-                t.email && t.email.trim().toLowerCase() === email.trim().toLowerCase()
-            );
+            // Filter by user email (case-insensitive, trim whitespace)
+            const userTransactions = transactions.filter(t => {
+                const transactionEmail = (t.email || "").trim().toLowerCase();
+                const userEmailLower = email.trim().toLowerCase();
+                return transactionEmail === userEmailLower;
+            });
             
             console.log("User transactions found:", userTransactions.length);
             
             if (userTransactions.length === 0) {
-                console.log("No transactions for user:", email);
+                console.log("No transactions found for user:", email);
+                console.log("Looking for email:", email);
+                console.log("Available emails in data:", transactions.map(t => t.email).slice(0, 5));
                 displayNoInvestments();
                 return;
             }
-            
-            // Debug: Show first few transactions
-            console.log("Sample transactions:", userTransactions.slice(0, 3));
             
             // Save to cache
             saveToCache(email, userTransactions);
@@ -1034,14 +1047,14 @@
                 displayNoInvestments();
                 console.error("No data available. Error:", error.message);
                 
-                // Show error message to user
+                // Show error to user
                 const container = document.getElementById('investmentContainer');
                 container.innerHTML = `
                     <div class="investment-card p-6 text-center">
                         <div class="text-5xl mb-4">⚠️</div>
                         <h3 class="text-xl font-semibold text-white mb-3">API Error</h3>
-                        <p class="text-gray-400 mb-4">Failed to load investment data. Please try again later.</p>
-                        <p class="text-sm text-gray-500 mb-6">Error: ${error.message}</p>
+                        <p class="text-gray-400 mb-4">Failed to fetch data from server.</p>
+                        <p class="text-sm text-gray-500 mb-6">${error.message}</p>
                         <button onclick="refreshInvestments()" class="px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg">
                             Retry
                         </button>
@@ -1051,26 +1064,49 @@
         }
     }
     
-    // Process and display data
+    // Process and display data - SIMPLIFIED FILTERING
     function processAndDisplayData(email, transactions) {
-        console.log("Processing transactions:", transactions.length);
-        
-        // SIMPLE FILTER: Show ALL transactions as investments for testing
-        // Remove this after testing
-        console.log("Showing ALL transactions as investments for testing");
+        console.log("Processing transactions for display. Total:", transactions.length);
         
         if (transactions.length === 0) {
             displayNoInvestments();
             return;
         }
         
-        // Process as investments
-        processInvestmentData(transactions);
+        // SIMPLIFIED: Show ALL transactions that have "investment" (case-insensitive) in type OR method
+        const investmentTransactions = transactions.filter(transaction => {
+            const type = (transaction.type || '').toLowerCase();
+            const method = (transaction.method || '').toLowerCase();
+            
+            // Check if either type or method contains "investment"
+            return type.includes('investment') || method.includes('investment');
+        });
+        
+        console.log("Investment transactions found:", investmentTransactions.length);
+        
+        if (investmentTransactions.length === 0) {
+            // If no "investment" found, show ALL transactions for debugging
+            console.log("No 'investment' keyword found. Showing ALL transactions for debugging:");
+            console.log("All transaction types:", transactions.map(t => t.type));
+            console.log("All transaction methods:", transactions.map(t => t.method));
+            
+            // For now, show all transactions so we can see what's there
+            processInvestmentData(transactions);
+            return;
+        }
+        
+        // Process investment data
+        processInvestmentData(investmentTransactions);
     }
     
     // Process investment data
     function processInvestmentData(transactions) {
-        console.log("Processing investment data");
+        console.log("Processing investment data:", transactions.length);
+        
+        if (transactions.length === 0) {
+            displayNoInvestments();
+            return;
+        }
         
         const investmentStats = {};
         let totalInvestment = 0;
@@ -1079,14 +1115,16 @@
         
         transactions.forEach((transaction, index) => {
             const method = (transaction.method || '').toLowerCase();
+            const type = (transaction.type || '').toLowerCase();
             const amount = parseFloat(transaction.amount) || 0;
             
             if (amount <= 0) return;
             
-            // Find matching investment plan
+            // Find matching investment plan - check both method and type
             let planKey = null;
             let plan = null;
             
+            // First check method field
             for (const [key, planData] of Object.entries(INVESTMENT_PLANS)) {
                 if (method.includes(key)) {
                     planKey = key;
@@ -1095,10 +1133,34 @@
                 }
             }
             
-            // Default to Bitcoin if no match
+            // If not found in method, check type field
             if (!planKey) {
-                planKey = 'btc';
-                plan = INVESTMENT_PLANS.btc;
+                for (const [key, planData] of Object.entries(INVESTMENT_PLANS)) {
+                    if (type.includes(key)) {
+                        planKey = key;
+                        plan = planData;
+                        break;
+                    }
+                }
+            }
+            
+            // Default plan if no match
+            if (!planKey) {
+                // Try to infer from common patterns
+                if (method.includes('btc') || type.includes('btc')) {
+                    planKey = 'btc';
+                    plan = INVESTMENT_PLANS.btc;
+                } else if (method.includes('eth') || type.includes('eth')) {
+                    planKey = 'eth';
+                    plan = INVESTMENT_PLANS.eth;
+                } else if (method.includes('gold') || type.includes('gold')) {
+                    planKey = 'gold';
+                    plan = INVESTMENT_PLANS.gold;
+                } else {
+                    // Default to Bitcoin
+                    planKey = 'btc';
+                    plan = INVESTMENT_PLANS.btc;
+                }
             }
             
             if (!investmentStats[planKey]) {
@@ -1138,7 +1200,9 @@
         });
         
         console.log("Investment Stats:", investmentStats);
-        console.log("Totals - Investment:", totalInvestment, "Returns:", totalReturns, "Plans:", activePlans);
+        console.log("Total Investment:", totalInvestment);
+        console.log("Total Returns:", totalReturns);
+        console.log("Active Plans:", activePlans);
         
         // Update statistics
         updateInvestmentStatistics(totalInvestment, totalReturns, activePlans, investmentStats);
@@ -1338,20 +1402,22 @@
             
             const amount = parseFloat(transaction.amount) || 0;
             const method = (transaction.method || '').toLowerCase();
+            const type = (transaction.type || '').toLowerCase();
             
             // Determine investment type
             let planInfo = null;
             let asset = 'Investment';
             let duration = '30d';
-            let type = 'investment';
+            let investmentType = 'investment';
             let badge = 'badge-crypto';
             
+            // Check method first, then type
             for (const [assetKey, plan] of Object.entries(INVESTMENT_PLANS)) {
-                if (method.includes(assetKey)) {
+                if (method.includes(assetKey) || type.includes(assetKey)) {
                     planInfo = plan;
                     asset = plan.asset;
                     duration = `${plan.duration}d`;
-                    type = plan.type;
+                    investmentType = plan.type;
                     badge = plan.badge;
                     break;
                 }
@@ -1370,7 +1436,7 @@
             row.innerHTML = `
                 <td class="py-3 px-4 text-sm text-gray-300">${formattedDate}</td>
                 <td class="py-3 px-4">
-                    <span class="${badge} investment-badge text-xs">${type.toUpperCase()}</span>
+                    <span class="${badge} investment-badge text-xs">${investmentType.toUpperCase()}</span>
                 </td>
                 <td class="py-3 px-4 text-sm text-white font-medium">${asset}</td>
                 <td class="py-3 px-4 text-sm text-gray-300">Investment Plan</td>
@@ -1614,7 +1680,5 @@
         });
     }
 </script>
-</body>
-</html>
 </body>
 </html>
