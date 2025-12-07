@@ -959,7 +959,7 @@
         // Refresh investment data to update currency formatting
         const userEmail = localStorage.getItem("v0trade_user_email");
         if (userEmail) {
-            updateCurrencyDisplay();
+            loadInvestmentData(userEmail);
         }
     }
     
@@ -1011,6 +1011,105 @@
         });
     }
     
+    // Currency dropdown functions
+    function toggleCurrencyDropdown(event) {
+        event.stopPropagation();
+        const dropdown = document.getElementById('currencyDropdown');
+        if (!dropdown) return;
+        
+        dropdown.classList.toggle('show');
+        
+        if (!dropdown.hasChildNodes()) {
+            populateCurrencyDropdown();
+        }
+    }
+    
+    function toggleMobileCurrencyMenu() {
+        const overlay = document.getElementById('mobileCurrencyOverlay');
+        const menu = document.getElementById('mobileCurrencyMenu');
+        
+        overlay.classList.add('show');
+        menu.classList.add('show');
+        
+        if (!document.querySelector('.mobile-currency-options').hasChildNodes()) {
+            populateMobileCurrencyDropdown();
+        }
+    }
+    
+    function closeMobileCurrencyMenu() {
+        const overlay = document.getElementById('mobileCurrencyOverlay');
+        const menu = document.getElementById('mobileCurrencyMenu');
+        
+        overlay.classList.remove('show');
+        menu.classList.remove('show');
+    }
+    
+    function populateCurrencyDropdown() {
+        const dropdown = document.getElementById('currencyDropdown');
+        if (!dropdown) return;
+        
+        dropdown.innerHTML = '';
+        const currentCurrency = getCurrentCurrency();
+        
+        CURRENCIES.forEach(currency => {
+            const option = document.createElement('div');
+            option.className = `currency-option-dropdown ${currency.code === currentCurrency ? 'active' : ''}`;
+            option.setAttribute('data-currency', currency.code);
+            option.onclick = () => selectCurrency(currency.code);
+            
+            option.innerHTML = `
+                <span class="symbol">${currency.symbol}</span>
+                <span class="code">${currency.code}</span>
+                <span class="name">${currency.name}</span>
+            `;
+            
+            dropdown.appendChild(option);
+        });
+    }
+    
+    function populateMobileCurrencyDropdown() {
+        const container = document.querySelector('.mobile-currency-options');
+        if (!container) return;
+        
+        container.innerHTML = '';
+        const currentCurrency = getCurrentCurrency();
+        
+        CURRENCIES.forEach(currency => {
+            const option = document.createElement('div');
+            option.className = `mobile-currency-option ${currency.code === currentCurrency ? 'active' : ''}`;
+            option.setAttribute('data-currency', currency.code);
+            option.onclick = () => {
+                selectCurrency(currency.code);
+                closeMobileCurrencyMenu();
+            };
+            
+            option.innerHTML = `
+                <span class="symbol">${currency.symbol}</span>
+                <span class="code">${currency.code}</span>
+                <span class="name">${currency.name}</span>
+            `;
+            
+            container.appendChild(option);
+        });
+    }
+    
+    function selectCurrency(currencyCode) {
+        localStorage.setItem('v0trade_currency', currencyCode);
+        updateCurrencySymbols(currencyCode);
+        
+        // Close dropdowns
+        const desktopDropdown = document.getElementById('currencyDropdown');
+        if (desktopDropdown) {
+            desktopDropdown.classList.remove('show');
+        }
+        
+        // Update active states
+        document.querySelectorAll('.currency-option-dropdown, .mobile-currency-option').forEach(option => {
+            const isActive = option.getAttribute('data-currency') === currencyCode;
+            option.classList.toggle('active', isActive);
+        });
+    }
+    
     // Mobile menu functions
     function toggleMobileMenu() {
         const menu = document.getElementById('mobileMenu');
@@ -1042,7 +1141,31 @@
         }
     }
     
-    window.addEventListener('DOMContentLoaded', function() {
+    // Close dropdowns when clicking outside
+    document.addEventListener('click', function(event) {
+        // Close currency dropdown
+        const currencyDropdown = document.getElementById('currencyDropdown');
+        const currencySelector = document.querySelector('.currency-selector');
+        
+        if (currencyDropdown && currencySelector && 
+            !currencyDropdown.contains(event.target) && 
+            !currencySelector.contains(event.target)) {
+            currencyDropdown.classList.remove('show');
+        }
+        
+        // Close mobile menu when clicking outside
+        const mobileMenu = document.getElementById('mobileMenu');
+        const mobileMenuButton = document.querySelector('button[onclick="toggleMobileMenu()"]');
+        
+        if (mobileMenu && mobileMenu.classList.contains('active') && 
+            !mobileMenu.contains(event.target) && 
+            mobileMenuButton && !mobileMenuButton.contains(event.target)) {
+            closeMobileMenu();
+        }
+    });
+    
+    // INITIALIZATION - LOAD DATA IMMEDIATELY
+    document.addEventListener('DOMContentLoaded', function() {
         const userEmail = localStorage.getItem("v0trade_user_email");
         
         if (!userEmail) {
@@ -1061,23 +1184,21 @@
         const currentCurrency = getCurrentCurrency();
         updateCurrencySymbols(currentCurrency);
         
-        // Initialize empty charts
-        initializeEmptyCharts();
+        // Populate currency dropdowns
+        populateCurrencyDropdown();
+        populateMobileCurrencyDropdown();
         
         // Auto-load investment data on page visit
         loadInvestmentData(userEmail);
         
-        // Close mobile menu when clicking outside
-        document.addEventListener('click', function(event) {
-            const mobileMenu = document.getElementById('mobileMenu');
-            const mobileMenuButton = document.querySelector('button[onclick="toggleMobileMenu()"]');
-            
-            if (mobileMenu && mobileMenu.classList.contains('active') && 
-                !mobileMenu.contains(event.target) && 
-                mobileMenuButton && !mobileMenuButton.contains(event.target)) {
-                closeMobileMenu();
+        // Set up auto-refresh every 30 seconds
+        setInterval(() => {
+            const currentUser = localStorage.getItem("v0trade_user_email");
+            if (currentUser) {
+                console.log("Auto-refreshing investment data...");
+                loadFreshInvestmentData(currentUser);
             }
-        });
+        }, 30000);
     });
 
     function getCachedInvestmentData(email) {
@@ -1128,19 +1249,23 @@
             // Check for cached investment data first
             const cachedData = getCachedInvestmentData(email);
             if (cachedData) {
-                // Use cached data for instant display
-                console.log("Using cached investment data");
+                // Use cached data for INSTANT display
+                console.log("Using cached investment data for instant display");
                 displayInvestments(cachedData.processedInvestments);
                 displayInvestmentTransactions(cachedData.investmentTransactions);
                 updateInvestmentStats(cachedData.processedInvestments);
                 updateChartsWithData(cachedData.processedInvestments);
                 
-                // Still load fresh data in background
-                setTimeout(() => loadFreshInvestmentData(email), 100);
+                // Still load fresh data in background (but don't wait for it)
+                setTimeout(() => {
+                    console.log("Loading fresh data in background...");
+                    loadFreshInvestmentData(email);
+                }, 500);
                 return;
             }
             
-            // No cache, load fresh data
+            // No cache, load fresh data immediately
+            console.log("No cache found, loading fresh data immediately");
             loadFreshInvestmentData(email);
             
         } catch (err) {
@@ -1207,10 +1332,10 @@
             // Calculate investment stats
             const investmentStats = calculateInvestmentStats(processedInvestments);
             
-            // Cache the data
+            // Cache the data for next load
             cacheInvestmentData(email, investmentStats, investmentTransactions, processedInvestments);
             
-            // Display investments
+            // Display investments (update existing display)
             displayInvestments(processedInvestments);
             
             // Display transactions
@@ -1219,12 +1344,14 @@
             // Update summary statistics
             updateInvestmentStats(processedInvestments);
             
-            // Initialize charts
+            // Initialize/update charts
             updateChartsWithData(processedInvestments);
+            
+            console.log("Fresh investment data loaded successfully");
             
         } catch (err) {
             console.error("Error loading fresh investment data:", err);
-            displayNoInvestments();
+            // Don't clear display if we have cached data
         }
     }
     
@@ -2082,6 +2209,17 @@
         if (userEmail) {
             console.log("Page focused, refreshing investment data...");
             loadInvestmentData(userEmail);
+        }
+    });
+    
+    // Listen for storage changes (in case transactions are updated from other tabs)
+    window.addEventListener('storage', (e) => {
+        if (e.key && e.key.includes('transactions_data')) {
+            const userEmail = localStorage.getItem("v0trade_user_email");
+            if (userEmail) {
+                console.log("Transactions data changed, refreshing...");
+                loadFreshInvestmentData(userEmail);
+            }
         }
     });
 </script>
