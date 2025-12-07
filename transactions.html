@@ -557,787 +557,659 @@
     </div>
 
     <script>
-        // Baserow API Configuration (same as dashboard)
-        const API_TOKEN = "LG6hnTBxgBG78FueElsSwpHRd4Wep1oL";
-        const TRANSACTIONS_TABLE = 756081;
-        const TRANSACTIONS_SYNC_INTERVAL = 24 * 60 * 60 * 1000; // 24 hours
+    // Currency data
+    const CURRENCIES = [
+        { code: 'USD', symbol: '$', name: 'US Dollar' },
+        { code: 'EUR', symbol: '€', name: 'Euro' },
+        { code: 'GBP', symbol: '£', name: 'British Pound' },
+        { code: 'ZAR', symbol: 'R', name: 'South African Rand' },
+        { code: 'INR', symbol: '₹', name: 'Indian Rupee' },
+        { code: 'JPY', symbol: '¥', name: 'Japanese Yen' },
+        { code: 'AUD', symbol: 'A$', name: 'Australian Dollar' },
+        { code: 'CAD', symbol: 'C$', name: 'Canadian Dollar' }
+    ];
+
+    // Baserow API Configuration (same as dashboard)
+    const API_TOKEN = "LG6hnTBxgBG78FueElsSwpHRd4Wep1oL";
+    const TRANSACTIONS_TABLE = 756081;
+    const TRANSACTIONS_SYNC_INTERVAL = 24 * 60 * 60 * 1000; // 24 hours
+    
+    // Local storage keys
+    const LAST_TRANSACTION_SYNC_KEY = "v0trade_last_transaction_sync";
+    const TRANSACTIONS_DATA_KEY = "v0trade_transactions_data";
+    
+    // State variables
+    let allTransactions = [];
+    let filteredTransactions = [];
+    let currentSort = { field: 'date', direction: 'desc' };
+    
+    // Get current currency
+    function getCurrentCurrency() {
+        return localStorage.getItem('v0trade_currency') || 'USD';
+    }
+    
+    // Get currency symbol
+    function getCurrencySymbol(currencyCode = null) {
+        const code = currencyCode || getCurrentCurrency();
+        const currency = CURRENCIES.find(c => c.code === code);
+        return currency ? currency.symbol : '$';
+    }
+    
+    // Update currency symbols on page
+    function updateCurrencySymbols(currencyCode = null) {
+        const symbol = getCurrencySymbol(currencyCode);
         
-        // Local storage keys
-        const LAST_TRANSACTION_SYNC_KEY = "v0trade_last_transaction_sync";
-        const TRANSACTIONS_DATA_KEY = "v0trade_transactions_data";
-        const CURRENCY_PREFERENCE_KEY = "v0trade_currency";
+        // Update all data-currency-symbol elements
+        document.querySelectorAll('[data-currency-symbol]').forEach(el => {
+            el.textContent = symbol;
+        });
         
-        // Currency data - SAME AS INVESTMENT TRACKS PAGE
-        const CURRENCIES = [
-            { code: 'USD', symbol: '$', name: 'US Dollar' },
-            { code: 'EUR', symbol: '€', name: 'Euro' },
-            { code: 'GBP', symbol: '£', name: 'British Pound' },
-            { code: 'ZAR', symbol: 'R', name: 'South African Rand' },
-            { code: 'INR', symbol: '₹', name: 'Indian Rupee' },
-            { code: 'JPY', symbol: '¥', name: 'Japanese Yen' },
-            { code: 'AUD', symbol: 'A$', name: 'Australian Dollar' },
-            { code: 'CAD', symbol: 'C$', name: 'Canadian Dollar' }
-        ];
+        // Update statistics display
+        updateStats(allTransactions);
         
-        // State variables
-        let allTransactions = [];
-        let filteredTransactions = [];
-        let currentSort = { field: 'date', direction: 'desc' };
-        let currentCurrency = 'USD';
-        
-        // Currency functions - SAME AS INVESTMENT TRACKS PAGE
-        function getCurrentCurrency() {
-            return localStorage.getItem(CURRENCY_PREFERENCE_KEY) || 'USD';
+        // Refresh displayed transactions
+        if (filteredTransactions.length > 0) {
+            displayTransactions();
         }
+    }
+    
+    // Initialize currency switcher in header
+    function initCurrencySwitcher() {
+        const currentCurrency = getCurrentCurrency();
+        const currency = CURRENCIES.find(c => c.code === currentCurrency);
         
-        function getCurrentCurrencySymbol() {
-            const currentCurrency = getCurrentCurrency();
-            const currency = CURRENCIES.find(c => c.code === currentCurrency);
-            return currency ? currency.symbol : '$';
-        }
+        // Create currency switcher element
+        const currencySwitcher = document.createElement('div');
+        currencySwitcher.className = 'dropdown';
+        currencySwitcher.innerHTML = `
+            <button class="text-sm text-gray-300 hover:text-white transition flex items-center gap-1">
+                <span class="currency-symbol">${currency?.symbol || '$'}</span>
+                <span class="currency-code">${currentCurrency}</span>
+                <span>▼</span>
+            </button>
+            <div class="dropdown-content" style="min-width: 10rem;">
+                ${CURRENCIES.map(curr => `
+                    <a href="javascript:void(0)" onclick="changeCurrency('${curr.code}')" 
+                       class="block px-3 py-2 text-sm text-gray-300 hover:text-white hover:bg-purple-500/10 rounded flex items-center gap-2 ${curr.code === currentCurrency ? 'bg-purple-500/10' : ''}">
+                        <span class="text-lg">${curr.symbol}</span>
+                        <span class="flex-1">${curr.name}</span>
+                        <span class="text-xs opacity-70">${curr.code}</span>
+                    </a>
+                `).join('')}
+            </div>
+        `;
         
-        function updateCurrencySymbols(currencyCode) {
-            const currency = CURRENCIES.find(c => c.code === currencyCode);
-            if (!currency) return;
-            
-            document.querySelectorAll('.currency-symbol').forEach(el => {
-                el.textContent = currency.symbol;
-            });
-            
-            document.querySelector('.mobile-currency-symbol').textContent = currency.symbol;
-            document.querySelector('.mobile-currency-code').textContent = currency.code;
-            
-            const desktopSelector = document.querySelector('.currency-selector');
-            if (desktopSelector) {
-                desktopSelector.querySelector('.current-symbol').textContent = currency.symbol;
-                desktopSelector.querySelector('.current-code').textContent = currency.code;
+        // Find the header navigation and add currency switcher before logout
+        const headerNav = document.querySelector('header .hidden.items-center.gap-4.md\\:flex');
+        if (headerNav) {
+            const logoutLink = headerNav.querySelector('a[href="index.html"]:last-child');
+            if (logoutLink) {
+                headerNav.insertBefore(currencySwitcher, logoutLink);
             }
-            
-            // Refresh transaction display with new currency
-            if (filteredTransactions.length > 0) {
-                displayTransactions();
-                updateStats(allTransactions);
-            }
+        }
+    }
+    
+    // Change currency
+    function changeCurrency(currencyCode) {
+        const currency = CURRENCIES.find(c => c.code === currencyCode);
+        if (!currency) return;
+        
+        // Update display
+        document.querySelector('.currency-symbol').textContent = currency.symbol;
+        document.querySelector('.currency-code').textContent = currency.code;
+        
+        // Save to localStorage
+        localStorage.setItem('v0trade_currency', currencyCode);
+        
+        // Update all currency symbols on page
+        updateCurrencySymbols(currencyCode);
+        
+        // Dispatch event for other pages if needed
+        document.dispatchEvent(new CustomEvent('currencyChanged', { 
+            detail: { code: currencyCode, symbol: currency.symbol } 
+        }));
+    }
+    
+    // Load user email and transactions
+    function loadTransactions() {
+        const userEmail = localStorage.getItem("v0trade_user_email");
+        
+        if (!userEmail) {
+            window.location.href = "login.html";
+            return;
         }
         
-        function convertAmount(amount, fromCurrency, toCurrency) {
-            // Simple conversion rates (in a real app, you would fetch live rates)
-            const rates = {
-                'USD': 1,
-                'EUR': 0.92,
-                'GBP': 0.79,
-                'ZAR': 18.75,
-                'INR': 83.5,
-                'JPY': 150,
-                'AUD': 1.52,
-                'CAD': 1.36
-            };
-            
-            if (!rates[fromCurrency] || !rates[toCurrency]) return amount;
-            
-            const amountInUSD = amount / rates[fromCurrency];
-            return amountInUSD * rates[toCurrency];
-        }
+        document.getElementById("headerEmailDisplay").textContent = userEmail;
         
-        function updateCurrencyDisplay() {
-            const currentCurrency = getCurrentCurrency();
-            const currency = CURRENCIES.find(c => c.code === currentCurrency);
-            if (!currency) return;
+        // Initialize currency switcher
+        initCurrencySwitcher();
+        
+        // Show loading state
+        document.getElementById("loadingState").classList.remove("hidden");
+        document.getElementById("contentState").classList.add("hidden");
+        document.getElementById("errorState").classList.add("hidden");
+        
+        // Try to load from Baserow
+        fetchTransactionsFromBaserow(userEmail);
+    }
+    
+    // Fetch transactions from Baserow
+    async function fetchTransactionsFromBaserow(email, forceRefresh = false) {
+        try {
+            const now = Date.now();
+            const lastSync = localStorage.getItem(`${LAST_TRANSACTION_SYNC_KEY}_${email}`);
+            const cachedData = localStorage.getItem(`${TRANSACTIONS_DATA_KEY}_${email}`);
             
-            // Update all displayed amounts with currency conversion
-            document.querySelectorAll('[data-amount]').forEach(el => {
-                const amount = parseFloat(el.getAttribute('data-amount') || '0');
-                const convertedAmount = convertAmount(amount, 'USD', currentCurrency);
+            // Check if we should use cached data or fetch new
+            if (!forceRefresh && cachedData && lastSync) {
+                const timeSinceLastSync = now - parseInt(lastSync);
                 
-                if (el.classList.contains('currency-symbol')) {
-                    el.textContent = currency.symbol;
-                } else if (el.id === 'totalAmount' || el.id === 'totalDeposits' || 
-                           el.id === 'totalWithdrawals' || el.id === 'totalEarnings') {
-                    el.innerHTML = `<span class="currency-symbol">${currency.symbol}</span>${convertedAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-                } else {
-                    // For table cells
-                    const currentText = el.textContent;
-                    if (currentText.startsWith('$') || currentText.startsWith('€') || 
-                        currentText.startsWith('£') || currentText.startsWith('R') ||
-                        currentText.startsWith('₹') || currentText.startsWith('¥') ||
-                        currentText.startsWith('A$') || currentText.startsWith('C$')) {
-                        el.textContent = currency.symbol + convertedAmount.toFixed(2);
-                    }
+                if (timeSinceLastSync < TRANSACTIONS_SYNC_INTERVAL) {
+                    // Use cached data
+                    allTransactions = JSON.parse(cachedData);
+                    processAndDisplayTransactions();
+                    return;
                 }
-            });
-        }
-        
-        // Currency dropdown functions - SAME AS INVESTMENT TRACKS PAGE
-        function toggleCurrencyDropdown(event) {
-            event.stopPropagation();
-            const dropdown = document.getElementById('currencyDropdown');
-            dropdown.classList.toggle('show');
+            }
             
-            // Populate dropdown if empty
-            if (dropdown.children.length === 0) {
-                populateCurrencyDropdown();
+            // Fetch ALL transactions from Baserow
+            const url = `https://api.baserow.io/api/database/rows/table/${TRANSACTIONS_TABLE}/?user_field_names=true&size=200`;
+            
+            console.log("Fetching transactions from Baserow...");
+            
+            const res = await fetch(url, {
+                headers: { Authorization: `Token ${API_TOKEN}` }
+            });
+            
+            if (!res.ok) {
+                throw new Error(`API Error: ${res.status}`);
+            }
+            
+            const data = await res.json();
+            
+            if (!data.results || data.results.length === 0) {
+                console.log("No transactions found in Baserow table");
+                // Try to use cached data if available
+                if (cachedData) {
+                    allTransactions = JSON.parse(cachedData);
+                } else {
+                    allTransactions = [];
+                }
+            } else {
+                // Filter transactions by user email
+                const userTransactions = data.results.filter(row => {
+                    const rowEmail = row["email"] || row["field_6394448"] || "";
+                    return rowEmail.toLowerCase() === email.toLowerCase();
+                });
+                
+                console.log(`Found ${userTransactions.length} transactions for user ${email}`);
+                
+                // Process transactions data
+                allTransactions = userTransactions.map(row => {
+                    const transaction = {
+                        id: row.id,
+                        email: row["email"] || row["field_6394448"] || "",
+                        amount: row["amount"] || row["field_6394449"] || "0.00",
+                        type: row["type"] || row["field_6394450"] || "",
+                        method: row["method"] || row["field_6394451"] || "",
+                        status: row["status"] || row["field_6394452"] || "",
+                        date: row["date"] || row["field_6394453"] || new Date().toISOString(),
+                        timestamp: 0
+                    };
+                    
+                    // Parse date to timestamp for sorting
+                    try {
+                        transaction.timestamp = new Date(transaction.date).getTime();
+                        if (isNaN(transaction.timestamp)) {
+                            transaction.timestamp = now;
+                        }
+                    } catch (e) {
+                        transaction.timestamp = now;
+                    }
+                    
+                    return transaction;
+                });
+                
+                // Get existing cached transactions
+                let combinedTransactions = [];
+                if (cachedData && !forceRefresh) {
+                    const cachedTransactions = JSON.parse(cachedData);
+                    combinedTransactions = [...cachedTransactions];
+                }
+                
+                // Add new transactions from Baserow
+                allTransactions.forEach(newTransaction => {
+                    // Check if transaction already exists in cache
+                    const exists = combinedTransactions.some(t => t.id === newTransaction.id);
+                    if (!exists) {
+                        combinedTransactions.push(newTransaction);
+                    }
+                });
+                
+                // Filter out transactions older than 90 days (extended for full view)
+                const ninetyDaysAgo = now - (90 * 24 * 60 * 60 * 1000);
+                allTransactions = combinedTransactions.filter(t => t.timestamp > ninetyDaysAgo);
+                
+                // Sort by date (newest first)
+                allTransactions.sort((a, b) => b.timestamp - a.timestamp);
+                
+                // Save to localStorage
+                localStorage.setItem(`${TRANSACTIONS_DATA_KEY}_${email}`, JSON.stringify(allTransactions));
+                localStorage.setItem(`${LAST_TRANSACTION_SYNC_KEY}_${email}`, now.toString());
+            }
+            
+            processAndDisplayTransactions();
+            
+        } catch (err) {
+            console.error("TRANSACTIONS LOAD ERROR:", err);
+            
+            // Try to show cached data if available
+            const userEmail = localStorage.getItem("v0trade_user_email");
+            const cachedData = localStorage.getItem(`${TRANSACTIONS_DATA_KEY}_${userEmail}`);
+            
+            if (cachedData) {
+                allTransactions = JSON.parse(cachedData);
+                processAndDisplayTransactions();
+            } else {
+                showError("Failed to load transactions. Please check your connection and try again.");
             }
         }
+    }
+    
+    // Process and display transactions
+    function processAndDisplayTransactions() {
+        // Hide loading state
+        document.getElementById("loadingState").classList.add("hidden");
         
-        function toggleMobileCurrencyMenu() {
-            const overlay = document.getElementById('mobileCurrencyOverlay');
-            const menu = document.getElementById('mobileCurrencyMenu');
-            
-            overlay.classList.add('show');
-            menu.classList.add('show');
-            
-            // Populate mobile dropdown if empty
-            const optionsContainer = menu.querySelector('.mobile-currency-options');
-            if (optionsContainer.children.length === 0) {
-                populateMobileCurrencyDropdown();
+        if (allTransactions.length === 0) {
+            document.getElementById("contentState").classList.remove("hidden");
+            document.getElementById("noTransactionsMessage").classList.remove("hidden");
+            updateStats([]);
+            return;
+        }
+        
+        document.getElementById("contentState").classList.remove("hidden");
+        document.getElementById("noTransactionsMessage").classList.add("hidden");
+        
+        // Initial filter (show all)
+        filteredTransactions = [...allTransactions];
+        
+        // Sort transactions
+        sortTransactions();
+        
+        // Update statistics
+        updateStats(allTransactions);
+        
+        // Display transactions
+        displayTransactions();
+    }
+    
+    // Display transactions in the table
+    function displayTransactions() {
+        const tableBody = document.getElementById("transactionsTableBody");
+        const transactionCount = document.getElementById("transactionCount");
+        
+        // Update count
+        transactionCount.textContent = `Showing ${filteredTransactions.length} of ${allTransactions.length} transactions`;
+        
+        if (filteredTransactions.length === 0) {
+            tableBody.innerHTML = `
+                <tr>
+                    <td colspan="6" class="px-6 py-12 text-center text-gray-500">
+                        No transactions match your filters. Try changing your search criteria.
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+        
+        // Get current currency symbol
+        const currencySymbol = getCurrencySymbol();
+        
+        let html = '';
+        filteredTransactions.forEach(transaction => {
+            // Format date
+            let formattedDate = 'Unknown date';
+            try {
+                const date = new Date(transaction.date);
+                if (!isNaN(date.getTime())) {
+                    formattedDate = date.toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+                } else {
+                    formattedDate = transaction.date || 'Unknown date';
+                }
+            } catch (e) {
+                formattedDate = transaction.date || 'Unknown date';
             }
-        }
-        
-        function closeMobileCurrencyMenu() {
-            const overlay = document.getElementById('mobileCurrencyOverlay');
-            const menu = document.getElementById('mobileCurrencyMenu');
             
-            overlay.classList.remove('show');
-            menu.classList.remove('show');
-        }
-        
-        function populateCurrencyDropdown() {
-            const dropdown = document.getElementById('currencyDropdown');
-            const currentCurrency = getCurrentCurrency();
+            // Format amount with current currency symbol
+            const amount = parseFloat(transaction.amount) || 0;
+            const formattedAmount = `${currencySymbol}${Math.abs(amount).toFixed(2)}`;
             
-            dropdown.innerHTML = '';
-            
-            CURRENCIES.forEach(currency => {
-                const option = document.createElement('div');
-                option.className = `currency-option-dropdown ${currency.code === currentCurrency ? 'active' : ''}`;
-                option.onclick = () => selectCurrency(currency.code);
-                
-                option.innerHTML = `
-                    <span class="symbol">${currency.symbol}</span>
-                    <span class="code">${currency.code}</span>
-                    <span class="name">${currency.name}</span>
-                `;
-                
-                dropdown.appendChild(option);
-            });
-        }
-        
-        function populateMobileCurrencyDropdown() {
-            const optionsContainer = document.querySelector('.mobile-currency-options');
-            const currentCurrency = getCurrentCurrency();
-            
-            optionsContainer.innerHTML = '';
-            
-            CURRENCIES.forEach(currency => {
-                const option = document.createElement('div');
-                option.className = `mobile-currency-option ${currency.code === currentCurrency ? 'active' : ''}`;
-                option.onclick = () => {
-                    selectCurrency(currency.code);
-                    closeMobileCurrencyMenu();
-                };
-                
-                option.innerHTML = `
-                    <span class="symbol" style="font-size: 20px;">${currency.symbol}</span>
-                    <span class="code" style="font-weight: 600;">${currency.code}</span>
-                    <span class="name" style="margin-left: auto; color: #94a3b8;">${currency.name}</span>
-                `;
-                
-                optionsContainer.appendChild(option);
-            });
-        }
-        
-        function selectCurrency(currencyCode) {
-            localStorage.setItem(CURRENCY_PREFERENCE_KEY, currencyCode);
-            currentCurrency = currencyCode;
-            
-            // Update display
-            updateCurrencySymbols(currencyCode);
-            
-            // Close dropdowns
-            document.getElementById('currencyDropdown').classList.remove('show');
-            
-            // Update transaction display
-            if (filteredTransactions.length > 0) {
-                displayTransactions();
-                updateStats(allTransactions);
+            // Determine amount color based on type
+            const type = transaction.type?.toLowerCase() || '';
+            let amountClass = 'type-investment';
+            if (type.includes('deposit')) {
+                amountClass = 'type-deposit';
+            } else if (type.includes('withdrawal') || type.includes('withdraw')) {
+                amountClass = 'type-withdrawal';
+            } else if (type.includes('earning') || type.includes('commission')) {
+                amountClass = 'type-commission';
+            } else if (type.includes('investment')) {
+                amountClass = 'type-investment';
             }
-        }
+            
+            // Get status class
+            let statusClass = 'status-pending';
+            const status = transaction.status?.toLowerCase() || '';
+            if (status.includes('complete') || status.includes('success')) {
+                statusClass = 'status-completed';
+            } else if (status.includes('fail') || status.includes('error')) {
+                statusClass = 'status-failed';
+            } else if (status.includes('process')) {
+                statusClass = 'status-processing';
+            }
+            
+            // Get transaction type icon and formatted text
+            let typeIcon = '💳';
+            if (type.includes('deposit')) {
+                typeIcon = '📥';
+            } else if (type.includes('withdrawal') || type.includes('withdraw')) {
+                typeIcon = '📤';
+            } else if (type.includes('earning')) {
+                typeIcon = '💰';
+            } else if (type.includes('commission')) {
+                typeIcon = '🎁';
+            } else if (type.includes('investment')) {
+                typeIcon = '📈';
+            }
+            
+            // Format type text
+            let typeText = transaction.type || 'Transaction';
+            if (typeText) {
+                typeText = typeText.charAt(0).toUpperCase() + typeText.slice(1).toLowerCase();
+            }
+            
+            // Format method
+            let methodText = transaction.method || 'N/A';
+            if (methodText) {
+                methodText = methodText.charAt(0).toUpperCase() + methodText.slice(1).toLowerCase();
+            }
+            
+            // Format status text
+            let statusText = transaction.status || 'Pending';
+            if (statusText) {
+                statusText = statusText.charAt(0).toUpperCase() + statusText.slice(1).toLowerCase();
+            }
+            
+            html += `
+                <tr class="border-b border-gray-100 hover:bg-gray-50">
+                    <td class="px-6 py-4 text-sm text-gray-700 whitespace-nowrap">${formattedDate}</td>
+                    <td class="px-6 py-4 text-sm">
+                        <div class="flex items-center gap-2">
+                            <span class="text-lg">${typeIcon}</span>
+                            <span class="font-medium">${typeText}</span>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 text-sm font-semibold ${amountClass}">${formattedAmount}</td>
+                    <td class="px-6 py-4 text-sm text-gray-700">${methodText}</td>
+                    <td class="px-6 py-4 text-sm">
+                        <span class="${statusClass}">${statusText}</span>
+                    </td>
+                    <td class="px-6 py-4 text-sm text-gray-500 font-mono">${transaction.id}</td>
+                </tr>
+            `;
+        });
         
-        // Close dropdowns when clicking outside
-        document.addEventListener('click', function(event) {
-            const dropdown = document.getElementById('currencyDropdown');
-            if (dropdown && dropdown.classList.contains('show') && !event.target.closest('.currency-switcher')) {
-                dropdown.classList.remove('show');
+        tableBody.innerHTML = html;
+    }
+    
+    // Update statistics with correct currency symbol
+    function updateStats(transactions) {
+        // Get current currency symbol
+        const currencySymbol = getCurrencySymbol();
+        
+        let totalAmount = 0;
+        let totalDeposits = 0;
+        let totalWithdrawals = 0;
+        let totalEarnings = 0;
+        
+        transactions.forEach(transaction => {
+            const amount = parseFloat(transaction.amount) || 0;
+            const type = transaction.type?.toLowerCase() || '';
+            
+            totalAmount += Math.abs(amount);
+            
+            if (type.includes('deposit')) {
+                totalDeposits += amount;
+            } else if (type.includes('withdrawal') || type.includes('withdraw')) {
+                totalWithdrawals += Math.abs(amount);
+            } else if (type.includes('earning') || type.includes('commission') || type.includes('investment')) {
+                totalEarnings += amount;
             }
         });
         
-        // Mobile menu and sidebar functions
-        function toggleMobileMenu() {
-            const menu = document.getElementById('mobileMenu');
-            menu.classList.toggle('active');
-        }
+        document.getElementById("totalAmount").textContent = `${currencySymbol}${totalAmount.toFixed(2)}`;
+        document.getElementById("totalDeposits").textContent = `${currencySymbol}${totalDeposits.toFixed(2)}`;
+        document.getElementById("totalWithdrawals").textContent = `${currencySymbol}${totalWithdrawals.toFixed(2)}`;
+        document.getElementById("totalEarnings").textContent = `${currencySymbol}${totalEarnings.toFixed(2)}`;
+    }
+    
+    // Filter transactions based on search and filters
+    function filterTransactions() {
+        const searchInput = document.getElementById("searchInput").value.toLowerCase();
+        const typeFilter = document.getElementById("typeFilter").value;
+        const statusFilter = document.getElementById("statusFilter").value;
         
-        function closeMobileMenu() {
-            const menu = document.getElementById('mobileMenu');
-            if (menu) {
-                menu.classList.remove('active');
-            }
-        }
-        
-        function toggleSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            const overlay = document.getElementById('sidebarOverlay');
-            sidebar.classList.toggle('active');
-            overlay.classList.toggle('active');
-        }
-        
-        // Load user email and transactions
-        function loadTransactions() {
-            const userEmail = localStorage.getItem("v0trade_user_email");
+        filteredTransactions = allTransactions.filter(transaction => {
+            // Search filter
+            const matchesSearch = !searchInput || 
+                (transaction.id && transaction.id.toString().toLowerCase().includes(searchInput)) ||
+                (transaction.type && transaction.type.toLowerCase().includes(searchInput)) ||
+                (transaction.method && transaction.method.toLowerCase().includes(searchInput)) ||
+                (transaction.amount && transaction.amount.toString().toLowerCase().includes(searchInput));
             
-            if (!userEmail) {
-                window.location.href = "login.html";
-                return;
-            }
-            
-            document.getElementById("headerEmailDisplay").textContent = userEmail;
-            
-            // Initialize currency system
-            const currentCurrency = getCurrentCurrency();
-            updateCurrencySymbols(currentCurrency);
-            
-            // Show loading state
-            document.getElementById("loadingState").classList.remove("hidden");
-            document.getElementById("contentState").classList.add("hidden");
-            document.getElementById("errorState").classList.add("hidden");
-            
-            // Try to load from Baserow
-            fetchTransactionsFromBaserow(userEmail);
-        }
-        
-        // Fetch transactions from Baserow
-        async function fetchTransactionsFromBaserow(email, forceRefresh = false) {
-            try {
-                const now = Date.now();
-                const lastSync = localStorage.getItem(`${LAST_TRANSACTION_SYNC_KEY}_${email}`);
-                const cachedData = localStorage.getItem(`${TRANSACTIONS_DATA_KEY}_${email}`);
-                
-                // Check if we should use cached data or fetch new
-                if (!forceRefresh && cachedData && lastSync) {
-                    const timeSinceLastSync = now - parseInt(lastSync);
-                    
-                    if (timeSinceLastSync < TRANSACTIONS_SYNC_INTERVAL) {
-                        // Use cached data
-                        allTransactions = JSON.parse(cachedData);
-                        processAndDisplayTransactions();
-                        return;
-                    }
-                }
-                
-                // Fetch ALL transactions from Baserow
-                const url = `https://api.baserow.io/api/database/rows/table/${TRANSACTIONS_TABLE}/?user_field_names=true&size=200`;
-                
-                console.log("Fetching transactions from Baserow...");
-                
-                const res = await fetch(url, {
-                    headers: { Authorization: `Token ${API_TOKEN}` }
-                });
-                
-                if (!res.ok) {
-                    throw new Error(`API Error: ${res.status}`);
-                }
-                
-                const data = await res.json();
-                
-                if (!data.results || data.results.length === 0) {
-                    console.log("No transactions found in Baserow table");
-                    // Try to use cached data if available
-                    if (cachedData) {
-                        allTransactions = JSON.parse(cachedData);
-                    } else {
-                        allTransactions = [];
-                    }
-                } else {
-                    // Filter transactions by user email
-                    const userTransactions = data.results.filter(row => {
-                        const rowEmail = row["email"] || row["field_6394448"] || "";
-                        return rowEmail.toLowerCase() === email.toLowerCase();
-                    });
-                    
-                    console.log(`Found ${userTransactions.length} transactions for user ${email}`);
-                    
-                    // Process transactions data
-                    allTransactions = userTransactions.map(row => {
-                        const transaction = {
-                            id: row.id,
-                            email: row["email"] || row["field_6394448"] || "",
-                            amount: row["amount"] || row["field_6394449"] || "0.00",
-                            type: row["type"] || row["field_6394450"] || "",
-                            method: row["method"] || row["field_6394451"] || "",
-                            status: row["status"] || row["field_6394452"] || "",
-                            date: row["date"] || row["field_6394453"] || new Date().toISOString(),
-                            timestamp: 0
-                        };
-                        
-                        // Parse date to timestamp for sorting
-                        try {
-                            transaction.timestamp = new Date(transaction.date).getTime();
-                            if (isNaN(transaction.timestamp)) {
-                                transaction.timestamp = now;
-                            }
-                        } catch (e) {
-                            transaction.timestamp = now;
-                        }
-                        
-                        return transaction;
-                    });
-                    
-                    // Get existing cached transactions
-                    let combinedTransactions = [];
-                    if (cachedData && !forceRefresh) {
-                        const cachedTransactions = JSON.parse(cachedData);
-                        combinedTransactions = [...cachedTransactions];
-                    }
-                    
-                    // Add new transactions from Baserow
-                    allTransactions.forEach(newTransaction => {
-                        // Check if transaction already exists in cache
-                        const exists = combinedTransactions.some(t => t.id === newTransaction.id);
-                        if (!exists) {
-                            combinedTransactions.push(newTransaction);
-                        }
-                    });
-                    
-                    // Filter out transactions older than 90 days (extended for full view)
-                    const ninetyDaysAgo = now - (90 * 24 * 60 * 60 * 1000);
-                    allTransactions = combinedTransactions.filter(t => t.timestamp > ninetyDaysAgo);
-                    
-                    // Sort by date (newest first)
-                    allTransactions.sort((a, b) => b.timestamp - a.timestamp);
-                    
-                    // Save to localStorage
-                    localStorage.setItem(`${TRANSACTIONS_DATA_KEY}_${email}`, JSON.stringify(allTransactions));
-                    localStorage.setItem(`${LAST_TRANSACTION_SYNC_KEY}_${email}`, now.toString());
-                }
-                
-                processAndDisplayTransactions();
-                
-            } catch (err) {
-                console.error("TRANSACTIONS LOAD ERROR:", err);
-                
-                // Try to show cached data if available
-                const userEmail = localStorage.getItem("v0trade_user_email");
-                const cachedData = localStorage.getItem(`${TRANSACTIONS_DATA_KEY}_${userEmail}`);
-                
-                if (cachedData) {
-                    allTransactions = JSON.parse(cachedData);
-                    processAndDisplayTransactions();
-                } else {
-                    showError("Failed to load transactions. Please check your connection and try again.");
+            // Type filter
+            const transactionType = transaction.type?.toLowerCase() || '';
+            let matchesType = true;
+            if (typeFilter !== 'all') {
+                if (typeFilter === 'deposit') {
+                    matchesType = transactionType.includes('deposit');
+                } else if (typeFilter === 'withdrawal') {
+                    matchesType = transactionType.includes('withdrawal') || transactionType.includes('withdraw');
+                } else if (typeFilter === 'earning') {
+                    matchesType = transactionType.includes('earning');
+                } else if (typeFilter === 'commission') {
+                    matchesType = transactionType.includes('commission');
+                } else if (typeFilter === 'investment') {
+                    matchesType = transactionType.includes('investment');
                 }
             }
-        }
-        
-        // Process and display transactions
-        function processAndDisplayTransactions() {
-            // Hide loading state
-            document.getElementById("loadingState").classList.add("hidden");
             
-            if (allTransactions.length === 0) {
-                document.getElementById("contentState").classList.remove("hidden");
-                document.getElementById("noTransactionsMessage").classList.remove("hidden");
-                updateStats([]);
-                return;
+            // Status filter
+            const transactionStatus = transaction.status?.toLowerCase() || '';
+            let matchesStatus = true;
+            if (statusFilter !== 'all') {
+                if (statusFilter === 'completed') {
+                    matchesStatus = transactionStatus.includes('complete') || transactionStatus.includes('success');
+                } else if (statusFilter === 'pending') {
+                    matchesStatus = transactionStatus.includes('pending');
+                } else if (statusFilter === 'processing') {
+                    matchesStatus = transactionStatus.includes('process');
+                } else if (statusFilter === 'failed') {
+                    matchesStatus = transactionStatus.includes('fail') || transactionStatus.includes('error');
+                }
             }
             
-            document.getElementById("contentState").classList.remove("hidden");
-            document.getElementById("noTransactionsMessage").classList.add("hidden");
-            
-            // Initial filter (show all)
-            filteredTransactions = [...allTransactions];
-            
-            // Sort transactions
-            sortTransactions();
-            
-            // Update statistics
-            updateStats(allTransactions);
-            
-            // Display transactions
-            displayTransactions();
-        }
+            return matchesSearch && matchesType && matchesStatus;
+        });
         
-        // Display transactions in the table
-        function displayTransactions() {
-            const tableBody = document.getElementById("transactionsTableBody");
-            const transactionCount = document.getElementById("transactionCount");
-            const currencySymbol = getCurrentCurrencySymbol();
-            
-            // Update count
-            transactionCount.textContent = `Showing ${filteredTransactions.length} of ${allTransactions.length} transactions`;
-            
-            if (filteredTransactions.length === 0) {
-                tableBody.innerHTML = `
-                    <tr>
-                        <td colspan="6" class="px-6 py-12 text-center text-gray-500">
-                            No transactions match your filters. Try changing your search criteria.
-                        </td>
-                    </tr>
-                `;
-                return;
-            }
-            
-            let html = '';
-            filteredTransactions.forEach(transaction => {
-                // Format date
-                let formattedDate = 'Unknown date';
-                try {
-                    const date = new Date(transaction.date);
-                    if (!isNaN(date.getTime())) {
-                        formattedDate = date.toLocaleDateString('en-US', {
-                            year: 'numeric',
-                            month: 'short',
-                            day: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                        });
-                    } else {
-                        formattedDate = transaction.date || 'Unknown date';
-                    }
-                } catch (e) {
-                    formattedDate = transaction.date || 'Unknown date';
-                }
-                
-                // Format amount with current currency
-                const amount = parseFloat(transaction.amount) || 0;
-                const currentCurrency = getCurrentCurrency();
-                const convertedAmount = convertAmount(Math.abs(amount), 'USD', currentCurrency);
-                const formattedAmount = `${currencySymbol}${convertedAmount.toFixed(2)}`;
-                
-                // Determine amount color based on type
-                const type = transaction.type?.toLowerCase() || '';
-                let amountClass = 'type-investment';
-                if (type.includes('deposit')) {
-                    amountClass = 'type-deposit';
-                } else if (type.includes('withdrawal') || type.includes('withdraw')) {
-                    amountClass = 'type-withdrawal';
-                } else if (type.includes('earning') || type.includes('commission')) {
-                    amountClass = 'type-commission';
-                } else if (type.includes('investment')) {
-                    amountClass = 'type-investment';
-                }
-                
-                // Get status class
-                let statusClass = 'status-pending';
-                const status = transaction.status?.toLowerCase() || '';
-                if (status.includes('complete') || status.includes('success')) {
-                    statusClass = 'status-completed';
-                } else if (status.includes('fail') || status.includes('error')) {
-                    statusClass = 'status-failed';
-                } else if (status.includes('process')) {
-                    statusClass = 'status-processing';
-                }
-                
-                // Get transaction type icon and formatted text
-                let typeIcon = '💳';
-                if (type.includes('deposit')) {
-                    typeIcon = '📥';
-                } else if (type.includes('withdrawal') || type.includes('withdraw')) {
-                    typeIcon = '📤';
-                } else if (type.includes('earning')) {
-                    typeIcon = '💰';
-                } else if (type.includes('commission')) {
-                    typeIcon = '🎁';
-                } else if (type.includes('investment')) {
-                    typeIcon = '📈';
-                }
-                
-                // Format type text
-                let typeText = transaction.type || 'Transaction';
-                if (typeText) {
-                    typeText = typeText.charAt(0).toUpperCase() + typeText.slice(1).toLowerCase();
-                }
-                
-                // Format method
-                let methodText = transaction.method || 'N/A';
-                if (methodText) {
-                    methodText = methodText.charAt(0).toUpperCase() + methodText.slice(1).toLowerCase();
-                }
-                
-                // Format status text
-                let statusText = transaction.status || 'Pending';
-                if (statusText) {
-                    statusText = statusText.charAt(0).toUpperCase() + statusText.slice(1).toLowerCase();
-                }
-                
-                html += `
-                    <tr class="border-b border-gray-100 hover:bg-gray-50">
-                        <td class="px-6 py-4 text-sm text-gray-700 whitespace-nowrap">${formattedDate}</td>
-                        <td class="px-6 py-4 text-sm">
-                            <div class="flex items-center gap-2">
-                                <span class="text-lg">${typeIcon}</span>
-                                <span class="font-medium">${typeText}</span>
-                            </div>
-                        </td>
-                        <td class="px-6 py-4 text-sm font-semibold ${amountClass}" data-amount="${amount}">${formattedAmount}</td>
-                        <td class="px-6 py-4 text-sm text-gray-700">${methodText}</td>
-                        <td class="px-6 py-4 text-sm">
-                            <span class="${statusClass}">${statusText}</span>
-                        </td>
-                        <td class="px-6 py-4 text-sm text-gray-500 font-mono">${transaction.id}</td>
-                    </tr>
-                `;
-            });
-            
-            tableBody.innerHTML = html;
-        }
-        
-        // Update statistics
-        function updateStats(transactions) {
-            let totalAmount = 0;
-            let totalDeposits = 0;
-            let totalWithdrawals = 0;
-            let totalEarnings = 0;
-            const currencySymbol = getCurrentCurrencySymbol();
-            const currentCurrency = getCurrentCurrency();
-            
-            transactions.forEach(transaction => {
-                const amount = parseFloat(transaction.amount) || 0;
-                const type = transaction.type?.toLowerCase() || '';
-                
-                totalAmount += Math.abs(amount);
-                
-                if (type.includes('deposit')) {
-                    totalDeposits += amount;
-                } else if (type.includes('withdrawal') || type.includes('withdraw')) {
-                    totalWithdrawals += Math.abs(amount);
-                } else if (type.includes('earning') || type.includes('commission') || type.includes('investment')) {
-                    totalEarnings += amount;
-                }
-            });
-            
-            // Convert amounts to selected currency
-            const convertedTotalAmount = convertAmount(totalAmount, 'USD', currentCurrency);
-            const convertedTotalDeposits = convertAmount(totalDeposits, 'USD', currentCurrency);
-            const convertedTotalWithdrawals = convertAmount(totalWithdrawals, 'USD', currentCurrency);
-            const convertedTotalEarnings = convertAmount(totalEarnings, 'USD', currentCurrency);
-            
-            // Update with data attributes for currency conversion
-            const totalAmountEl = document.getElementById("totalAmount");
-            totalAmountEl.innerHTML = `<span class="currency-symbol">${currencySymbol}</span>${convertedTotalAmount.toFixed(2)}`;
-            totalAmountEl.setAttribute('data-amount', totalAmount);
-            
-            const totalDepositsEl = document.getElementById("totalDeposits");
-            totalDepositsEl.innerHTML = `<span class="currency-symbol">${currencySymbol}</span>${convertedTotalDeposits.toFixed(2)}`;
-            totalDepositsEl.setAttribute('data-amount', totalDeposits);
-            
-            const totalWithdrawalsEl = document.getElementById("totalWithdrawals");
-            totalWithdrawalsEl.innerHTML = `<span class="currency-symbol">${currencySymbol}</span>${convertedTotalWithdrawals.toFixed(2)}`;
-            totalWithdrawalsEl.setAttribute('data-amount', totalWithdrawals);
-            
-            const totalEarningsEl = document.getElementById("totalEarnings");
-            totalEarningsEl.innerHTML = `<span class="currency-symbol">${currencySymbol}</span>${convertedTotalEarnings.toFixed(2)}`;
-            totalEarningsEl.setAttribute('data-amount', totalEarnings);
-        }
-        
-        // Filter transactions based on search and filters
-        function filterTransactions() {
-            const searchInput = document.getElementById("searchInput").value.toLowerCase();
-            const typeFilter = document.getElementById("typeFilter").value;
-            const statusFilter = document.getElementById("statusFilter").value;
-            
-            filteredTransactions = allTransactions.filter(transaction => {
-                // Search filter
-                const matchesSearch = !searchInput || 
-                    (transaction.id && transaction.id.toString().toLowerCase().includes(searchInput)) ||
-                    (transaction.type && transaction.type.toLowerCase().includes(searchInput)) ||
-                    (transaction.method && transaction.method.toLowerCase().includes(searchInput)) ||
-                    (transaction.amount && transaction.amount.toString().toLowerCase().includes(searchInput));
-                
-                // Type filter
-                const transactionType = transaction.type?.toLowerCase() || '';
-                let matchesType = true;
-                if (typeFilter !== 'all') {
-                    if (typeFilter === 'deposit') {
-                        matchesType = transactionType.includes('deposit');
-                    } else if (typeFilter === 'withdrawal') {
-                        matchesType = transactionType.includes('withdrawal') || transactionType.includes('withdraw');
-                    } else if (typeFilter === 'earning') {
-                        matchesType = transactionType.includes('earning');
-                    } else if (typeFilter === 'commission') {
-                        matchesType = transactionType.includes('commission');
-                    } else if (typeFilter === 'investment') {
-                        matchesType = transactionType.includes('investment');
-                    }
-                }
-                
-                // Status filter
-                const transactionStatus = transaction.status?.toLowerCase() || '';
-                let matchesStatus = true;
-                if (statusFilter !== 'all') {
-                    if (statusFilter === 'completed') {
-                        matchesStatus = transactionStatus.includes('complete') || transactionStatus.includes('success');
-                    } else if (statusFilter === 'pending') {
-                        matchesStatus = transactionStatus.includes('pending');
-                    } else if (statusFilter === 'processing') {
-                        matchesStatus = transactionStatus.includes('process');
-                    } else if (statusFilter === 'failed') {
-                        matchesStatus = transactionStatus.includes('fail') || transactionStatus.includes('error');
-                    }
-                }
-                
-                return matchesSearch && matchesType && matchesStatus;
-            });
-            
-            // Re-sort filtered transactions
-            sortTransactions();
-            displayTransactions();
-        }
-        
-        // Sort table by field
-        function sortTable(field) {
-            if (currentSort.field === field) {
-                // Toggle direction
-                currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
-            } else {
-                // New field, default to descending
-                currentSort.field = field;
-                currentSort.direction = 'desc';
-            }
-            
-            // Update sort icons
-            updateSortIcons();
-            
-            // Sort transactions
-            sortTransactions();
-            displayTransactions();
+        // Re-sort filtered transactions
+        sortTransactions();
+        displayTransactions();
+    }
+    
+    // Sort table by field
+    function sortTable(field) {
+        if (currentSort.field === field) {
+            // Toggle direction
+            currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+        } else {
+            // New field, default to descending
+            currentSort.field = field;
+            currentSort.direction = 'desc';
         }
         
         // Update sort icons
-        function updateSortIcons() {
-            // Reset all icons
-            ['date', 'type', 'amount', 'status'].forEach(field => {
-                document.getElementById(`${field}SortIcon`).textContent = '';
-            });
-            
-            // Set current sort icon
-            const icon = currentSort.direction === 'asc' ? '↑' : '↓';
-            document.getElementById(`${currentSort.field}SortIcon`).textContent = icon;
-        }
+        updateSortIcons();
         
-        // Sort transactions based on current sort settings
-        function sortTransactions() {
-            filteredTransactions.sort((a, b) => {
-                let aValue, bValue;
-                
-                switch(currentSort.field) {
-                    case 'date':
-                        aValue = a.timestamp;
-                        bValue = b.timestamp;
-                        break;
-                    case 'type':
-                        aValue = a.type?.toLowerCase() || '';
-                        bValue = b.type?.toLowerCase() || '';
-                        break;
-                    case 'amount':
-                        aValue = parseFloat(a.amount) || 0;
-                        bValue = parseFloat(b.amount) || 0;
-                        break;
-                    case 'status':
-                        aValue = a.status?.toLowerCase() || '';
-                        bValue = b.status?.toLowerCase() || '';
-                        break;
-                    default:
-                        aValue = a.timestamp;
-                        bValue = b.timestamp;
-                }
-                
-                if (currentSort.direction === 'asc') {
-                    return aValue > bValue ? 1 : -1;
-                } else {
-                    return aValue < bValue ? 1 : -1;
-                }
-            });
-        }
+        // Sort transactions
+        sortTransactions();
+        displayTransactions();
+    }
+    
+    // Update sort icons
+    function updateSortIcons() {
+        // Reset all icons
+        ['date', 'type', 'amount', 'status'].forEach(field => {
+            document.getElementById(`${field}SortIcon`).textContent = '';
+        });
         
-        // Refresh transactions
-        function refreshTransactions() {
-            const userEmail = localStorage.getItem("v0trade_user_email");
-            if (!userEmail) return;
+        // Set current sort icon
+        const icon = currentSort.direction === 'asc' ? '↑' : '↓';
+        document.getElementById(`${currentSort.field}SortIcon`).textContent = icon;
+    }
+    
+    // Sort transactions based on current sort settings
+    function sortTransactions() {
+        filteredTransactions.sort((a, b) => {
+            let aValue, bValue;
             
-            // Show loading state
-            document.getElementById("loadingState").classList.remove("hidden");
-            document.getElementById("contentState").classList.add("hidden");
-            document.getElementById("errorState").classList.add("hidden");
-            
-            // Force refresh from Baserow
-            fetchTransactionsFromBaserow(userEmail, true);
-            
-            // Show temporary success indicator
-            setTimeout(() => {
-                const refreshBtn = document.querySelector('button[onclick="refreshTransactions()"]');
-                const originalText = refreshBtn.innerHTML;
-                refreshBtn.innerHTML = `
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                    </svg>
-                    Refreshed
-                `;
-                refreshBtn.classList.remove('bg-orange-500', 'hover:bg-orange-600');
-                refreshBtn.classList.add('bg-green-500', 'hover:bg-green-600');
-                
-                setTimeout(() => {
-                    refreshBtn.innerHTML = originalText;
-                    refreshBtn.classList.remove('bg-green-500', 'hover:bg-green-600');
-                    refreshBtn.classList.add('bg-orange-500', 'hover:bg-orange-600');
-                }, 2000);
-            }, 1000);
-        }
-        
-        // Export transactions to CSV
-        function exportTransactions() {
-            if (filteredTransactions.length === 0) {
-                alert("No transactions to export.");
-                return;
+            switch(currentSort.field) {
+                case 'date':
+                    aValue = a.timestamp;
+                    bValue = b.timestamp;
+                    break;
+                case 'type':
+                    aValue = a.type?.toLowerCase() || '';
+                    bValue = b.type?.toLowerCase() || '';
+                    break;
+                case 'amount':
+                    aValue = parseFloat(a.amount) || 0;
+                    bValue = parseFloat(b.amount) || 0;
+                    break;
+                case 'status':
+                    aValue = a.status?.toLowerCase() || '';
+                    bValue = b.status?.toLowerCase() || '';
+                    break;
+                default:
+                    aValue = a.timestamp;
+                    bValue = b.timestamp;
             }
             
-            const currencySymbol = getCurrentCurrencySymbol();
-            const currentCurrency = getCurrentCurrency();
+            if (currentSort.direction === 'asc') {
+                return aValue > bValue ? 1 : -1;
+            } else {
+                return aValue < bValue ? 1 : -1;
+            }
+        });
+    }
+    
+    // Refresh transactions
+    function refreshTransactions() {
+        const userEmail = localStorage.getItem("v0trade_user_email");
+        if (!userEmail) return;
+        
+        // Show loading state
+        document.getElementById("loadingState").classList.remove("hidden");
+        document.getElementById("contentState").classList.add("hidden");
+        document.getElementById("errorState").classList.add("hidden");
+        
+        // Force refresh from Baserow
+        fetchTransactionsFromBaserow(userEmail, true);
+        
+        // Show temporary success indicator
+        setTimeout(() => {
+            const refreshBtn = document.querySelector('button[onclick="refreshTransactions()"]');
+            const originalText = refreshBtn.innerHTML;
+            refreshBtn.innerHTML = `
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                </svg>
+                Refreshed
+            `;
+            refreshBtn.classList.remove('bg-orange-500', 'hover:bg-orange-600');
+            refreshBtn.classList.add('bg-green-500', 'hover:bg-green-600');
             
-            // Create CSV content
-            let csv = "Date,Type,Amount,Method,Status,ID\n";
-            
-            filteredTransactions.forEach(transaction => {
-                const date = new Date(transaction.date).toLocaleDateString();
-                const type = transaction.type || '';
-                const amount = parseFloat(transaction.amount) || 0;
-                const convertedAmount = convertAmount(Math.abs(amount), 'USD', currentCurrency);
-                const method = transaction.method || '';
-                const status = transaction.status || '';
-                const id = transaction.id;
-                
-                csv += `"${date}","${type}","${currencySymbol}${convertedAmount.toFixed(2)}","${method}","${status}","${id}"\n`;
-            });
-            
-            // Create download link
-            const blob = new Blob([csv], { type: 'text/csv' });
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `v0trade-transactions-${new Date().toISOString().split('T')[0]}-${currentCurrency}.csv`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            window.URL.revokeObjectURL(url);
+            setTimeout(() => {
+                refreshBtn.innerHTML = originalText;
+                refreshBtn.classList.remove('bg-green-500', 'hover:bg-green-600');
+                refreshBtn.classList.add('bg-orange-500', 'hover:bg-orange-600');
+            }, 2000);
+        }, 1000);
+    }
+    
+    // Export transactions to CSV with correct currency symbol
+    function exportTransactions() {
+        if (filteredTransactions.length === 0) {
+            alert("No transactions to export.");
+            return;
         }
         
-        // Show error message
-        function showError(message) {
-            document.getElementById("loadingState").classList.add("hidden");
-            document.getElementById("contentState").classList.add("hidden");
-            document.getElementById("errorState").classList.remove("hidden");
-            document.getElementById("errorMessage").textContent = message;
-        }
-    </script>
-
+        // Get current currency symbol
+        const currencySymbol = getCurrencySymbol();
+        
+        // Create CSV content
+        let csv = "Date,Type,Amount,Method,Status,ID\n";
+        
+        filteredTransactions.forEach(transaction => {
+            const date = new Date(transaction.date).toLocaleDateString();
+            const type = transaction.type || '';
+            const amount = parseFloat(transaction.amount) || 0;
+            const method = transaction.method || '';
+            const status = transaction.status || '';
+            const id = transaction.id;
+            
+            csv += `"${date}","${type}","${currencySymbol}${amount}","${method}","${status}","${id}"\n`;
+        });
+        
+        // Create download link
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `v0trade-transactions-${new Date().toISOString().split('T')[0]}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+    }
+    
+    // Show error message
+    function showError(message) {
+        document.getElementById("loadingState").classList.add("hidden");
+        document.getElementById("contentState").classList.add("hidden");
+        document.getElementById("errorState").classList.remove("hidden");
+        document.getElementById("errorMessage").textContent = message;
+    }
+    
+    // Mobile menu and sidebar functions
+    function toggleMobileMenu() {
+        const menu = document.getElementById('mobileMenu');
+        menu.classList.toggle('active');
+    }
+    
+    function toggleSidebar() {
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('sidebarOverlay');
+        sidebar.classList.toggle('active');
+        overlay.classList.toggle('active');
+    }
+</script>
 </body>
 </html>
