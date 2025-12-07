@@ -716,14 +716,8 @@
                         <!-- Investments will be loaded here -->
                         <div class="investment-card p-6 text-center">
                             <div class="text-5xl mb-4">📈</div>
-                            <h3 class="text-xl font-semibold text-white mb-3">No Active Investments</h3>
-                            <p class="text-gray-400 mb-6">Start investing to track your portfolio performance here</p>
-                            <div class="flex gap-4 justify-center flex-wrap">
-                                <a href="cryptocurrencies.html" class="text-sm text-orange-400 hover:text-orange-300">Invest in Crypto</a>
-                                <a href="stocks.html" class="text-sm text-blue-400 hover:text-blue-300">Invest in Stocks</a>
-                                <a href="etfs.html" class="text-sm text-green-400 hover:text-green-300">Invest in ETFs</a>
-                                <a href="precious-metals.html" class="text-sm text-yellow-400 hover:text-yellow-300">Invest in Metals</a>
-                            </div>
+                            <h3 class="text-xl font-semibold text-white mb-3">Loading Investments...</h3>
+                            <p class="text-gray-400 mb-6">Please wait while we load your investment data</p>
                         </div>
                     </div>
                 </div>
@@ -772,13 +766,14 @@
         { code: 'CAD', symbol: 'C$', name: 'Canadian Dollar' }
     ];
     
-    // Keys for localStorage
+    // Storage keys
     const TRANSACTIONS_DATA_KEY = "v0trade_transactions_data";
     const INVESTMENT_CACHE_KEY = "v0trade_investment_tracks_cache";
     const INVESTMENT_CACHE_EXPIRY = 24 * 60 * 60 * 1000; // 24 hours cache
     
     // Investment plan configurations
     const INVESTMENT_PLANS = {
+        // Cryptocurrencies
         'bitcoin': { 
             type: 'crypto', 
             asset: 'Bitcoin (BTC)', 
@@ -963,6 +958,7 @@
     }
     
     function convertAmount(amount, fromCurrency, toCurrency) {
+        // Simple conversion rates
         const rates = {
             'USD': 1,
             'EUR': 0.92,
@@ -997,6 +993,7 @@
                        el.id === 'bestPerformerReturns') {
                 el.innerHTML = `<span class="currency-symbol">${currency.symbol}</span>${convertedAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
             } else {
+                // For investment cards and table cells
                 const currentText = el.textContent;
                 if (currentText.startsWith('$') || currentText.startsWith('€') || 
                     currentText.startsWith('£') || currentText.startsWith('R') ||
@@ -1039,7 +1036,7 @@
         }
     }
     
-    // MAIN LOAD FUNCTION - Called immediately when page loads
+    // AUTO-LOAD DATA ON PAGE LOAD
     window.addEventListener('DOMContentLoaded', function() {
         const userEmail = localStorage.getItem("v0trade_user_email");
         
@@ -1059,7 +1056,10 @@
         const currentCurrency = getCurrentCurrency();
         updateCurrencySymbols(currentCurrency);
         
-        // Auto-load investment data IMMEDIATELY on page visit
+        // Initialize empty charts
+        initializeEmptyCharts();
+        
+        // Auto-load investment data immediately
         loadInvestmentData(userEmail);
         
         // Close mobile menu when clicking outside
@@ -1116,25 +1116,43 @@
         }
     }
 
+    // MAIN FUNCTION TO LOAD INVESTMENT DATA
     function loadInvestmentData(email) {
         try {
-            console.log("Loading investment data for:", email);
+            console.log("Auto-loading investment data for:", email);
             
             // Show loading state
-            showLoadingState();
+            const container = document.getElementById('investmentContainer');
+            if (container) {
+                container.innerHTML = `
+                    <div class="investment-card p-6 text-center">
+                        <div class="flex flex-col items-center justify-center">
+                            <svg class="animate-spin h-12 w-12 text-purple-500 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            <p class="text-gray-400">Loading your investment data...</p>
+                        </div>
+                    </div>
+                `;
+            }
             
-            // Check for cached investment data first for INSTANT display
+            // Check for cached investment data first
             const cachedData = getCachedInvestmentData(email);
             if (cachedData) {
                 console.log("Using cached investment data for instant display");
-                // Use cached data for INSTANT display
+                // Use cached data for instant display
                 displayInvestments(cachedData.processedInvestments);
                 displayInvestmentTransactions(cachedData.investmentTransactions);
                 updateInvestmentStats(cachedData.processedInvestments);
                 updateChartsWithData(cachedData.processedInvestments);
+                
+                // Still load fresh data in background
+                setTimeout(() => loadFreshInvestmentData(email), 500);
+                return;
             }
             
-            // ALWAYS load fresh data from localStorage
+            // No cache, load fresh data immediately
             loadFreshInvestmentData(email);
             
         } catch (err) {
@@ -1143,24 +1161,9 @@
         }
     }
     
-    function showLoadingState() {
-        const container = document.getElementById('investmentContainer');
-        container.innerHTML = `
-            <div class="investment-card p-6 text-center">
-                <div class="flex flex-col items-center justify-center">
-                    <svg class="animate-spin h-12 w-12 text-purple-500 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    <p class="text-gray-400">Loading investment data...</p>
-                </div>
-            </div>
-        `;
-    }
-    
     function loadFreshInvestmentData(email) {
         try {
-            console.log("Loading FRESH investment data from localStorage for:", email);
+            console.log("Loading fresh investment data for:", email);
             
             // Get cached transactions from localStorage
             const cachedData = localStorage.getItem(`${TRANSACTIONS_DATA_KEY}_${email}`);
@@ -1172,19 +1175,23 @@
             }
             
             const allTransactions = JSON.parse(cachedData);
-            console.log("Total transactions found in localStorage:", allTransactions.length);
+            console.log("Total transactions found in cache:", allTransactions.length);
             
             if (allTransactions.length === 0) {
                 displayNoInvestments();
                 return;
             }
             
-            // Filter to get ONLY investment transactions
+            // Filter to get ONLY investment transactions (Type contains "Investment" or investment keywords)
             const investmentTransactions = allTransactions.filter(transaction => {
                 const type = (transaction.type || '').toLowerCase();
                 const method = (transaction.method || '').toLowerCase();
+                const amount = parseFloat(transaction.amount) || 0;
                 
-                // Check if it's an investment transaction
+                // Skip if no amount
+                if (amount <= 0) return false;
+                
+                // Check if it's an investment transaction based on type/method
                 const isInvestment = type.includes('investment') || 
                                     method.includes('investment') ||
                                     type.includes('invest') ||
@@ -1203,7 +1210,7 @@
                 return isInvestment || hasInvestmentKeyword;
             });
             
-            console.log("Filtered investment transactions from localStorage:", investmentTransactions.length);
+            console.log("Filtered investment transactions found:", investmentTransactions.length);
             
             if (investmentTransactions.length === 0) {
                 displayNoInvestments();
@@ -1216,19 +1223,19 @@
             // Calculate investment stats
             const investmentStats = calculateInvestmentStats(processedInvestments);
             
-            // Cache the data for future instant loading
+            // Cache the data
             cacheInvestmentData(email, investmentStats, investmentTransactions, processedInvestments);
             
-            // Display investments (REAL DATA)
+            // Display investments
             displayInvestments(processedInvestments);
             
-            // Display transactions (REAL DATA)
+            // Display transactions
             displayInvestmentTransactions(investmentTransactions);
             
-            // Update summary statistics (REAL DATA)
+            // Update summary statistics
             updateInvestmentStats(processedInvestments);
             
-            // Initialize charts with REAL DATA
+            // Initialize charts with real data
             updateChartsWithData(processedInvestments);
             
         } catch (err) {
@@ -1314,6 +1321,7 @@
     }
     
     function parseROIFromMethod(method, planName) {
+        // ROI based on plan name
         const roiMap = {
             '1 Hour Plan': 20,
             '5 Hours Plan': 30,
@@ -1340,6 +1348,7 @@
             let transactionDate;
             try {
                 if (transaction.date) {
+                    // Try to parse date in format "Month Day, Year" like "December 12, 2025"
                     const dateStr = transaction.date.replace(/,/g, '');
                     transactionDate = new Date(dateStr);
                     
@@ -1531,10 +1540,6 @@
                     }
                 }
             }
-            
-            // Calculate daily return (for display purposes)
-            const totalHours = inv.duration.unit === 'hours' ? inv.duration.duration : inv.duration.duration * 24;
-            const dailyReturn = totalHours > 0 ? (inv.returns / totalHours) * 24 : 0;
             
             investmentCard.innerHTML = `
                 <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -1774,6 +1779,7 @@
             </tr>
         `;
         
+        // Show empty charts instead of fake data
         initializeEmptyCharts();
     }
     
@@ -1784,15 +1790,15 @@
         
         const currencySymbol = getCurrentCurrencySymbol();
         
-        // Empty performance chart
+        // Empty performance chart - Shows no data
         const performanceCtx = document.getElementById('performanceChart').getContext('2d');
         performanceChart = new Chart(performanceCtx, {
             type: 'line',
             data: {
-                labels: ['Day 1', 'Day 2', 'Day 3', 'Day 4', 'Day 5', 'Day 6', 'Day 7'],
+                labels: [],
                 datasets: [{
                     label: 'Portfolio Value',
-                    data: [1000, 1050, 1100, 1150, 1200, 1250, 1300],
+                    data: [],
                     borderColor: '#8b5cf6',
                     backgroundColor: 'rgba(139, 92, 246, 0.1)',
                     borderWidth: 2,
@@ -1814,7 +1820,15 @@
                     }
                 },
                 scales: {
-                    x: { grid: { color: 'rgba(255, 255, 255, 0.1)' }, ticks: { color: '#9ca3af' } },
+                    x: { 
+                        grid: { color: 'rgba(255, 255, 255, 0.1)' }, 
+                        ticks: { color: '#9ca3af' },
+                        title: {
+                            display: true,
+                            text: 'No investment data',
+                            color: '#6b7280'
+                        }
+                    },
                     y: { 
                         grid: { color: 'rgba(255, 255, 255, 0.1)' },
                         ticks: { 
@@ -1828,15 +1842,15 @@
             }
         });
         
-        // Empty distribution chart
+        // Empty distribution chart - Shows no data
         const distributionCtx = document.getElementById('distributionChart').getContext('2d');
         distributionChart = new Chart(distributionCtx, {
             type: 'doughnut',
             data: {
-                labels: ['Crypto', 'Stocks', 'ETFs', 'Metals'],
+                labels: ['No investments'],
                 datasets: [{
-                    data: [25, 25, 25, 25],
-                    backgroundColor: ['#f59e0b', '#3b82f6', '#10b981', '#fbbf24'],
+                    data: [100],
+                    backgroundColor: ['#6b7280'],
                     borderWidth: 0
                 }]
             },
@@ -1844,11 +1858,27 @@
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
-                    legend: { position: 'right', labels: { color: '#9ca3af', padding: 20 } },
+                    legend: { 
+                        position: 'right', 
+                        labels: { 
+                            color: '#9ca3af', 
+                            padding: 20,
+                            generateLabels: function(chart) {
+                                return [{
+                                    text: 'No investments yet',
+                                    fillStyle: '#6b7280',
+                                    strokeStyle: '#6b7280',
+                                    lineWidth: 0,
+                                    hidden: false,
+                                    index: 0
+                                }];
+                            }
+                        } 
+                    },
                     tooltip: {
                         callbacks: {
                             label: function(context) {
-                                return `${context.label}: ${context.raw}%`;
+                                return 'Start investing to see data';
                             }
                         }
                     }
@@ -1856,23 +1886,15 @@
             }
         });
         
-        // Empty candlestick chart
+        // Empty candlestick chart - Shows no data
         const candlestickCtx = document.getElementById('candlestickChart').getContext('2d');
         candlestickChart = new Chart(candlestickCtx, {
             type: 'candlestick',
             data: {
-                labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                labels: [],
                 datasets: [{
                     label: 'Market Index',
-                    data: [
-                        { o: 100, h: 105, l: 95, c: 100 },
-                        { o: 100, h: 105, l: 95, c: 100 },
-                        { o: 100, h: 105, l: 95, c: 100 },
-                        { o: 100, h: 105, l: 95, c: 100 },
-                        { o: 100, h: 105, l: 95, c: 100 },
-                        { o: 100, h: 105, l: 95, c: 100 },
-                        { o: 100, h: 105, l: 95, c: 100 }
-                    ],
+                    data: [],
                     color: { up: '#10b981', down: '#ef4444', unchanged: '#6b7280' }
                 }]
             },
@@ -1880,7 +1902,15 @@
                 responsive: true,
                 maintainAspectRatio: false,
                 scales: {
-                    x: { grid: { color: 'rgba(255, 255, 255, 0.1)' }, ticks: { color: '#9ca3af' } },
+                    x: { 
+                        grid: { color: 'rgba(255, 255, 255, 0.1)' }, 
+                        ticks: { color: '#9ca3af' },
+                        title: {
+                            display: true,
+                            text: 'No market data available',
+                            color: '#6b7280'
+                        }
+                    },
                     y: { 
                         grid: { color: 'rgba(255, 255, 255, 0.1)' },
                         ticks: { 
@@ -1902,28 +1932,41 @@
         const currencySymbol = getCurrentCurrencySymbol();
         const stats = calculateInvestmentStats(processedInvestments);
         
-        // Update performance chart with projection
+        // Only update charts if we have real data
+        if (processedInvestments.length === 0) {
+            initializeEmptyCharts();
+            return;
+        }
+        
+        // Update performance chart with real data timeline
         const performanceCtx = document.getElementById('performanceChart').getContext('2d');
         
-        // Create 7-day projection based on current portfolio value
-        const labels = [];
-        const data = [];
-        const baseValue = stats.portfolioValue;
+        // Create timeline based on actual investment dates
+        const timelineData = [];
+        const timelineLabels = [];
         
-        for (let i = 0; i < 7; i++) {
-            labels.push(`Day ${i + 1}`);
-            // Project 2% daily growth
-            const projectedValue = baseValue * Math.pow(1.02, i);
-            data.push(Math.round(projectedValue));
-        }
+        // Sort investments by date
+        const sortedInvestments = [...processedInvestments].sort((a, b) => a.startDate - b.startDate);
+        
+        // Create timeline points
+        let runningTotal = 0;
+        sortedInvestments.forEach((inv, index) => {
+            runningTotal += inv.amount;
+            timelineLabels.push(`Inv ${index + 1}`);
+            timelineData.push(runningTotal);
+        });
+        
+        // Add current total
+        timelineLabels.push('Now');
+        timelineData.push(stats.portfolioValue);
         
         performanceChart = new Chart(performanceCtx, {
             type: 'line',
             data: {
-                labels: labels,
+                labels: timelineLabels,
                 datasets: [{
                     label: 'Portfolio Value',
-                    data: data,
+                    data: timelineData,
                     borderColor: '#8b5cf6',
                     backgroundColor: 'rgba(139, 92, 246, 0.1)',
                     borderWidth: 2,
@@ -1978,12 +2021,6 @@
             }
         }
         
-        // If no data, show empty chart
-        if (typeLabels.length === 0) {
-            typeLabels.push('Crypto', 'Stocks', 'ETFs', 'Metals');
-            typeValues.push(25, 25, 25, 25);
-        }
-        
         distributionChart = new Chart(distributionCtx, {
             type: 'doughnut',
             data: {
@@ -2034,7 +2071,7 @@
             </div>
         `;
         
-        // Clear cache and reload
+        // Clear cache and reload fresh data
         localStorage.removeItem(`${INVESTMENT_CACHE_KEY}_${userEmail}`);
         
         setTimeout(() => {
@@ -2083,22 +2120,26 @@
         }
     }
     
-    // Auto-refresh when returning to the page
+    // AUTO-REFRESH WHEN PAGE GAINS FOCUS
     window.addEventListener('focus', () => {
         const userEmail = localStorage.getItem("v0trade_user_email");
         if (userEmail) {
-            console.log("Page focused, refreshing investment data...");
-            loadInvestmentData(userEmail);
+            console.log("Page focused, auto-refreshing investment data...");
+            // Clear cache and load fresh data
+            localStorage.removeItem(`${INVESTMENT_CACHE_KEY}_${userEmail}`);
+            loadFreshInvestmentData(userEmail);
         }
     });
     
-    // Load data when page becomes visible
+    // AUTO-REFRESH WHEN VISIBILITY CHANGES
     document.addEventListener('visibilitychange', () => {
         if (!document.hidden) {
             const userEmail = localStorage.getItem("v0trade_user_email");
             if (userEmail) {
-                console.log("Page visible, refreshing investment data...");
-                loadInvestmentData(userEmail);
+                console.log("Page visible again, auto-refreshing...");
+                // Clear cache and load fresh data
+                localStorage.removeItem(`${INVESTMENT_CACHE_KEY}_${userEmail}`);
+                loadFreshInvestmentData(userEmail);
             }
         }
     });
