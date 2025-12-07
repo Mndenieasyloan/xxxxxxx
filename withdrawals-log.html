@@ -226,55 +226,243 @@
         </main>
     </div>
 
-    <script>
-        // Baserow API Configuration
-        const BASEROW_API_TOKEN = 'YOUR_DATABASE_TOKEN'; // Replace with your actual token
-        const BASEROW_TABLE_ID = '756079';
-        const BASEROW_API_URL = `https://api.baserow.io/api/database/rows/table/${BASEROW_TABLE_ID}/`;
+  <script>
+    // Currency data
+    const CURRENCIES = [
+        { code: 'USD', symbol: '$', name: 'US Dollar' },
+        { code: 'EUR', symbol: '€', name: 'Euro' },
+        { code: 'GBP', symbol: '£', name: 'British Pound' },
+        { code: 'ZAR', symbol: 'R', name: 'South African Rand' },
+        { code: 'INR', symbol: '₹', name: 'Indian Rupee' },
+        { code: 'JPY', symbol: '¥', name: 'Japanese Yen' },
+        { code: 'AUD', symbol: 'A$', name: 'Australian Dollar' },
+        { code: 'CAD', symbol: 'C$', name: 'Canadian Dollar' }
+    ];
+
+    // Baserow API Configuration
+    const BASEROW_API_TOKEN = 'LG6hnTBxgBG78FueElsSwpHRd4Wep1oL';
+    const BASEROW_TABLE_ID = '756079';
+    const BASEROW_API_URL = `https://api.baserow.io/api/database/rows/table/${BASEROW_TABLE_ID}/`;
+    
+    // Get current currency
+    function getCurrentCurrency() {
+        return localStorage.getItem('v0trade_currency') || 'USD';
+    }
+    
+    // Get currency symbol
+    function getCurrencySymbol(currencyCode = null) {
+        const code = currencyCode || getCurrentCurrency();
+        const currency = CURRENCIES.find(c => c.code === code);
+        return currency ? currency.symbol : '$';
+    }
+    
+    // Update currency symbols on page
+    function updateCurrencySymbols(currencyCode = null) {
+        const symbol = getCurrencySymbol(currencyCode);
         
-        // Load user data and display email
-        function loadUserData() {
-            const userData = JSON.parse(localStorage.getItem('userData') || '{}');
-            const userEmail = document.getElementById('userEmail');
-            if (userData.email) {
-                userEmail.textContent = userData.email;
-                return userData.email;
+        // Update all data-currency-symbol elements
+        document.querySelectorAll('[data-currency-symbol]').forEach(el => {
+            el.textContent = symbol;
+        });
+        
+        // Update withdrawal statistics with correct symbol
+        updateStatsDisplay();
+        
+        // Refresh displayed withdrawals if they exist
+        const tableBody = document.getElementById('withdrawalsTableBody');
+        if (tableBody.children.length > 0) {
+            const rows = tableBody.querySelectorAll('tr');
+            if (rows.length > 0) {
+                // Re-display withdrawals with new currency symbol
+                const withdrawals = getCurrentWithdrawals();
+                if (withdrawals && withdrawals.length > 0) {
+                    displayWithdrawals(withdrawals);
+                }
             }
-            return null;
+        }
+    }
+    
+    // Initialize currency switcher in header
+    function initCurrencySwitcher() {
+        const currentCurrency = getCurrentCurrency();
+        const currency = CURRENCIES.find(c => c.code === currentCurrency);
+        
+        // Create currency switcher element
+        const currencySwitcher = document.createElement('div');
+        currencySwitcher.className = 'dropdown';
+        currencySwitcher.innerHTML = `
+            <button class="text-sm text-gray-300 hover:text-white transition flex items-center gap-1">
+                <span class="currency-symbol">${currency?.symbol || '$'}</span>
+                <span class="currency-code">${currentCurrency}</span>
+                <span>▼</span>
+            </button>
+            <div class="dropdown-content" style="min-width: 10rem;">
+                ${CURRENCIES.map(curr => `
+                    <a href="javascript:void(0)" onclick="changeCurrency('${curr.code}')" 
+                       class="block px-3 py-2 text-sm text-gray-300 hover:text-white hover:bg-purple-500/10 rounded flex items-center gap-2 ${curr.code === currentCurrency ? 'bg-purple-500/10' : ''}">
+                        <span class="text-lg">${curr.symbol}</span>
+                        <span class="flex-1">${curr.name}</span>
+                        <span class="text-xs opacity-70">${curr.code}</span>
+                    </a>
+                `).join('')}
+            </div>
+        `;
+        
+        // Find the header navigation and add currency switcher before logout
+        const headerNav = document.querySelector('header .hidden.items-center.gap-4.md\\:flex');
+        if (headerNav) {
+            const logoutLink = headerNav.querySelector('a[href="index.html"]:last-child');
+            if (logoutLink) {
+                headerNav.insertBefore(currencySwitcher, logoutLink);
+            }
+        }
+    }
+    
+    // Change currency
+    function changeCurrency(currencyCode) {
+        const currency = CURRENCIES.find(c => c.code === currencyCode);
+        if (!currency) return;
+        
+        // Update display
+        const currencySymbolElement = document.querySelector('.currency-symbol');
+        const currencyCodeElement = document.querySelector('.currency-code');
+        
+        if (currencySymbolElement) {
+            currencySymbolElement.textContent = currency.symbol;
+        }
+        if (currencyCodeElement) {
+            currencyCodeElement.textContent = currency.code;
         }
         
-        // Fetch withdrawals from Baserow filtered by user email
-        async function fetchWithdrawals() {
-            try {
-                const userEmail = loadUserData();
-                
-                if (!userEmail) {
-                    showError('Please log in to view your withdrawal history.');
-                    return [];
+        // Save to localStorage
+        localStorage.setItem('v0trade_currency', currencyCode);
+        
+        // Update all currency symbols on page
+        updateCurrencySymbols(currencyCode);
+        
+        // Dispatch event for other pages if needed
+        document.dispatchEvent(new CustomEvent('currencyChanged', { 
+            detail: { code: currencyCode, symbol: currency.symbol } 
+        }));
+    }
+    
+    // Global variable to store current withdrawals
+    let currentWithdrawals = [];
+
+    // Load withdrawals with user data
+    async function loadWithdrawals() {
+        const userEmail = localStorage.getItem("v0trade_user_email");
+        
+        if (!userEmail) {
+            window.location.href = "login.html";
+            return;
+        }
+
+        document.getElementById("userEmail").textContent = userEmail;
+        
+        // Initialize currency switcher
+        initCurrencySwitcher();
+        
+        // Show loading state
+        document.getElementById('loadingState').classList.remove('hidden');
+        document.getElementById('contentState').classList.add('hidden');
+        document.getElementById('errorState').classList.add('hidden');
+        
+        // Fetch withdrawals
+        const withdrawals = await fetchWithdrawals();
+        
+        // Hide loading state
+        document.getElementById('loadingState').classList.add('hidden');
+        
+        if (withdrawals.length > 0) {
+            document.getElementById('contentState').classList.remove('hidden');
+            currentWithdrawals = withdrawals;
+            displayWithdrawals(withdrawals);
+            updateStats(withdrawals);
+        } else {
+            document.getElementById('contentState').classList.remove('hidden');
+            document.getElementById('noWithdrawalsMessage').classList.remove('hidden');
+            document.getElementById('withdrawalsTableBody').innerHTML = '';
+            
+            // Reset stats
+            document.getElementById('totalWithdrawals').textContent = '$0.00';
+            document.getElementById('completedWithdrawals').textContent = '0';
+            document.getElementById('pendingWithdrawals').textContent = '0';
+            document.getElementById('monthWithdrawals').textContent = '$0.00';
+        }
+    }
+    
+    // Get current withdrawals (for re-display after currency change)
+    function getCurrentWithdrawals() {
+        return currentWithdrawals;
+    }
+    
+    // Update stats display with correct currency symbol
+    function updateStatsDisplay() {
+        const symbol = getCurrencySymbol();
+        
+        // Update stats display elements
+        const totalEl = document.getElementById('totalWithdrawals');
+        const monthEl = document.getElementById('monthWithdrawals');
+        
+        if (totalEl && totalEl.textContent !== '$0.00' && totalEl.textContent.startsWith('$')) {
+            totalEl.textContent = symbol + totalEl.textContent.substring(1);
+        }
+        
+        if (monthEl && monthEl.textContent !== '$0.00' && monthEl.textContent.startsWith('$')) {
+            monthEl.textContent = symbol + monthEl.textContent.substring(1);
+        }
+    }
+    
+    // Fetch withdrawals from Baserow filtered by user email
+    async function fetchWithdrawals() {
+        try {
+            const userEmail = localStorage.getItem("v0trade_user_email");
+            
+            if (!userEmail) {
+                showError('Please log in to view your withdrawal history.');
+                return [];
+            }
+            
+            // Create filter object to filter by email
+            const filterParams = new URLSearchParams({
+                'user_field_names': 'true',
+                'size': '200',
+                'filters': JSON.stringify({
+                    'filter_type': 'AND',
+                    'filters': [{
+                        'field': 'email',
+                        'type': 'equal',
+                        'value': userEmail
+                    }]
+                })
+            });
+            
+            // Fetch filtered rows
+            const response = await fetch(`${BASEROW_API_URL}?${filterParams.toString()}`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Token ${BASEROW_API_TOKEN}`,
+                    'Content-Type': 'application/json'
                 }
-                
-                // Show loading state
-                document.getElementById('loadingState').classList.remove('hidden');
-                document.getElementById('contentState').classList.add('hidden');
-                document.getElementById('errorState').classList.add('hidden');
-                
-                // Create filter object to filter by email
-                // Baserow uses filter_type and filters parameter for filtering
-                const filterParams = new URLSearchParams({
-                    'user_field_names': 'true',
-                    'size': '200',
-                    'filters': JSON.stringify({
-                        'filter_type': 'AND',
-                        'filters': [{
-                            'field': 'email',  // Field name in Baserow
-                            'type': 'equal',
-                            'value': userEmail
-                        }]
-                    })
-                });
-                
-                // Fetch filtered rows
-                const response = await fetch(`${BASEROW_API_URL}?${filterParams.toString()}`, {
+            });
+            
+            if (!response.ok) {
+                throw new Error(`API Error: ${response.status} ${response.statusText}`);
+            }
+            
+            const data = await response.json();
+            
+            // Return the filtered results
+            return data.results || [];
+            
+        } catch (error) {
+            console.error('Error fetching withdrawals:', error);
+            
+            // If filtering by email fails, fall back to fetching all and filtering client-side
+            try {
+                console.log('Falling back to client-side filtering...');
+                const fallbackResponse = await fetch(`${BASEROW_API_URL}?user_field_names=true&size=200`, {
                     method: 'GET',
                     headers: {
                         'Authorization': `Token ${BASEROW_API_TOKEN}`,
@@ -282,249 +470,206 @@
                     }
                 });
                 
-                if (!response.ok) {
-                    throw new Error(`API Error: ${response.status} ${response.statusText}`);
+                if (!fallbackResponse.ok) {
+                    throw new Error(`Fallback API Error: ${fallbackResponse.status}`);
                 }
                 
-                const data = await response.json();
+                const fallbackData = await fallbackResponse.json();
+                const userEmail = localStorage.getItem("v0trade_user_email");
                 
-                // Return the filtered results
-                return data.results || [];
+                // Filter client-side by email
+                const filteredResults = fallbackData.results.filter(row => 
+                    row.email && row.email.toLowerCase() === userEmail?.toLowerCase()
+                );
                 
-            } catch (error) {
-                console.error('Error fetching withdrawals:', error);
+                return filteredResults;
                 
-                // If filtering by email fails, fall back to fetching all and filtering client-side
+            } catch (fallbackError) {
+                console.error('Fallback also failed:', fallbackError);
+                showError('Failed to load withdrawal history. Please check your connection and try again.');
+                return [];
+            }
+        }
+    }
+    
+    // Display withdrawals in the table
+    function displayWithdrawals(withdrawals) {
+        const tableBody = document.getElementById('withdrawalsTableBody');
+        const noWithdrawalsMessage = document.getElementById('noWithdrawalsMessage');
+        
+        if (withdrawals.length === 0) {
+            tableBody.innerHTML = '';
+            noWithdrawalsMessage.classList.remove('hidden');
+            return;
+        }
+        
+        noWithdrawalsMessage.classList.add('hidden');
+        
+        // Get current currency symbol
+        const currencySymbol = getCurrencySymbol();
+        
+        // Sort by date (newest first)
+        withdrawals.sort((a, b) => {
+            const dateA = new Date(a.date || a.created_at || Date.now());
+            const dateB = new Date(b.date || b.created_at || Date.now());
+            return dateB - dateA;
+        });
+        
+        let html = '';
+        withdrawals.forEach((withdrawal) => {
+            const amount = parseFloat(withdrawal.amount || 0);
+            const fee = parseFloat(withdrawal.fee || 0);
+            const netAmount = amount - fee;
+            const method = withdrawal.method || 'Bank Transfer';
+            const status = withdrawal.status || 'pending';
+            const date = withdrawal.date || withdrawal.created_at;
+            const transactionId = withdrawal.transaction_id || `W${String(withdrawal.id).padStart(4, '0')}`;
+            const id = withdrawal['id 2'] || transactionId;
+            
+            // Format date
+            let formattedDate = 'N/A';
+            if (date) {
                 try {
-                    console.log('Falling back to client-side filtering...');
-                    const fallbackResponse = await fetch(`${BASEROW_API_URL}?user_field_names=true&size=200`, {
-                        method: 'GET',
-                        headers: {
-                            'Authorization': `Token ${BASEROW_API_TOKEN}`,
-                            'Content-Type': 'application/json'
-                        }
+                    formattedDate = new Date(date).toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
                     });
-                    
-                    if (!fallbackResponse.ok) {
-                        throw new Error(`Fallback API Error: ${fallbackResponse.status}`);
-                    }
-                    
-                    const fallbackData = await fallbackResponse.json();
-                    const userEmail = loadUserData();
-                    
-                    // Filter client-side by email
-                    const filteredResults = fallbackData.results.filter(row => 
-                        row.email && row.email.toLowerCase() === userEmail?.toLowerCase()
-                    );
-                    
-                    return filteredResults;
-                    
-                } catch (fallbackError) {
-                    console.error('Fallback also failed:', fallbackError);
-                    showError('Failed to load withdrawal history. Please check your connection and try again.');
-                    return [];
-                }
-            }
-        }
-        
-        // Load and display withdrawals
-        async function loadWithdrawals() {
-            const withdrawals = await fetchWithdrawals();
-            
-            // Hide loading state
-            document.getElementById('loadingState').classList.add('hidden');
-            
-            if (withdrawals.length > 0) {
-                document.getElementById('contentState').classList.remove('hidden');
-                displayWithdrawals(withdrawals);
-                updateStats(withdrawals);
-            } else {
-                document.getElementById('contentState').classList.remove('hidden');
-                document.getElementById('noWithdrawalsMessage').classList.remove('hidden');
-                document.getElementById('withdrawalsTableBody').innerHTML = '';
-                
-                // Reset stats
-                document.getElementById('totalWithdrawals').textContent = '$0.00';
-                document.getElementById('completedWithdrawals').textContent = '0';
-                document.getElementById('pendingWithdrawals').textContent = '0';
-                document.getElementById('monthWithdrawals').textContent = '$0.00';
-            }
-        }
-        
-        // Display withdrawals in the table
-        function displayWithdrawals(withdrawals) {
-            const tableBody = document.getElementById('withdrawalsTableBody');
-            const noWithdrawalsMessage = document.getElementById('noWithdrawalsMessage');
-            
-            if (withdrawals.length === 0) {
-                tableBody.innerHTML = '';
-                noWithdrawalsMessage.classList.remove('hidden');
-                return;
-            }
-            
-            noWithdrawalsMessage.classList.add('hidden');
-            
-            // Sort by date (newest first)
-            withdrawals.sort((a, b) => {
-                const dateA = new Date(a.date || a.created_at || Date.now());
-                const dateB = new Date(b.date || b.created_at || Date.now());
-                return dateB - dateA;
-            });
-            
-            let html = '';
-            withdrawals.forEach((withdrawal) => {
-                const amount = parseFloat(withdrawal.amount || 0);
-                const fee = parseFloat(withdrawal.fee || 0);
-                const netAmount = amount - fee;
-                const method = withdrawal.method || 'Bank Transfer';
-                const status = withdrawal.status || 'pending';
-                const date = withdrawal.date || withdrawal.created_at;
-                const transactionId = withdrawal.transaction_id || `W${String(withdrawal.id).padStart(4, '0')}`;
-                const id = withdrawal['id 2'] || transactionId;
-                
-                // Format date
-                let formattedDate = 'N/A';
-                if (date) {
-                    try {
-                        formattedDate = new Date(date).toLocaleDateString('en-US', {
-                            year: 'numeric',
-                            month: 'short',
-                            day: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                        });
-                    } catch (e) {
-                        formattedDate = date;
-                    }
-                }
-                
-                // Status badge
-                let statusClass = '';
-                let statusText = '';
-                switch(status.toLowerCase()) {
-                    case 'completed':
-                    case 'success':
-                    case 'approved':
-                        statusClass = 'status-completed';
-                        statusText = 'Completed';
-                        break;
-                    case 'pending':
-                        statusClass = 'status-pending';
-                        statusText = 'Pending';
-                        break;
-                    case 'processing':
-                        statusClass = 'status-processing';
-                        statusText = 'Processing';
-                        break;
-                    case 'failed':
-                    case 'rejected':
-                    case 'declined':
-                        statusClass = 'status-failed';
-                        statusText = 'Failed';
-                        break;
-                    case 'cancelled':
-                    case 'canceled':
-                        statusClass = 'status-cancelled';
-                        statusText = 'Cancelled';
-                        break;
-                    default:
-                        statusClass = 'status-pending';
-                        statusText = 'Pending';
-                }
-                
-                html += `
-                    <tr class="border-b border-gray-100 hover:bg-gray-50">
-                        <td class="px-6 py-4 text-sm font-mono text-gray-900">${id}</td>
-                        <td class="px-6 py-4 text-sm font-medium text-gray-900">$${amount.toFixed(2)}</td>
-                        <td class="px-6 py-4 text-sm text-gray-600">${method}</td>
-                        <td class="px-6 py-4 text-sm text-red-600">$${fee.toFixed(2)}</td>
-                        <td class="px-6 py-4 text-sm font-medium text-green-600">$${netAmount.toFixed(2)}</td>
-                        <td class="px-6 py-4">
-                            <span class="px-3 py-1 text-xs font-semibold rounded-full ${statusClass}">${statusText}</span>
-                        </td>
-                        <td class="px-6 py-4 text-sm text-gray-500">${formattedDate}</td>
-                    </tr>
-                `;
-            });
-            
-            tableBody.innerHTML = html;
-        }
-        
-        // Update statistics
-        function updateStats(withdrawals) {
-            const totalWithdrawals = withdrawals.reduce((sum, w) => sum + parseFloat(w.amount || 0), 0);
-            
-            const completed = withdrawals.filter(w => 
-                w.status && ['completed', 'success', 'approved'].includes(w.status.toLowerCase())
-            ).length;
-            
-            const pending = withdrawals.filter(w => 
-                w.status && ['pending', 'processing'].includes(w.status.toLowerCase())
-            ).length;
-            
-            // Calculate this month's withdrawals
-            const currentMonth = new Date().getMonth();
-            const currentYear = new Date().getFullYear();
-            
-            const monthWithdrawals = withdrawals.reduce((sum, w) => {
-                if (!w.date) return sum;
-                try {
-                    const date = new Date(w.date);
-                    if (date.getMonth() === currentMonth && date.getFullYear() === currentYear) {
-                        return sum + parseFloat(w.amount || 0);
-                    }
                 } catch (e) {
-                    // Ignore invalid dates
+                    formattedDate = date;
                 }
-                return sum;
-            }, 0);
+            }
             
-            document.getElementById('totalWithdrawals').textContent = `$${totalWithdrawals.toFixed(2)}`;
-            document.getElementById('completedWithdrawals').textContent = completed;
-            document.getElementById('pendingWithdrawals').textContent = pending;
-            document.getElementById('monthWithdrawals').textContent = `$${monthWithdrawals.toFixed(2)}`;
-        }
-        
-        // Show error message
-        function showError(message) {
-            document.getElementById('loadingState').classList.add('hidden');
-            document.getElementById('contentState').classList.add('hidden');
-            document.getElementById('errorState').classList.remove('hidden');
-            document.getElementById('errorMessage').textContent = message;
-        }
-        
-        // Refresh withdrawals
-        function refreshWithdrawals() {
-            loadWithdrawals();
+            // Status badge
+            let statusClass = '';
+            let statusText = '';
+            switch(status.toLowerCase()) {
+                case 'completed':
+                case 'success':
+                case 'approved':
+                    statusClass = 'status-completed';
+                    statusText = 'Completed';
+                    break;
+                case 'pending':
+                    statusClass = 'status-pending';
+                    statusText = 'Pending';
+                    break;
+                case 'processing':
+                    statusClass = 'status-processing';
+                    statusText = 'Processing';
+                    break;
+                case 'failed':
+                case 'rejected':
+                case 'declined':
+                    statusClass = 'status-failed';
+                    statusText = 'Failed';
+                    break;
+                case 'cancelled':
+                case 'canceled':
+                    statusClass = 'status-cancelled';
+                    statusText = 'Cancelled';
+                    break;
+                default:
+                    statusClass = 'status-pending';
+                    statusText = 'Pending';
+            }
             
-            // Show refresh animation
-            const refreshBtn = document.querySelector('button[onclick="refreshWithdrawals()"]');
-            const originalText = refreshBtn.innerHTML;
-            refreshBtn.innerHTML = `
-                <svg class="w-5 h-5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
-                </svg>
-                Refreshing...
+            html += `
+                <tr class="border-b border-gray-100 hover:bg-gray-50">
+                    <td class="px-6 py-4 text-sm font-mono text-gray-900">${id}</td>
+                    <td class="px-6 py-4 text-sm font-medium text-gray-900">${currencySymbol}${amount.toFixed(2)}</td>
+                    <td class="px-6 py-4 text-sm text-gray-600">${method}</td>
+                    <td class="px-6 py-4 text-sm text-red-600">${currencySymbol}${fee.toFixed(2)}</td>
+                    <td class="px-6 py-4 text-sm font-medium text-green-600">${currencySymbol}${netAmount.toFixed(2)}</td>
+                    <td class="px-6 py-4">
+                        <span class="px-3 py-1 text-xs font-semibold rounded-full ${statusClass}">${statusText}</span>
+                    </td>
+                    <td class="px-6 py-4 text-sm text-gray-500">${formattedDate}</td>
+                </tr>
             `;
-            
-            setTimeout(() => {
-                refreshBtn.innerHTML = originalText;
-            }, 1000);
-        }
+        });
         
-        // Mobile menu and sidebar functions
-        function toggleMobileMenu() {
-            const menu = document.getElementById('mobileMenu');
-            menu.classList.toggle('active');
-        }
+        tableBody.innerHTML = html;
+    }
+    
+    // Update statistics
+    function updateStats(withdrawals) {
+        const totalWithdrawals = withdrawals.reduce((sum, w) => sum + parseFloat(w.amount || 0), 0);
         
-        function toggleSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            const overlay = document.getElementById('sidebarOverlay');
-            sidebar.classList.toggle('active');
-            overlay.classList.toggle('active');
-        }
-    </script>
-
+        const completed = withdrawals.filter(w => 
+            w.status && ['completed', 'success', 'approved'].includes(w.status.toLowerCase())
+        ).length;
+        
+        const pending = withdrawals.filter(w => 
+            w.status && ['pending', 'processing'].includes(w.status.toLowerCase())
+        ).length;
+        
+        // Calculate this month's withdrawals
+        const currentMonth = new Date().getMonth();
+        const currentYear = new Date().getFullYear();
+        
+        const monthWithdrawals = withdrawals.reduce((sum, w) => {
+            if (!w.date) return sum;
+            try {
+                const date = new Date(w.date);
+                if (date.getMonth() === currentMonth && date.getFullYear() === currentYear) {
+                    return sum + parseFloat(w.amount || 0);
+                }
+            } catch (e) {
+                // Ignore invalid dates
+            }
+            return sum;
+        }, 0);
+        
+        const currencySymbol = getCurrencySymbol();
+        
+        document.getElementById('totalWithdrawals').textContent = `${currencySymbol}${totalWithdrawals.toFixed(2)}`;
+        document.getElementById('completedWithdrawals').textContent = completed;
+        document.getElementById('pendingWithdrawals').textContent = pending;
+        document.getElementById('monthWithdrawals').textContent = `${currencySymbol}${monthWithdrawals.toFixed(2)}`;
+    }
+    
+    // Show error message
+    function showError(message) {
+        document.getElementById('loadingState').classList.add('hidden');
+        document.getElementById('contentState').classList.add('hidden');
+        document.getElementById('errorState').classList.remove('hidden');
+        document.getElementById('errorMessage').textContent = message;
+    }
+    
+    // Refresh withdrawals
+    function refreshWithdrawals() {
+        loadWithdrawals();
+        
+        // Show refresh animation
+        const refreshBtn = document.querySelector('button[onclick="refreshWithdrawals()"]');
+        const originalText = refreshBtn.innerHTML;
+        refreshBtn.innerHTML = `
+            <svg class="w-5 h-5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+            </svg>
+            Refreshing...
+        `;
+        
+        setTimeout(() => {
+            refreshBtn.innerHTML = originalText;
+        }, 1000);
+    }
+    
+    // Mobile menu and sidebar functions
+    function toggleMobileMenu() {
+        const menu = document.getElementById('mobileMenu');
+        menu.classList.toggle('active');
+    }
+    
+    function toggleSidebar() {
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('sidebarOverlay');
+        sidebar.classList.toggle('active');
+        overlay.classList.toggle('active');
+    }
+</script>
 </body>
 </html>
