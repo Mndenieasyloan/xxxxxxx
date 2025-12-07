@@ -372,20 +372,6 @@
             from { opacity: 0; transform: translate(-50%, -48%); }
             to { opacity: 1; transform: translate(-50%, -50%); }
         }
-        
-        /* Status colors */
-        .status-active { background: rgba(34, 197, 94, 0.1); color: #22c55e; }
-        .status-completed { background: rgba(59, 130, 246, 0.1); color: #3b82f6; }
-        .status-pending { background: rgba(245, 158, 11, 0.1); color: #f59e0b; }
-        .status-expired { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
-        
-        .time-remaining { 
-            background: linear-gradient(135deg, #8b5cf6, #3b82f6);
-            color: white;
-            padding: 4px 8px;
-            border-radius: 6px;
-            font-weight: 600;
-        }
     </style>
 </head>
 <body class="bg-slate-950">
@@ -774,7 +760,7 @@
     </div>
 
     <script>
-    // Currency data
+    // Currency data - SAME AS MINING PAGE
     const CURRENCIES = [
         { code: 'USD', symbol: '$', name: 'US Dollar' },
         { code: 'EUR', symbol: '€', name: 'Euro' },
@@ -786,58 +772,155 @@
         { code: 'CAD', symbol: 'C$', name: 'Canadian Dollar' }
     ];
     
-    // Storage keys
+    // USE THE SAME KEYS AS MINING PAGE
     const TRANSACTIONS_DATA_KEY = "v0trade_transactions_data";
-    const INVESTMENT_CACHE_KEY = "v0trade_investment_cache";
-    const INVESTMENT_DATA_KEY = "v0trade_investment_data"; // Persistent storage for processed investments
-    const INVESTMENT_CACHE_EXPIRY = 5 * 60 * 1000; // 5 minutes cache
+    const INVESTMENT_CACHE_KEY = "v0trade_investment_tracks_cache";
+    const INVESTMENT_CACHE_EXPIRY = 24 * 60 * 60 * 1000; // 24 hours cache
     
-    // Investment plan configurations with updated ROI from your info
+    // Investment plan configurations with durations from Method field
     const INVESTMENT_PLANS = {
         // Cryptocurrencies
-        'btc': { type: 'crypto', roi: 20, duration: 1, durationUnit: 'hour', asset: 'Bitcoin (BTC)', badge: 'badge-crypto', color: '#f59e0b' },
-        'bitcoin': { type: 'crypto', roi: 20, duration: 1, durationUnit: 'hour', asset: 'Bitcoin (BTC)', badge: 'badge-crypto', color: '#f59e0b' },
-        'eth': { type: 'crypto', roi: 20, duration: 1, durationUnit: 'hour', asset: 'Ethereum (ETH)', badge: 'badge-crypto', color: '#8b5cf6' },
-        'ethereum': { type: 'crypto', roi: 20, duration: 1, durationUnit: 'hour', asset: 'Ethereum (ETH)', badge: 'badge-crypto', color: '#8b5cf6' },
-        'usdt': { type: 'crypto', roi: 20, duration: 1, durationUnit: 'hour', asset: 'Tether (USDT)', badge: 'badge-crypto', color: '#26a17b' },
-        'tether': { type: 'crypto', roi: 20, duration: 1, durationUnit: 'hour', asset: 'Tether (USDT)', badge: 'badge-crypto', color: '#26a17b' },
-        
-        // Precious Metals
-        'gold': { type: 'metal', roi: 20, duration: 1, durationUnit: 'hour', asset: 'Gold', badge: 'badge-metal', color: '#fbbf24' },
-        'silver': { type: 'metal', roi: 20, duration: 1, durationUnit: 'hour', asset: 'Silver', badge: 'badge-metal', color: '#9ca3af' },
-        'platinum': { type: 'metal', roi: 20, duration: 1, durationUnit: 'hour', asset: 'Platinum', badge: 'badge-metal', color: '#e5e7eb' },
-        'rhodium': { type: 'metal', roi: 20, duration: 1, durationUnit: 'hour', asset: 'Rhodium', badge: 'badge-metal', color: '#a78bfa' },
-        'palladium': { type: 'metal', roi: 20, duration: 1, durationUnit: 'hour', asset: 'Palladium', badge: 'badge-metal', color: '#f472b6' },
+        'bitcoin': { 
+            type: 'crypto', 
+            asset: 'Bitcoin (BTC)', 
+            badge: 'badge-crypto', 
+            color: '#f59e0b',
+            plans: {
+                '1 Hour Plan': { roi: 20, duration: 1, unit: 'hours' },
+                '5 Hours Plan': { roi: 30, duration: 5, unit: 'hours' },
+                '24 Hours Plan': { roi: 68, duration: 24, unit: 'hours' },
+                '72 Hours Plan': { roi: 89, duration: 72, unit: 'hours' },
+                '1 Week Plan': { roi: 190, duration: 7, unit: 'days' }
+            }
+        },
+        'ethereum': { 
+            type: 'crypto', 
+            asset: 'Ethereum (ETH)', 
+            badge: 'badge-crypto', 
+            color: '#8b5cf6',
+            plans: {
+                '1 Hour Plan': { roi: 20, duration: 1, unit: 'hours' },
+                '5 Hours Plan': { roi: 30, duration: 5, unit: 'hours' },
+                '24 Hours Plan': { roi: 68, duration: 24, unit: 'hours' },
+                '72 Hours Plan': { roi: 89, duration: 72, unit: 'hours' },
+                '1 Week Plan': { roi: 190, duration: 7, unit: 'days' }
+            }
+        },
+        'tether': { 
+            type: 'crypto', 
+            asset: 'Tether (USDT)', 
+            badge: 'badge-crypto', 
+            color: '#26a17b',
+            plans: {
+                '1 Hour Plan': { roi: 20, duration: 1, unit: 'hours' },
+                '5 Hours Plan': { roi: 30, duration: 5, unit: 'hours' },
+                '24 Hours Plan': { roi: 68, duration: 24, unit: 'hours' },
+                '72 Hours Plan': { roi: 89, duration: 72, unit: 'hours' },
+                '1 Week Plan': { roi: 190, duration: 7, unit: 'days' }
+            }
+        },
         
         // Stocks
-        'nvidia': { type: 'stock', roi: 20, duration: 1, durationUnit: 'hour', asset: 'NVIDIA (NVDA)', badge: 'badge-stock', color: '#3b82f6' },
-        'apple': { type: 'stock', roi: 20, duration: 1, durationUnit: 'hour', asset: 'Apple (AAPL)', badge: 'badge-stock', color: '#1d4ed8' },
-        'microsoft': { type: 'stock', roi: 20, duration: 1, durationUnit: 'hour', asset: 'Microsoft (MSFT)', badge: 'badge-stock', color: '#1e40af' },
-        'google': { type: 'stock', roi: 20, duration: 1, durationUnit: 'hour', asset: 'Google (GOOGL)', badge: 'badge-stock', color: '#0ea5e9' },
-        'amazon': { type: 'stock', roi: 20, duration: 1, durationUnit: 'hour', asset: 'Amazon (AMZN)', badge: 'badge-stock', color: '#f97316' },
+        'nvidia': { 
+            type: 'stock', 
+            asset: 'NVIDIA (NVDA)', 
+            badge: 'badge-stock', 
+            color: '#3b82f6',
+            plans: {
+                '1 Hour Plan': { roi: 20, duration: 1, unit: 'hours' },
+                '5 Hours Plan': { roi: 30, duration: 5, unit: 'hours' },
+                '24 Hours Plan': { roi: 68, duration: 24, unit: 'hours' },
+                '72 Hours Plan': { roi: 89, duration: 72, unit: 'hours' }
+            }
+        },
+        'apple': { 
+            type: 'stock', 
+            asset: 'Apple (AAPL)', 
+            badge: 'badge-stock', 
+            color: '#1d4ed8',
+            plans: {
+                '1 Hour Plan': { roi: 20, duration: 1, unit: 'hours' },
+                '5 Hours Plan': { roi: 30, duration: 5, unit: 'hours' },
+                '24 Hours Plan': { roi: 68, duration: 24, unit: 'hours' },
+                '72 Hours Plan': { roi: 89, duration: 72, unit: 'hours' }
+            }
+        },
+        'microsoft': { 
+            type: 'stock', 
+            asset: 'Microsoft (MSFT)', 
+            badge: 'badge-stock', 
+            color: '#1e40af',
+            plans: {
+                '1 Hour Plan': { roi: 20, duration: 1, unit: 'hours' },
+                '5 Hours Plan': { roi: 30, duration: 5, unit: 'hours' },
+                '24 Hours Plan': { roi: 68, duration: 24, unit: 'hours' },
+                '72 Hours Plan': { roi: 89, duration: 72, unit: 'hours' }
+            }
+        },
+        
+        // Precious Metals
+        'gold': { 
+            type: 'metal', 
+            asset: 'Gold', 
+            badge: 'badge-metal', 
+            color: '#fbbf24',
+            plans: {
+                '1 Hour Plan': { roi: 20, duration: 1, unit: 'hours' },
+                '5 Hours Plan': { roi: 30, duration: 5, unit: 'hours' },
+                '24 Hours Plan': { roi: 68, duration: 24, unit: 'hours' },
+                '72 Hours Plan': { roi: 89, duration: 72, unit: 'hours' }
+            }
+        },
+        'silver': { 
+            type: 'metal', 
+            asset: 'Silver', 
+            badge: 'badge-metal', 
+            color: '#9ca3af',
+            plans: {
+                '1 Hour Plan': { roi: 20, duration: 1, unit: 'hours' },
+                '5 Hours Plan': { roi: 30, duration: 5, unit: 'hours' },
+                '24 Hours Plan': { roi: 68, duration: 24, unit: 'hours' },
+                '72 Hours Plan': { roi: 89, duration: 72, unit: 'hours' }
+            }
+        },
+        'platinum': { 
+            type: 'metal', 
+            asset: 'Platinum', 
+            badge: 'badge-metal', 
+            color: '#e5e7eb',
+            plans: {
+                '1 Hour Plan': { roi: 20, duration: 1, unit: 'hours' },
+                '5 Hours Plan': { roi: 30, duration: 5, unit: 'hours' },
+                '24 Hours Plan': { roi: 68, duration: 24, unit: 'hours' },
+                '72 Hours Plan': { roi: 89, duration: 72, unit: 'hours' }
+            }
+        },
         
         // ETFs
-        'spy': { type: 'etf', roi: 20, duration: 1, durationUnit: 'hour', asset: 'SPDR S&P 500 (SPY)', badge: 'badge-etf', color: '#10b981' },
-        'voo': { type: 'etf', roi: 20, duration: 1, durationUnit: 'hour', asset: 'Vanguard S&P 500 (VOO)', badge: 'badge-etf', color: '#047857' },
-        'ivv': { type: 'etf', roi: 20, duration: 1, durationUnit: 'hour', asset: 'iShares S&P 500 (IVV)', badge: 'badge-etf', color: '#065f46' },
-        'vti': { type: 'etf', roi: 20, duration: 1, durationUnit: 'hour', asset: 'Vanguard Total Market (VTI)', badge: 'badge-etf', color: '#064e3b' },
-        'qqq': { type: 'etf', roi: 20, duration: 1, durationUnit: 'hour', asset: 'Invesco QQQ (QQQ)', badge: 'badge-etf', color: '#059669' }
-    };
-    
-    // Plan duration patterns to parse from method field
-    const PLAN_DURATIONS = {
-        '1 hour': { duration: 1, durationUnit: 'hour', roi: 20 },
-        '1 Hour': { duration: 1, durationUnit: 'hour', roi: 20 },
-        '5 hours': { duration: 5, durationUnit: 'hour', roi: 30 },
-        '5 Hours': { duration: 5, durationUnit: 'hour', roi: 30 },
-        '24 hours': { duration: 24, durationUnit: 'hour', roi: 68 },
-        '24 Hours': { duration: 24, durationUnit: 'hour', roi: 68 },
-        '72 hours': { duration: 72, durationUnit: 'hour', roi: 89 },
-        '72 Hours': { duration: 72, durationUnit: 'hour', roi: 89 },
-        '1 week': { duration: 7, durationUnit: 'day', roi: 190 },
-        '1 Week': { duration: 7, durationUnit: 'day', roi: 190 },
-        '1 day': { duration: 1, durationUnit: 'day', roi: 68 },
-        '6 days': { duration: 6, durationUnit: 'day', roi: 150 }
+        'spy': { 
+            type: 'etf', 
+            asset: 'SPDR S&P 500 (SPY)', 
+            badge: 'badge-etf', 
+            color: '#10b981',
+            plans: {
+                '1 Hour Plan': { roi: 20, duration: 1, unit: 'hours' },
+                '5 Hours Plan': { roi: 30, duration: 5, unit: 'hours' },
+                '24 Hours Plan': { roi: 68, duration: 24, unit: 'hours' },
+                '72 Hours Plan': { roi: 89, duration: 72, unit: 'hours' }
+            }
+        },
+        'voo': { 
+            type: 'etf', 
+            asset: 'Vanguard S&P 500 (VOO)', 
+            badge: 'badge-etf', 
+            color: '#047857',
+            plans: {
+                '1 Hour Plan': { roi: 20, duration: 1, unit: 'hours' },
+                '5 Hours Plan': { roi: 30, duration: 5, unit: 'hours' },
+                '24 Hours Plan': { roi: 68, duration: 24, unit: 'hours' },
+                '72 Hours Plan': { roi: 89, duration: 72, unit: 'hours' }
+            }
+        }
     };
     
     // Chart instances
@@ -845,7 +928,7 @@
     let distributionChart = null;
     let candlestickChart = null;
     
-    // Currency functions
+    // Currency functions - SAME AS MINING PAGE
     function getCurrentCurrency() {
         return localStorage.getItem('v0trade_currency') || 'USD';
     }
@@ -873,6 +956,7 @@
             desktopSelector.querySelector('.current-code').textContent = currency.code;
         }
         
+        // Refresh investment data to update currency formatting
         const userEmail = localStorage.getItem("v0trade_user_email");
         if (userEmail) {
             updateCurrencyDisplay();
@@ -880,6 +964,7 @@
     }
     
     function convertAmount(amount, fromCurrency, toCurrency) {
+        // Simple conversion rates (in a real app, you would fetch live rates)
         const rates = {
             'USD': 1,
             'EUR': 0.92,
@@ -902,29 +987,27 @@
         const currency = CURRENCIES.find(c => c.code === currentCurrency);
         if (!currency) return;
         
-        // Update all elements with data-amount attributes
+        // Update all displayed amounts with currency conversion
         document.querySelectorAll('[data-amount]').forEach(el => {
-            if (!el.classList.contains('currency-symbol')) {
-                const amount = parseFloat(el.getAttribute('data-amount') || '0');
-                const convertedAmount = convertAmount(amount, 'USD', currentCurrency);
-                
-                if (el.tagName === 'INPUT') {
-                    el.value = convertedAmount.toFixed(2);
-                } else {
-                    // Check if it's a currency display (starts with $, €, etc.)
-                    const currentText = el.textContent;
-                    if (currentText.match(/^[\$\€\£\₹\¥\R]/)) {
-                        el.textContent = `${currency.symbol}${convertedAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-                    } else {
-                        el.textContent = convertedAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-                    }
+            const amount = parseFloat(el.getAttribute('data-amount') || '0');
+            const convertedAmount = convertAmount(amount, 'USD', currentCurrency);
+            
+            if (el.classList.contains('currency-symbol')) {
+                el.textContent = currency.symbol;
+            } else if (el.id === 'totalInvestment' || el.id === 'totalReturns' || 
+                       el.id === 'portfolioValue' || el.id === 'dailyAverage' || 
+                       el.id === 'bestPerformerReturns') {
+                el.innerHTML = `<span class="currency-symbol">${currency.symbol}</span>${convertedAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            } else {
+                // For investment cards and table cells
+                const currentText = el.textContent;
+                if (currentText.startsWith('$') || currentText.startsWith('€') || 
+                    currentText.startsWith('£') || currentText.startsWith('R') ||
+                    currentText.startsWith('₹') || currentText.startsWith('¥') ||
+                    currentText.startsWith('A$') || currentText.startsWith('C$')) {
+                    el.textContent = currency.symbol + convertedAmount.toFixed(2);
                 }
             }
-        });
-        
-        // Update currency symbols
-        document.querySelectorAll('.currency-symbol').forEach(el => {
-            el.textContent = currency.symbol;
         });
     }
     
@@ -959,123 +1042,6 @@
         }
     }
     
-    // Parse duration from method field
-    function parseDurationFromMethod(method) {
-        if (!method) return { duration: 1, durationUnit: 'hour', roi: 20 };
-        
-        const methodLower = method.toLowerCase();
-        
-        // Check for plan durations
-        for (const [pattern, plan] of Object.entries(PLAN_DURATIONS)) {
-            if (methodLower.includes(pattern.toLowerCase())) {
-                return plan;
-            }
-        }
-        
-        // Try to parse numbers with time units
-        const hourMatch = methodLower.match(/(\d+)\s*hour/);
-        if (hourMatch) {
-            const hours = parseInt(hourMatch[1]);
-            let roi = 20;
-            if (hours === 5) roi = 30;
-            else if (hours === 24) roi = 68;
-            else if (hours === 72) roi = 89;
-            return { duration: hours, durationUnit: 'hour', roi: roi };
-        }
-        
-        const dayMatch = methodLower.match(/(\d+)\s*day/);
-        if (dayMatch) {
-            const days = parseInt(dayMatch[1]);
-            let roi = 68;
-            if (days === 7) roi = 190;
-            else if (days === 6) roi = 150;
-            return { duration: days, durationUnit: 'day', roi: roi };
-        }
-        
-        const weekMatch = methodLower.match(/(\d+)\s*week/);
-        if (weekMatch) {
-            const weeks = parseInt(weekMatch[1]);
-            const days = weeks * 7;
-            return { duration: days, durationUnit: 'day', roi: 190 };
-        }
-        
-        // Default
-        return { duration: 1, durationUnit: 'hour', roi: 20 };
-    }
-    
-    // Parse asset from method
-    function parseAssetFromMethod(method) {
-        if (!method) return null;
-        
-        const methodLower = method.toLowerCase();
-        
-        // Check for cryptocurrencies
-        if (methodLower.includes('btc') || methodLower.includes('bitcoin')) return 'btc';
-        if (methodLower.includes('eth') || methodLower.includes('ethereum')) return 'eth';
-        if (methodLower.includes('usdt') || methodLower.includes('tether')) return 'usdt';
-        
-        // Check for precious metals
-        if (methodLower.includes('gold')) return 'gold';
-        if (methodLower.includes('silver')) return 'silver';
-        if (methodLower.includes('platinum')) return 'platinum';
-        if (methodLower.includes('rhodium')) return 'rhodium';
-        if (methodLower.includes('palladium')) return 'palladium';
-        
-        // Check for stocks
-        if (methodLower.includes('nvidia') || methodLower.includes('nvda')) return 'nvidia';
-        if (methodLower.includes('apple') || methodLower.includes('aapl')) return 'apple';
-        if (methodLower.includes('microsoft') || methodLower.includes('msft')) return 'microsoft';
-        if (methodLower.includes('google') || methodLower.includes('googl')) return 'google';
-        if (methodLower.includes('amazon') || methodLower.includes('amzn')) return 'amazon';
-        
-        // Check for ETFs
-        if (methodLower.includes('spy')) return 'spy';
-        if (methodLower.includes('voo')) return 'voo';
-        if (methodLower.includes('ivv')) return 'ivv';
-        if (methodLower.includes('vti')) return 'vti';
-        if (methodLower.includes('qqq')) return 'qqq';
-        
-        return null;
-    }
-    
-    // Convert duration to milliseconds
-    function durationToMs(duration, unit) {
-        switch(unit) {
-            case 'hour': return duration * 60 * 60 * 1000;
-            case 'day': return duration * 24 * 60 * 60 * 1000;
-            default: return duration * 60 * 60 * 1000; // Default to hours
-        }
-    }
-    
-    // Format time remaining
-    function formatTimeRemaining(ms) {
-        if (ms <= 0) return "Completed";
-        
-        const days = Math.floor(ms / (1000 * 60 * 60 * 24));
-        const hours = Math.floor((ms % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-        const minutes = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60));
-        
-        if (days > 0) return `${days}d ${hours}h`;
-        if (hours > 0) return `${hours}h ${minutes}m`;
-        return `${minutes}m`;
-    }
-    
-    // Format duration for display
-    function formatDuration(duration, unit) {
-        switch(unit) {
-            case 'hour': 
-                if (duration === 1) return "1 Hour";
-                if (duration === 24) return "1 Day";
-                return `${duration} Hours`;
-            case 'day':
-                if (duration === 1) return "1 Day";
-                if (duration === 7) return "1 Week";
-                return `${duration} Days`;
-            default:
-                return `${duration} ${unit}s`;
-        }
-    }
-    
     window.addEventListener('DOMContentLoaded', function() {
         const userEmail = localStorage.getItem("v0trade_user_email");
         
@@ -1098,7 +1064,7 @@
         // Initialize empty charts
         initializeEmptyCharts();
         
-        // Load investment data
+        // Auto-load investment data on page visit
         loadInvestmentData(userEmail);
         
         // Close mobile menu when clicking outside
@@ -1114,62 +1080,6 @@
         });
     });
 
-    function getStoredInvestmentData(email) {
-        try {
-            const key = `${INVESTMENT_DATA_KEY}_${email}`;
-            const stored = localStorage.getItem(key);
-            if (!stored) return null;
-            
-            const data = JSON.parse(stored);
-            
-            // Check if any investments need status updates
-            const now = Date.now();
-            let updated = false;
-            
-            data.investments = data.investments.map(investment => {
-                const endTime = new Date(investment.endTime).getTime();
-                
-                if (now >= endTime && investment.status !== 'Completed') {
-                    investment.status = 'Completed';
-                    investment.progress = 100;
-                    updated = true;
-                } else if (now < endTime && investment.status !== 'Active') {
-                    investment.status = 'Active';
-                    const startTime = new Date(investment.startTime).getTime();
-                    const totalDuration = endTime - startTime;
-                    const elapsed = now - startTime;
-                    investment.progress = Math.min((elapsed / totalDuration) * 100, 100);
-                    updated = true;
-                }
-                
-                return investment;
-            });
-            
-            if (updated) {
-                saveInvestmentData(email, data.investments, data.transactions);
-            }
-            
-            return data;
-        } catch (e) {
-            console.error("Error reading stored investment data:", e);
-            return null;
-        }
-    }
-    
-    function saveInvestmentData(email, investments, transactions) {
-        try {
-            const key = `${INVESTMENT_DATA_KEY}_${email}`;
-            const data = {
-                investments: investments,
-                transactions: transactions,
-                lastUpdated: Date.now()
-            };
-            localStorage.setItem(key, JSON.stringify(data));
-        } catch (e) {
-            console.error("Error saving investment data:", e);
-        }
-    }
-    
     function getCachedInvestmentData(email) {
         try {
             const cacheKey = `${INVESTMENT_CACHE_KEY}_${email}`;
@@ -1179,25 +1089,33 @@
             const data = JSON.parse(cached);
             const now = Date.now();
             
+            // Check if cache is expired
             if (now - data.timestamp > INVESTMENT_CACHE_EXPIRY) {
                 localStorage.removeItem(cacheKey);
                 return null;
             }
             
-            return data;
+            return {
+                investmentStats: data.investmentStats,
+                investmentTransactions: data.investmentTransactions,
+                processedInvestments: data.processedInvestments
+            };
         } catch (e) {
             return null;
         }
     }
     
-    function cacheInvestmentData(email, data) {
+    function cacheInvestmentData(email, investmentStats, investmentTransactions, processedInvestments) {
         try {
             const cacheKey = `${INVESTMENT_CACHE_KEY}_${email}`;
             const cacheData = {
                 timestamp: Date.now(),
-                ...data
+                investmentStats: investmentStats,
+                investmentTransactions: investmentTransactions,
+                processedInvestments: processedInvestments
             };
             localStorage.setItem(cacheKey, JSON.stringify(cacheData));
+            console.log("Investment data cached for:", email);
         } catch (e) {
             console.error("Failed to cache investment data:", e);
         }
@@ -1207,29 +1125,22 @@
         try {
             console.log("Loading investment data for:", email);
             
-            // First, try to load from persistent storage
-            const storedData = getStoredInvestmentData(email);
-            if (storedData && storedData.investments.length > 0) {
-                displayInvestments(storedData.investments);
-                displayInvestmentTransactions(storedData.transactions);
-                updateInvestmentStats(storedData.investments);
-                updateChartsWithData(storedData.investments);
-                return;
-            }
-            
-            // Try cached data
+            // Check for cached investment data first
             const cachedData = getCachedInvestmentData(email);
             if (cachedData) {
-                displayInvestments(cachedData.investments);
-                displayInvestmentTransactions(cachedData.transactions);
-                updateInvestmentStats(cachedData.investments);
-                updateChartsWithData(cachedData.investments);
+                // Use cached data for instant display
+                console.log("Using cached investment data");
+                displayInvestments(cachedData.processedInvestments);
+                displayInvestmentTransactions(cachedData.investmentTransactions);
+                updateInvestmentStats(cachedData.processedInvestments);
+                updateChartsWithData(cachedData.processedInvestments);
                 
+                // Still load fresh data in background
                 setTimeout(() => loadFreshInvestmentData(email), 100);
                 return;
             }
             
-            // Load fresh data
+            // No cache, load fresh data
             loadFreshInvestmentData(email);
             
         } catch (err) {
@@ -1242,6 +1153,7 @@
         try {
             console.log("Loading fresh investment data for:", email);
             
+            // Get cached transactions from localStorage
             const cachedData = localStorage.getItem(`${TRANSACTIONS_DATA_KEY}_${email}`);
             
             if (!cachedData) {
@@ -1258,146 +1170,57 @@
                 return;
             }
             
-            // Get existing investments to avoid duplicates
-            const existingData = getStoredInvestmentData(email);
-            const existingIds = existingData ? existingData.investments.map(i => i.id) : [];
-            
-            // Process transactions to create investments
-            const processedInvestments = [];
-            const investmentTransactions = [];
-            
-            allTransactions.forEach(transaction => {
+            // Filter to get ONLY investment transactions (Type contains "Investment")
+            const investmentTransactions = allTransactions.filter(transaction => {
                 const type = (transaction.type || '').toLowerCase();
                 const method = (transaction.method || '').toLowerCase();
-                const combinedText = type + ' ' + method;
                 
                 // Check if it's an investment transaction
-                const isDepositWithdrawal = type.includes('deposit') || 
-                                          type.includes('withdraw') ||
-                                          method.includes('deposit') ||
-                                          method.includes('withdraw');
+                const isInvestment = type.includes('investment') || 
+                                    method.includes('investment') ||
+                                    type.includes('invest') ||
+                                    method.includes('invest');
                 
-                const isMining = combinedText.includes('miner') || 
-                                combinedText.includes('mining') ||
-                                combinedText.includes('micro') ||
-                                combinedText.includes('plan') && !method.includes('hour') && !method.includes('day');
+                // Also check for specific investment keywords
+                const investmentKeywords = ['btc', 'bitcoin', 'eth', 'ethereum', 'usdt', 'tether', 
+                                          'gold', 'silver', 'platinum', 'rhodium', 'palladium',
+                                          'nvidia', 'apple', 'microsoft', 'google', 'amazon',
+                                          'spy', 'voo', 'ivv', 'vti', 'qqq'];
                 
-                if (!isDepositWithdrawal && !isMining) {
-                    const amount = parseFloat(transaction.amount) || 0;
-                    if (amount <= 0) return;
-                    
-                    // Parse transaction date
-                    let transactionDate;
-                    try {
-                        if (transaction.date) {
-                            transactionDate = new Date(transaction.date);
-                        } else if (transaction.timestamp) {
-                            transactionDate = new Date(transaction.timestamp);
-                        }
-                        
-                        if (!transactionDate || isNaN(transactionDate.getTime())) {
-                            transactionDate = new Date();
-                        }
-                    } catch (e) {
-                        transactionDate = new Date();
-                    }
-                    
-                    // Parse duration from method
-                    const durationInfo = parseDurationFromMethod(method);
-                    
-                    // Parse asset from method
-                    const assetKey = parseAssetFromMethod(method);
-                    let planInfo = INVESTMENT_PLANS[assetKey] || {
-                        type: 'crypto',
-                        roi: durationInfo.roi,
-                        duration: durationInfo.duration,
-                        durationUnit: durationInfo.durationUnit,
-                        asset: 'Investment',
-                        badge: 'badge-crypto',
-                        color: '#f59e0b'
-                    };
-                    
-                    // Override ROI with duration-specific ROI
-                    planInfo.roi = durationInfo.roi;
-                    planInfo.duration = durationInfo.duration;
-                    planInfo.durationUnit = durationInfo.durationUnit;
-                    
-                    // Calculate end time
-                    const startTime = transactionDate.getTime();
-                    const durationMs = durationToMs(durationInfo.duration, durationInfo.durationUnit);
-                    const endTime = startTime + durationMs;
-                    
-                    // Create investment ID
-                    const investmentId = `${transactionDate.getTime()}_${assetKey}_${amount}`;
-                    
-                    // Check if this investment already exists
-                    if (existingIds.includes(investmentId)) {
-                        return;
-                    }
-                    
-                    // Calculate current progress
-                    const now = Date.now();
-                    const isCompleted = now >= endTime;
-                    const progress = isCompleted ? 100 : Math.min(((now - startTime) / durationMs) * 100, 100);
-                    
-                    const investment = {
-                        id: investmentId,
-                        transactionId: transaction.id || Date.now(),
-                        assetKey: assetKey,
-                        planInfo: planInfo,
-                        amount: amount,
-                        startTime: transactionDate,
-                        endTime: new Date(endTime),
-                        duration: durationInfo.duration,
-                        durationUnit: durationInfo.durationUnit,
-                        roi: durationInfo.roi,
-                        status: isCompleted ? 'Completed' : 'Active',
-                        progress: progress,
-                        returns: (amount * durationInfo.roi) / 100
-                    };
-                    
-                    processedInvestments.push(investment);
-                    investmentTransactions.push({
-                        ...transaction,
-                        parsedDate: transactionDate,
-                        investmentId: investmentId
-                    });
-                }
+                const hasInvestmentKeyword = investmentKeywords.some(keyword => 
+                    method.toLowerCase().includes(keyword) || type.toLowerCase().includes(keyword)
+                );
+                
+                return isInvestment || hasInvestmentKeyword;
             });
             
-            console.log("Processed investments:", processedInvestments.length);
+            console.log("Filtered investment transactions:", investmentTransactions.length);
             
-            // Merge with existing investments
-            let allInvestments = processedInvestments;
-            if (existingData && existingData.investments.length > 0) {
-                allInvestments = [...existingData.investments, ...processedInvestments];
-            }
-            
-            // Save to persistent storage
-            saveInvestmentData(email, allInvestments, investmentTransactions);
-            
-            // Cache for quick access
-            cacheInvestmentData(email, {
-                investments: allInvestments,
-                transactions: investmentTransactions
-            });
-            
-            if (allInvestments.length === 0) {
+            if (investmentTransactions.length === 0) {
                 displayNoInvestments();
                 return;
             }
             
+            // Process investment transactions
+            const processedInvestments = processInvestmentTransactions(investmentTransactions);
+            
+            // Calculate investment stats
+            const investmentStats = calculateInvestmentStats(processedInvestments);
+            
+            // Cache the data
+            cacheInvestmentData(email, investmentStats, investmentTransactions, processedInvestments);
+            
             // Display investments
-            displayInvestments(allInvestments);
+            displayInvestments(processedInvestments);
             
             // Display transactions
             displayInvestmentTransactions(investmentTransactions);
             
             // Update summary statistics
-            updateInvestmentStats(allInvestments);
+            updateInvestmentStats(processedInvestments);
             
             // Initialize charts
-            updateChartsWithData(allInvestments);
+            updateChartsWithData(processedInvestments);
             
         } catch (err) {
             console.error("Error loading fresh investment data:", err);
@@ -1405,114 +1228,362 @@
         }
     }
     
-    function displayInvestments(investments) {
+    function parseDurationFromMethod(method) {
+        if (!method) return { duration: 30, unit: 'days', planName: '30 Days Plan' };
+        
+        const methodLower = method.toLowerCase();
+        
+        // Check for hour plans
+        if (methodLower.includes('1 hour') || methodLower.includes('1-hour')) {
+            return { duration: 1, unit: 'hours', planName: '1 Hour Plan' };
+        }
+        if (methodLower.includes('5 hour') || methodLower.includes('5-hour')) {
+            return { duration: 5, unit: 'hours', planName: '5 Hours Plan' };
+        }
+        if (methodLower.includes('24 hour') || methodLower.includes('24-hour') || methodLower.includes('1 day')) {
+            return { duration: 24, unit: 'hours', planName: '24 Hours Plan' };
+        }
+        if (methodLower.includes('72 hour') || methodLower.includes('72-hour') || methodLower.includes('3 day')) {
+            return { duration: 72, unit: 'hours', planName: '72 Hours Plan' };
+        }
+        if (methodLower.includes('1 week') || methodLower.includes('7 day')) {
+            return { duration: 7, unit: 'days', planName: '1 Week Plan' };
+        }
+        
+        // Default to 30 days if no duration found
+        return { duration: 30, unit: 'days', planName: '30 Days Plan' };
+    }
+    
+    function parseAssetFromMethod(method) {
+        if (!method) return { assetKey: 'bitcoin', assetName: 'Bitcoin (BTC)', type: 'crypto' };
+        
+        const methodLower = method.toLowerCase();
+        
+        // Cryptocurrencies
+        if (methodLower.includes('btc') || methodLower.includes('bitcoin')) {
+            return { assetKey: 'bitcoin', assetName: 'Bitcoin (BTC)', type: 'crypto' };
+        }
+        if (methodLower.includes('eth') || methodLower.includes('ethereum')) {
+            return { assetKey: 'ethereum', assetName: 'Ethereum (ETH)', type: 'crypto' };
+        }
+        if (methodLower.includes('usdt') || methodLower.includes('tether')) {
+            return { assetKey: 'tether', assetName: 'Tether (USDT)', type: 'crypto' };
+        }
+        
+        // Stocks
+        if (methodLower.includes('nvidia') || methodLower.includes('nvda')) {
+            return { assetKey: 'nvidia', assetName: 'NVIDIA (NVDA)', type: 'stock' };
+        }
+        if (methodLower.includes('apple') || methodLower.includes('aapl')) {
+            return { assetKey: 'apple', assetName: 'Apple (AAPL)', type: 'stock' };
+        }
+        if (methodLower.includes('microsoft') || methodLower.includes('msft')) {
+            return { assetKey: 'microsoft', assetName: 'Microsoft (MSFT)', type: 'stock' };
+        }
+        
+        // Precious Metals
+        if (methodLower.includes('gold')) {
+            return { assetKey: 'gold', assetName: 'Gold', type: 'metal' };
+        }
+        if (methodLower.includes('silver')) {
+            return { assetKey: 'silver', assetName: 'Silver', type: 'metal' };
+        }
+        if (methodLower.includes('platinum')) {
+            return { assetKey: 'platinum', assetName: 'Platinum', type: 'metal' };
+        }
+        
+        // ETFs
+        if (methodLower.includes('spy')) {
+            return { assetKey: 'spy', assetName: 'SPDR S&P 500 (SPY)', type: 'etf' };
+        }
+        if (methodLower.includes('voo')) {
+            return { assetKey: 'voo', assetName: 'Vanguard S&P 500 (VOO)', type: 'etf' };
+        }
+        
+        // Default to Bitcoin
+        return { assetKey: 'bitcoin', assetName: 'Bitcoin (BTC)', type: 'crypto' };
+    }
+    
+    function parseROIFromMethod(method, planName) {
+        // ROI based on plan name
+        const roiMap = {
+            '1 Hour Plan': 20,
+            '5 Hours Plan': 30,
+            '24 Hours Plan': 68,
+            '72 Hours Plan': 89,
+            '1 Week Plan': 190,
+            '30 Days Plan': 15
+        };
+        
+        return roiMap[planName] || 15;
+    }
+    
+    function processInvestmentTransactions(transactions) {
+        const processedInvestments = [];
+        const now = new Date();
+        
+        transactions.forEach((transaction, index) => {
+            const method = transaction.method || '';
+            const amount = parseFloat(transaction.amount) || 0;
+            
+            if (amount <= 0) return;
+            
+            // Parse transaction date
+            let transactionDate;
+            try {
+                if (transaction.date) {
+                    // Try to parse date in format "Month Day, Year" like "December 12, 2025"
+                    const dateStr = transaction.date.replace(/,/g, '');
+                    transactionDate = new Date(dateStr);
+                    
+                    if (isNaN(transactionDate.getTime()) && transaction.timestamp) {
+                        transactionDate = new Date(transaction.timestamp);
+                    }
+                } else if (transaction.timestamp) {
+                    transactionDate = new Date(transaction.timestamp);
+                }
+                
+                if (!transactionDate || isNaN(transactionDate.getTime())) {
+                    transactionDate = now;
+                }
+            } catch (e) {
+                console.error("Error parsing date:", e);
+                transactionDate = now;
+            }
+            
+            // Parse duration from method
+            const durationInfo = parseDurationFromMethod(method);
+            const assetInfo = parseAssetFromMethod(method);
+            const roi = parseROIFromMethod(method, durationInfo.planName);
+            
+            // Calculate duration in hours for progress calculation
+            let durationInHours = durationInfo.duration;
+            if (durationInfo.unit === 'days') {
+                durationInHours = durationInfo.duration * 24;
+            }
+            
+            // Calculate end date
+            const endDate = new Date(transactionDate);
+            if (durationInfo.unit === 'hours') {
+                endDate.setHours(endDate.getHours() + durationInfo.duration);
+            } else if (durationInfo.unit === 'days') {
+                endDate.setDate(endDate.getDate() + durationInfo.duration);
+            }
+            
+            // Calculate progress
+            const elapsedMs = now - transactionDate;
+            const totalMs = endDate - transactionDate;
+            const progress = Math.min(Math.max((elapsedMs / totalMs) * 100, 0), 100);
+            
+            // Calculate returns
+            const returns = (amount * roi) / 100;
+            const totalValue = amount + returns;
+            
+            // Determine status
+            const isCompleted = now >= endDate || progress >= 100;
+            const status = isCompleted ? 'Completed' : 'Active';
+            
+            // Get plan info
+            const planInfo = INVESTMENT_PLANS[assetInfo.assetKey] || {
+                type: assetInfo.type,
+                asset: assetInfo.assetName,
+                badge: `badge-${assetInfo.type}`,
+                color: '#f59e0b'
+            };
+            
+            processedInvestments.push({
+                id: `inv_${index}_${Date.now()}`,
+                transaction: transaction,
+                amount: amount,
+                roi: roi,
+                returns: returns,
+                totalValue: totalValue,
+                startDate: transactionDate,
+                endDate: endDate,
+                progress: progress,
+                status: status,
+                duration: durationInfo,
+                asset: assetInfo,
+                planInfo: planInfo,
+                isCompleted: isCompleted,
+                formattedDate: formatDate(transactionDate)
+            });
+        });
+        
+        console.log("Processed investments:", processedInvestments.length);
+        return processedInvestments;
+    }
+    
+    function calculateInvestmentStats(processedInvestments) {
+        const stats = {
+            totalInvestment: 0,
+            totalReturns: 0,
+            portfolioValue: 0,
+            activeCount: 0,
+            completedCount: 0,
+            byType: {},
+            bestPerformer: null
+        };
+        
+        processedInvestments.forEach(inv => {
+            stats.totalInvestment += inv.amount;
+            stats.totalReturns += inv.returns;
+            stats.portfolioValue += inv.totalValue;
+            
+            if (inv.isCompleted) {
+                stats.completedCount++;
+            } else {
+                stats.activeCount++;
+            }
+            
+            // Track by type
+            if (!stats.byType[inv.asset.type]) {
+                stats.byType[inv.asset.type] = {
+                    count: 0,
+                    total: 0,
+                    returns: 0
+                };
+            }
+            stats.byType[inv.asset.type].count++;
+            stats.byType[inv.asset.type].total += inv.amount;
+            stats.byType[inv.asset.type].returns += inv.returns;
+            
+            // Track best performer
+            if (!stats.bestPerformer || inv.returns > stats.bestPerformer.returns) {
+                stats.bestPerformer = {
+                    name: inv.asset.assetName,
+                    returns: inv.returns,
+                    roi: inv.roi
+                };
+            }
+        });
+        
+        return stats;
+    }
+    
+    function formatDate(date) {
+        const options = { 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        };
+        return date.toLocaleDateString('en-US', options);
+    }
+    
+    function formatDuration(duration) {
+        if (duration.unit === 'hours') {
+            if (duration.duration === 1) return '1 Hour';
+            if (duration.duration === 5) return '5 Hours';
+            if (duration.duration === 24) return '24 Hours';
+            if (duration.duration === 72) return '72 Hours';
+            return `${duration.duration} Hours`;
+        } else if (duration.unit === 'days') {
+            if (duration.duration === 1) return '1 Day';
+            if (duration.duration === 7) return '1 Week';
+            return `${duration.duration} Days`;
+        }
+        return `${duration.duration} ${duration.unit}`;
+    }
+    
+    function displayInvestments(processedInvestments) {
         const container = document.getElementById('investmentContainer');
         const currencySymbol = getCurrentCurrencySymbol();
         
-        if (!investments || investments.length === 0) {
+        if (!processedInvestments || processedInvestments.length === 0) {
             displayNoInvestments();
             return;
         }
         
-        // Sort by end time (soonest first)
-        investments.sort((a, b) => new Date(a.endTime) - new Date(b.endTime));
+        // Sort by date (newest first)
+        processedInvestments.sort((a, b) => b.startDate - a.startDate);
         
         container.innerHTML = '';
         
-        investments.forEach((investment, index) => {
-            const plan = investment.planInfo;
-            const now = new Date();
-            const startTime = new Date(investment.startTime);
-            const endTime = new Date(investment.endTime);
-            
-            // Calculate time remaining
-            const timeRemainingMs = Math.max(0, endTime - now);
-            const timeRemaining = formatTimeRemaining(timeRemainingMs);
-            
-            // Calculate progress
-            const totalDuration = endTime - startTime;
-            const elapsed = Math.max(0, now - startTime);
-            const progress = Math.min((elapsed / totalDuration) * 100, 100);
-            
-            // Calculate returns
-            const returns = investment.returns;
-            const dailyReturn = returns / Math.max(investment.duration, 1);
-            
-            // Format dates
-            const formattedStartDate = startTime.toLocaleDateString('en-US', {
-                month: 'short',
-                day: 'numeric',
-                year: 'numeric'
-            });
-            
-            const formattedStartTime = startTime.toLocaleTimeString('en-US', {
-                hour: '2-digit',
-                minute: '2-digit'
-            });
-            
+        processedInvestments.forEach((inv, index) => {
             const investmentCard = document.createElement('div');
             investmentCard.className = 'investment-card p-6 mb-4';
-            investmentCard.dataset.type = plan.type;
-            investmentCard.dataset.id = investment.id;
+            investmentCard.dataset.type = inv.asset.type;
+            investmentCard.dataset.id = inv.id;
+            
+            // Calculate remaining time
+            const now = new Date();
+            let remainingText = 'Completed';
+            let remainingValue = 0;
+            
+            if (!inv.isCompleted) {
+                const remainingMs = inv.endDate - now;
+                if (remainingMs > 0) {
+                    if (inv.duration.unit === 'hours') {
+                        remainingValue = Math.ceil(remainingMs / (1000 * 60 * 60));
+                        remainingText = `${remainingValue}h`;
+                    } else if (inv.duration.unit === 'days') {
+                        remainingValue = Math.ceil(remainingMs / (1000 * 60 * 60 * 24));
+                        remainingText = `${remainingValue}d`;
+                    }
+                }
+            }
+            
+            // Calculate daily return (for display purposes)
+            const totalHours = inv.duration.unit === 'hours' ? inv.duration.duration : inv.duration.duration * 24;
+            const dailyReturn = totalHours > 0 ? (inv.returns / totalHours) * 24 : 0;
             
             investmentCard.innerHTML = `
                 <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div class="mb-4 md:mb-0">
                         <div class="flex items-center gap-3 mb-2">
-                            <span class="text-2xl">${getIconForType(plan.type)}</span>
+                            <span class="text-2xl">${getIconForType(inv.asset.type)}</span>
                             <div>
                                 <div class="flex items-center gap-2">
-                                    <span class="${plan.badge} investment-badge">${plan.type.toUpperCase()}</span>
+                                    <span class="${inv.planInfo.badge} investment-badge">${inv.asset.type.toUpperCase()}</span>
                                     <span class="text-sm text-gray-400">#${index + 1}</span>
-                                    <span class="text-xs px-2 py-1 rounded-full ${investment.status === 'Completed' ? 'status-completed' : 'status-active'}">
-                                        ${investment.status}
+                                    <span class="text-xs px-2 py-1 rounded-full ${inv.isCompleted ? 'bg-blue-500/20 text-blue-400' : 'bg-green-500/20 text-green-400'}">
+                                        ${inv.status}
                                     </span>
                                 </div>
-                                <h3 class="text-lg font-semibold text-white mt-1">${plan.asset}</h3>
-                                <p class="text-sm text-gray-400">ROI: ${investment.roi}% • ${formatDuration(investment.duration, investment.durationUnit)}</p>
+                                <h3 class="text-lg font-semibold text-white mt-1">${inv.asset.assetName}</h3>
+                                <p class="text-sm text-gray-400">${inv.duration.planName} • ROI: ${inv.roi}%</p>
                             </div>
                         </div>
                         <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
                             <div>
                                 <p class="text-xs text-gray-500">Amount</p>
-                                <p class="text-sm font-semibold text-white" data-amount="${investment.amount}">${currencySymbol}${investment.amount.toFixed(2)}</p>
+                                <p class="text-sm font-semibold text-white" data-amount="${inv.amount}">${currencySymbol}${inv.amount.toFixed(2)}</p>
                             </div>
                             <div>
-                                <p class="text-xs text-gray-500">Daily</p>
-                                <p class="text-sm font-semibold text-green-400" data-amount="${dailyReturn}">+${currencySymbol}${dailyReturn.toFixed(2)}</p>
+                                <p class="text-xs text-gray-500">Duration</p>
+                                <p class="text-sm font-semibold text-cyan-400">${formatDuration(inv.duration)}</p>
                             </div>
                             <div>
                                 <p class="text-xs text-gray-500">Total Returns</p>
-                                <p class="text-sm font-semibold text-cyan-400" data-amount="${returns}">${currencySymbol}${returns.toFixed(2)}</p>
+                                <p class="text-sm font-semibold text-green-400" data-amount="${inv.returns}">${currencySymbol}${inv.returns.toFixed(2)}</p>
                             </div>
                             <div>
-                                <p class="text-xs text-gray-500">Time Remaining</p>
-                                <span class="text-xs time-remaining">${timeRemaining}</span>
+                                <p class="text-xs text-gray-500">Started</p>
+                                <p class="text-sm text-gray-300">${inv.startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</p>
                             </div>
                         </div>
                         
                         <div class="mt-4">
                             <div class="flex justify-between text-sm mb-1">
                                 <span class="text-gray-400">Progress</span>
-                                <span class="text-white">${progress.toFixed(1)}%</span>
+                                <span class="text-white">${inv.progress.toFixed(1)}%</span>
                             </div>
                             <div class="w-full bg-gray-700 rounded-full h-2.5">
-                                <div class="progress-bar h-2.5 rounded-full" style="width: ${progress}%"></div>
+                                <div class="progress-bar h-2.5 rounded-full" style="width: ${inv.progress}%"></div>
                             </div>
-                        </div>
-                        
-                        <div class="text-xs text-gray-500 mt-2">
-                            Started: ${formattedStartDate} ${formattedStartTime}
                         </div>
                     </div>
                     
                     <div class="md:text-right">
                         <div class="mb-2">
-                            <span class="text-gray-400">Ends In</span>
-                            <p class="text-2xl font-bold bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text text-transparent">${timeRemaining}</p>
+                            <span class="text-gray-400">${inv.isCompleted ? 'Completed' : 'Remaining'}</span>
+                            <p class="text-2xl font-bold bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text text-transparent">${remainingText}</p>
                         </div>
                         <div class="text-sm text-gray-400">
-                            Ends: ${endTime.toLocaleDateString('en-US', {
+                            ${inv.isCompleted ? 'Ended: ' : 'Ends: '}
+                            ${inv.endDate.toLocaleDateString('en-US', {
                                 month: 'short',
                                 day: 'numeric',
                                 hour: '2-digit',
@@ -1534,7 +1605,7 @@
         const container = document.getElementById('investmentTransactionsList');
         const currencySymbol = getCurrentCurrencySymbol();
         
-        if (!transactions || transactions.length === 0) {
+        if (transactions.length === 0) {
             container.innerHTML = `
                 <tr>
                     <td colspan="8" class="text-center py-12">
@@ -1547,8 +1618,8 @@
         
         // Sort by date (newest first)
         transactions.sort((a, b) => {
-            const dateA = a.parsedDate || new Date(a.timestamp) || new Date(a.date);
-            const dateB = b.parsedDate || new Date(b.timestamp) || new Date(b.date);
+            const dateA = new Date(a.date || a.timestamp);
+            const dateB = new Date(b.date || b.timestamp);
             return dateB - dateA;
         });
         
@@ -1558,50 +1629,43 @@
             const row = document.createElement('tr');
             row.className = 'border-b border-gray-800 hover:bg-gray-800/50';
             
-            const transactionDate = transaction.parsedDate || new Date(transaction.timestamp) || new Date(transaction.date);
-            const formattedDate = transactionDate.toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: 'short',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-            });
+            // Parse transaction data
+            const transactionDate = new Date(transaction.date || transaction.timestamp);
+            const formattedDate = formatDate(transactionDate);
             
             const amount = parseFloat(transaction.amount) || 0;
-            const method = (transaction.method || '').toLowerCase();
+            const method = transaction.method || '';
             
-            // Parse duration and asset
+            // Parse asset and duration from method
+            const assetInfo = parseAssetFromMethod(method);
             const durationInfo = parseDurationFromMethod(method);
-            const assetKey = parseAssetFromMethod(method);
-            const plan = INVESTMENT_PLANS[assetKey] || {
-                type: 'crypto',
-                roi: durationInfo.roi,
-                asset: 'Investment',
-                badge: 'badge-crypto'
-            };
+            const roi = parseROIFromMethod(method, durationInfo.planName);
+            const returns = (amount * roi) / 100;
             
-            // Calculate returns
-            const returns = (amount * durationInfo.roi) / 100;
+            // Calculate end date and status
+            const endDate = new Date(transactionDate);
+            if (durationInfo.unit === 'hours') {
+                endDate.setHours(endDate.getHours() + durationInfo.duration);
+            } else if (durationInfo.unit === 'days') {
+                endDate.setDate(endDate.getDate() + durationInfo.duration);
+            }
             
-            // Determine status based on end time
-            const startTime = transactionDate.getTime();
-            const durationMs = durationToMs(durationInfo.duration, durationInfo.durationUnit);
-            const endTime = startTime + durationMs;
-            const now = Date.now();
-            const isCompleted = now >= endTime;
+            const now = new Date();
+            const isCompleted = now >= endDate;
+            const status = isCompleted ? 'Completed' : 'Active';
             
             row.innerHTML = `
                 <td class="py-3 px-4 text-sm text-gray-300">${formattedDate}</td>
                 <td class="py-3 px-4">
-                    <span class="${plan.badge} investment-badge text-xs">${plan.type.toUpperCase()}</span>
+                    <span class="badge-${assetInfo.type} investment-badge text-xs">${assetInfo.type.toUpperCase()}</span>
                 </td>
-                <td class="py-3 px-4 text-sm text-white font-medium">${plan.asset}</td>
-                <td class="py-3 px-4 text-sm text-gray-300">${formatDuration(durationInfo.duration, durationInfo.durationUnit)} Plan</td>
+                <td class="py-3 px-4 text-sm text-white font-medium">${assetInfo.assetName}</td>
+                <td class="py-3 px-4 text-sm text-gray-300">${durationInfo.planName}</td>
                 <td class="py-3 px-4 text-sm text-green-400 font-semibold" data-amount="${amount}">${currencySymbol}${amount.toFixed(2)}</td>
-                <td class="py-3 px-4 text-sm text-gray-300">${formatDuration(durationInfo.duration, durationInfo.durationUnit)}</td>
+                <td class="py-3 px-4 text-sm text-gray-300">${formatDuration(durationInfo)}</td>
                 <td class="py-3 px-4 text-sm">
-                    <span class="px-2 py-1 rounded-full text-xs ${isCompleted ? 'status-completed' : 'status-active'}">
-                        ${isCompleted ? 'Completed' : 'Active'}
+                    <span class="px-2 py-1 rounded-full text-xs ${isCompleted ? 'bg-blue-500/10 text-blue-400' : 'bg-green-400/10 text-green-400'}">
+                        ${status}
                     </span>
                 </td>
                 <td class="py-3 px-4 text-sm text-yellow-400 font-semibold" data-amount="${returns}">${currencySymbol}${returns.toFixed(2)}</td>
@@ -1614,60 +1678,52 @@
         updateCurrencyDisplay();
     }
     
-    function updateInvestmentStats(investments) {
+    function updateInvestmentStats(processedInvestments) {
         const currencySymbol = getCurrentCurrencySymbol();
         
-        let totalInvestment = 0;
-        let totalReturns = 0;
-        let activePlans = 0;
-        let bestPerformer = { name: '-', returns: 0 };
-        let portfolioValue = 0;
-        
-        investments.forEach(investment => {
-            totalInvestment += investment.amount;
-            totalReturns += investment.returns;
-            portfolioValue += investment.amount + investment.returns;
-            
-            if (investment.status === 'Active') {
-                activePlans++;
-            }
-            
-            if (investment.returns > bestPerformer.returns) {
-                bestPerformer = {
-                    name: investment.planInfo.asset,
-                    returns: investment.returns
-                };
-            }
-        });
-        
-        const growthPercentage = totalInvestment > 0 ? (totalReturns / totalInvestment) * 100 : 0;
-        const dailyAverage = totalReturns > 0 ? totalReturns / 30 : 0;
+        const stats = calculateInvestmentStats(processedInvestments);
         
         // Update with data attributes for currency conversion
         const totalInvestmentEl = document.getElementById('totalInvestment');
-        totalInvestmentEl.innerHTML = `<span class="currency-symbol">${currencySymbol}</span>${totalInvestment.toFixed(2)}`;
-        totalInvestmentEl.setAttribute('data-amount', totalInvestment);
+        totalInvestmentEl.innerHTML = `<span class="currency-symbol">${currencySymbol}</span>${stats.totalInvestment.toFixed(2)}`;
+        totalInvestmentEl.setAttribute('data-amount', stats.totalInvestment);
         
         const totalReturnsEl = document.getElementById('totalReturns');
-        totalReturnsEl.innerHTML = `<span class="currency-symbol">${currencySymbol}</span>${totalReturns.toFixed(2)}`;
-        totalReturnsEl.setAttribute('data-amount', totalReturns);
+        totalReturnsEl.innerHTML = `<span class="currency-symbol">${currencySymbol}</span>${stats.totalReturns.toFixed(2)}`;
+        totalReturnsEl.setAttribute('data-amount', stats.totalReturns);
         
         const portfolioValueEl = document.getElementById('portfolioValue');
-        portfolioValueEl.innerHTML = `<span class="currency-symbol">${currencySymbol}</span>${portfolioValue.toFixed(2)}`;
-        portfolioValueEl.setAttribute('data-amount', portfolioValue);
+        portfolioValueEl.innerHTML = `<span class="currency-symbol">${currencySymbol}</span>${stats.portfolioValue.toFixed(2)}`;
+        portfolioValueEl.setAttribute('data-amount', stats.portfolioValue);
         
+        // Calculate growth percentage
+        const growthPercentage = stats.totalInvestment > 0 ? 
+            ((stats.totalReturns / stats.totalInvestment) * 100) : 0;
         document.getElementById('growthPercentage').textContent = `${growthPercentage.toFixed(1)}%`;
-        document.getElementById('activePlansCount').textContent = activePlans;
         
+        // Update active plans count
+        document.getElementById('activePlansCount').textContent = stats.activeCount;
+        
+        // Calculate daily average (returns per day)
+        const totalDays = Math.max(processedInvestments.length, 1);
+        const dailyAverage = stats.totalReturns / totalDays;
         const dailyAverageEl = document.getElementById('dailyAverage');
         dailyAverageEl.innerHTML = `<span class="currency-symbol">${currencySymbol}</span>${dailyAverage.toFixed(2)}`;
         dailyAverageEl.setAttribute('data-amount', dailyAverage);
         
-        document.getElementById('bestPerformer').textContent = bestPerformer.name;
-        
+        // Update best performer
+        const bestPerformerEl = document.getElementById('bestPerformer');
         const bestPerformerReturnsEl = document.getElementById('bestPerformerReturns');
-        bestPerformerReturnsEl.innerHTML = `<span class="currency-symbol">${currencySymbol}</span>${bestPerformer.returns.toFixed(2)}`;
-        bestPerformerReturnsEl.setAttribute('data-amount', bestPerformer.returns);
+        
+        if (stats.bestPerformer) {
+            bestPerformerEl.textContent = stats.bestPerformer.name;
+            bestPerformerReturnsEl.innerHTML = `<span class="currency-symbol">${currencySymbol}</span>${stats.bestPerformer.returns.toFixed(2)}`;
+            bestPerformerReturnsEl.setAttribute('data-amount', stats.bestPerformer.returns);
+        } else {
+            bestPerformerEl.textContent = '-';
+            bestPerformerReturnsEl.innerHTML = `<span class="currency-symbol">${currencySymbol}</span>0.00`;
+            bestPerformerReturnsEl.setAttribute('data-amount', '0');
+        }
     }
     
     function displayNoInvestments() {
@@ -1688,30 +1744,19 @@
         
         const currencySymbol = getCurrentCurrencySymbol();
         
-        const totalInvestmentEl = document.getElementById('totalInvestment');
-        totalInvestmentEl.innerHTML = `<span class="currency-symbol">${currencySymbol}</span>0.00`;
-        totalInvestmentEl.setAttribute('data-amount', '0');
-        
-        const totalReturnsEl = document.getElementById('totalReturns');
-        totalReturnsEl.innerHTML = `<span class="currency-symbol">${currencySymbol}</span>0.00`;
-        totalReturnsEl.setAttribute('data-amount', '0');
-        
-        const portfolioValueEl = document.getElementById('portfolioValue');
-        portfolioValueEl.innerHTML = `<span class="currency-symbol">${currencySymbol}</span>0.00`;
-        portfolioValueEl.setAttribute('data-amount', '0');
+        // Reset all stats to zero
+        const elementsToReset = ['totalInvestment', 'totalReturns', 'portfolioValue', 'dailyAverage', 'bestPerformerReturns'];
+        elementsToReset.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+                el.innerHTML = `<span class="currency-symbol">${currencySymbol}</span>0.00`;
+                el.setAttribute('data-amount', '0');
+            }
+        });
         
         document.getElementById('growthPercentage').textContent = '0%';
         document.getElementById('activePlansCount').textContent = '0';
-        
-        const dailyAverageEl = document.getElementById('dailyAverage');
-        dailyAverageEl.innerHTML = `<span class="currency-symbol">${currencySymbol}</span>0.00`;
-        dailyAverageEl.setAttribute('data-amount', '0');
-        
         document.getElementById('bestPerformer').textContent = '-';
-        
-        const bestPerformerReturnsEl = document.getElementById('bestPerformerReturns');
-        bestPerformerReturnsEl.innerHTML = `<span class="currency-symbol">${currencySymbol}</span>0.00`;
-        bestPerformerReturnsEl.setAttribute('data-amount', '0');
         
         const containerTable = document.getElementById('investmentTransactionsList');
         containerTable.innerHTML = `
@@ -1843,30 +1888,26 @@
         });
     }
     
-    function updateChartsWithData(investments) {
+    function updateChartsWithData(processedInvestments) {
         if (performanceChart) performanceChart.destroy();
         if (distributionChart) distributionChart.destroy();
         
         const currencySymbol = getCurrentCurrencySymbol();
+        const stats = calculateInvestmentStats(processedInvestments);
         
-        // Update performance chart with real data
+        // Update performance chart with projection
         const performanceCtx = document.getElementById('performanceChart').getContext('2d');
         
-        // Calculate portfolio value over last 7 days
+        // Create 7-day projection based on current portfolio value
         const labels = [];
         const data = [];
+        const baseValue = stats.portfolioValue;
         
-        // Get total portfolio value
-        let totalPortfolioValue = 0;
-        investments.forEach(investment => {
-            totalPortfolioValue += investment.amount + investment.returns;
-        });
-        
-        // Create projection for next 7 days (assuming 5% daily growth)
         for (let i = 0; i < 7; i++) {
             labels.push(`Day ${i + 1}`);
-            const growthFactor = 1 + (0.05 * i);
-            data.push(Math.round(totalPortfolioValue * growthFactor));
+            // Project 2% daily growth
+            const projectedValue = baseValue * Math.pow(1.02, i);
+            data.push(Math.round(projectedValue));
         }
         
         performanceChart = new Chart(performanceCtx, {
@@ -1914,32 +1955,24 @@
         // Update distribution chart with real data
         const distributionCtx = document.getElementById('distributionChart').getContext('2d');
         
-        const typeData = {};
-        const typeColors = {};
         const typeLabels = [];
         const typeValues = [];
-        const typeColorMap = {
+        const typeColors = {
             'crypto': '#f59e0b',
             'stock': '#3b82f6',
             'etf': '#10b981',
             'metal': '#fbbf24'
         };
         
-        investments.forEach(investment => {
-            const type = investment.planInfo.type;
-            if (!typeData[type]) {
-                typeData[type] = 0;
+        for (const [type, typeStats] of Object.entries(stats.byType)) {
+            if (typeStats.total > 0) {
+                typeLabels.push(type.charAt(0).toUpperCase() + type.slice(1));
+                typeValues.push(typeStats.total);
             }
-            typeData[type] += investment.amount;
-            typeColors[type] = investment.planInfo.color || typeColorMap[type] || '#8b5cf6';
-        });
-        
-        for (const [type, value] of Object.entries(typeData)) {
-            typeLabels.push(type.charAt(0).toUpperCase() + type.slice(1));
-            typeValues.push(value);
         }
         
-        if (typeValues.length === 0) {
+        // If no data, show empty chart
+        if (typeLabels.length === 0) {
             typeLabels.push('Crypto', 'Stocks', 'ETFs', 'Metals');
             typeValues.push(25, 25, 25, 25);
         }
@@ -1952,7 +1985,7 @@
                     data: typeValues,
                     backgroundColor: typeLabels.map(label => {
                         const type = label.toLowerCase();
-                        return typeColors[type] || typeColorMap[type] || '#8b5cf6';
+                        return typeColors[type] || '#8b5cf6';
                     }),
                     borderWidth: 0
                 }]
@@ -1967,7 +2000,7 @@
                             label: function(context) {
                                 const value = context.raw;
                                 const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                                const percentage = ((value / total) * 100).toFixed(1);
+                                const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
                                 return `${context.label}: ${currencySymbol}${value.toLocaleString()} (${percentage}%)`;
                             }
                         }
@@ -1994,7 +2027,7 @@
             </div>
         `;
         
-        // Clear cache and reload fresh data
+        // Clear cache and reload
         localStorage.removeItem(`${INVESTMENT_CACHE_KEY}_${userEmail}`);
         
         setTimeout(() => {
@@ -2042,42 +2075,6 @@
             default: return '💰';
         }
     }
-    
-    // Auto-update investments every minute
-    setInterval(() => {
-        const userEmail = localStorage.getItem("v0trade_user_email");
-        if (userEmail) {
-            const storedData = getStoredInvestmentData(userEmail);
-            if (storedData && storedData.investments.length > 0) {
-                // Update progress and status
-                const updatedInvestments = storedData.investments.map(investment => {
-                    const now = new Date();
-                    const startTime = new Date(investment.startTime);
-                    const endTime = new Date(investment.endTime);
-                    
-                    if (now >= endTime && investment.status !== 'Completed') {
-                        investment.status = 'Completed';
-                        investment.progress = 100;
-                    } else if (now < endTime) {
-                        const totalDuration = endTime - startTime;
-                        const elapsed = now - startTime;
-                        investment.progress = Math.min((elapsed / totalDuration) * 100, 100);
-                    }
-                    
-                    return investment;
-                });
-                
-                // Save updated data
-                saveInvestmentData(userEmail, updatedInvestments, storedData.transactions);
-                
-                // Update display if we're on the investment tracks page
-                if (window.location.pathname.includes('investment-tracks')) {
-                    displayInvestments(updatedInvestments);
-                    updateInvestmentStats(updatedInvestments);
-                }
-            }
-        }
-    }, 60000); // Update every minute
     
     // Auto-refresh when returning to the page
     window.addEventListener('focus', () => {
