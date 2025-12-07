@@ -772,7 +772,7 @@
         { code: 'CAD', symbol: 'C$', name: 'Canadian Dollar' }
     ];
     
-    // Constants - SAME AS DASHBOARD
+    // IMPORTANT: Use the SAME transaction data key as dashboard.js
     const TRANSACTIONS_DATA_KEY = "v0trade_transactions_data";
     const INVESTMENT_CACHE_KEY = "v0trade_investment_cache";
     const INVESTMENT_CACHE_EXPIRY = 5 * 60 * 1000; // 5 minutes cache
@@ -985,17 +985,20 @@
     
     function loadFreshInvestmentData(email) {
         try {
-            // Get cached transactions from localStorage - SAME KEY AS DASHBOARD
+            // Get cached transactions from localStorage - IMPORTANT: Use the SAME key as dashboard
             const cachedData = localStorage.getItem(`${TRANSACTIONS_DATA_KEY}_${email}`);
             
             if (!cachedData) {
-                console.log("No cached transactions data found");
-                displayNoInvestments();
+                console.log("No cached transactions data found. Checking if we need to fetch from API...");
+                
+                // If no cached data, we need to fetch from the dashboard API
+                fetchDashboardTransactions(email);
                 return;
             }
             
             const allTransactions = JSON.parse(cachedData);
             console.log("Total transactions found in cache:", allTransactions.length);
+            console.log("Sample transaction:", allTransactions[0]);
             
             // Filter to get ONLY investment transactions (not mining)
             const investmentTransactions = allTransactions.filter(transaction => {
@@ -1069,6 +1072,81 @@
             
         } catch (err) {
             console.error("Error loading fresh investment data:", err);
+            displayNoInvestments();
+        }
+    }
+    
+    async function fetchDashboardTransactions(email) {
+        try {
+            console.log("Fetching transactions from dashboard API for:", email);
+            
+            // Simulate fetching from the dashboard's API endpoint
+            // In a real implementation, you would call the same API as the dashboard
+            const API_TOKEN = "LG6hnTBxgBG78FueElsSwpHRd4Wep1oL";
+            const TRANSACTIONS_TABLE = 756081;
+            
+            const url = `https://api.baserow.io/api/database/rows/table/${TRANSACTIONS_TABLE}/?user_field_names=true&size=200`;
+            
+            const res = await fetch(url, {
+                headers: { Authorization: `Token ${API_TOKEN}` }
+            });
+            
+            const data = await res.json();
+            
+            if (!data.results || data.results.length === 0) {
+                console.log("No transactions found from API");
+                displayNoInvestments();
+                return;
+            }
+            
+            // Filter transactions by user email
+            const userTransactions = data.results.filter(row => {
+                const rowEmail = row["email"] || row["field_6394448"] || "";
+                return rowEmail.toLowerCase() === email.toLowerCase();
+            });
+            
+            console.log("API transactions for user:", userTransactions.length);
+            
+            if (userTransactions.length === 0) {
+                displayNoInvestments();
+                return;
+            }
+            
+            // Process the API transactions
+            const transactions = userTransactions.map(row => {
+                const transaction = {
+                    id: row.id,
+                    email: row["email"] || row["field_6394448"] || "",
+                    amount: row["amount"] || row["field_6394449"] || "0.00",
+                    type: row["type"] || row["field_6394450"] || "",
+                    method: row["method"] || row["field_6394451"] || "",
+                    status: row["status"] || row["field_6394452"] || "",
+                    date: row["date"] || row["field_6394453"] || new Date().toISOString(),
+                    timestamp: 0
+                };
+                
+                // Parse date to timestamp
+                try {
+                    transaction.timestamp = new Date(transaction.date).getTime();
+                    if (isNaN(transaction.timestamp)) {
+                        transaction.timestamp = Date.now();
+                    }
+                } catch (e) {
+                    transaction.timestamp = Date.now();
+                }
+                
+                return transaction;
+            });
+            
+            // Save to localStorage (same as dashboard does)
+            localStorage.setItem(`${TRANSACTIONS_DATA_KEY}_${email}`, JSON.stringify(transactions));
+            localStorage.setItem(`v0trade_last_transaction_sync_${email}`, Date.now().toString());
+            
+            // Now load the investment data with these transactions
+            loadFreshInvestmentData(email);
+            
+        } catch (err) {
+            console.error("Error fetching dashboard transactions:", err);
             displayNoInvestments();
         }
     }
@@ -1192,7 +1270,7 @@
             }
             
             if (!planKey) {
-                console.log("No plan match found for investment transaction");
+                console.log("No plan match found for investment transaction:", transactionText);
                 return;
             }
             
@@ -1859,9 +1937,9 @@
             // Clear cache and reload
             localStorage.removeItem(`${INVESTMENT_CACHE_KEY}_${userEmail}`);
             
-            // Reload data
+            // Force refresh from API
             setTimeout(() => {
-                loadFreshInvestmentData(userEmail);
+                fetchDashboardTransactions(userEmail);
                 
                 // Show success indicator
                 const refreshBtn = document.querySelector('button[onclick="refreshInvestments()"]');
@@ -1923,6 +2001,5 @@
             }
         });
     </script>
-
 </body>
 </html>
