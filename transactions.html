@@ -40,6 +40,13 @@
         .type-earning { color: #7c3aed; }
         .type-commission { color: #d97706; }
         .type-investment { color: #2563eb; }
+        
+        /* Currency selector styles */
+        .currency-selector { position: relative; display: inline-block; }
+        .currency-dropdown { display: none; position: absolute; background-color: white; min-width: 140px; box-shadow: 0 8px 16px rgba(0,0,0,0.1); border-radius: 8px; border: 1px solid #e5e7eb; padding: 8px 0; z-index: 1000; right: 0; }
+        .currency-option { padding: 8px 16px; cursor: pointer; display: flex; align-items: center; gap: 8px; }
+        .currency-option:hover { background-color: #f9fafb; }
+        .currency-flag { width: 20px; height: 20px; border-radius: 50%; }
     </style>
 </head>
 <body class="bg-gray-50" onload="loadTransactions()">
@@ -100,6 +107,41 @@
                 </nav>
 
                 <div class="hidden items-center gap-4 md:flex">
+                    <!-- Currency Selector Added Here -->
+                    <div class="currency-selector">
+                        <button onclick="toggleCurrencyDropdown()" class="flex items-center gap-2 px-3 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg transition text-sm text-gray-300 hover:text-white">
+                            <span id="currentCurrencySymbol">$</span>
+                            <span id="currentCurrencyCode">USD</span>
+                            <span>▼</span>
+                        </button>
+                        <div id="currencyDropdown" class="currency-dropdown">
+                            <div class="currency-option" onclick="changeCurrency('$', 'USD', '🇺🇸')">
+                                <span class="currency-flag" style="background: linear-gradient(to bottom, #bf0a30 50%, #002868 50%);"></span>
+                                <span>$ USD</span>
+                            </div>
+                            <div class="currency-option" onclick="changeCurrency('€', 'EUR', '🇪🇺')">
+                                <span class="currency-flag" style="background: linear-gradient(to bottom, #003399 33%, #ffcc00 33%, #ffcc00 66%, #ff0000 66%);"></span>
+                                <span>€ EUR</span>
+                            </div>
+                            <div class="currency-option" onclick="changeCurrency('£', 'GBP', '🇬🇧')">
+                                <span class="currency-flag" style="background: linear-gradient(135deg, #012169 0%, #012169 33%, #c8102e 33%, #c8102e 66%, #ffffff 66%);"></span>
+                                <span>£ GBP</span>
+                            </div>
+                            <div class="currency-option" onclick="changeCurrency('¥', 'JPY', '🇯🇵')">
+                                <span class="currency-flag" style="background: radial-gradient(circle, #bc002d 30%, white 30%);"></span>
+                                <span>¥ JPY</span>
+                            </div>
+                            <div class="currency-option" onclick="changeCurrency('₹', 'INR', '🇮🇳')">
+                                <span class="currency-flag" style="background: linear-gradient(to bottom, #ff9933 33%, #ffffff 33%, #ffffff 66%, #138808 66%);"></span>
+                                <span>₹ INR</span>
+                            </div>
+                            <div class="currency-option" onclick="changeCurrency('₿', 'BTC', '₿')">
+                                <span class="currency-flag" style="background: #f7931a; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold;">₿</span>
+                                <span>₿ BTC</span>
+                            </div>
+                        </div>
+                    </div>
+                    
                     <a href="dashboard.html" class="text-sm text-purple-400 hover:text-purple-300 transition">Dashboard</a>
                     <span class="text-sm text-gray-400" id="headerEmailDisplay">user@email.com</span>
                     <a href="index.html" class="text-sm text-gray-300 hover:text-white transition">Logout</a>
@@ -114,6 +156,41 @@
 
             <div id="mobileMenu" class="mobile-menu border-t border-purple-500/20 py-4 md:hidden">
                 <nav class="flex flex-col gap-3">
+                    <!-- Mobile Currency Selector -->
+                    <div class="currency-selector mb-3">
+                        <button onclick="toggleCurrencyDropdownMobile()" class="flex items-center gap-2 px-3 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg transition text-sm text-gray-300 hover:text-white w-full">
+                            <span id="currentCurrencySymbolMobile">$</span>
+                            <span id="currentCurrencyCodeMobile">USD</span>
+                            <span class="ml-auto">▼</span>
+                        </button>
+                        <div id="currencyDropdownMobile" class="currency-dropdown w-full">
+                            <div class="currency-option" onclick="changeCurrency('$', 'USD', '🇺🇸')">
+                                <span class="currency-flag" style="background: linear-gradient(to bottom, #bf0a30 50%, #002868 50%);"></span>
+                                <span>$ USD</span>
+                            </div>
+                            <div class="currency-option" onclick="changeCurrency('€', 'EUR', '🇪🇺')">
+                                <span class="currency-flag" style="background: linear-gradient(to bottom, #003399 33%, #ffcc00 33%, #ffcc00 66%, #ff0000 66%);"></span>
+                                <span>€ EUR</span>
+                            </div>
+                            <div class="currency-option" onclick="changeCurrency('£', 'GBP', '🇬🇧')">
+                                <span class="currency-flag" style="background: linear-gradient(135deg, #012169 0%, #012169 33%, #c8102e 33%, #c8102e 66%, #ffffff 66%);"></span>
+                                <span>£ GBP</span>
+                            </div>
+                            <div class="currency-option" onclick="changeCurrency('¥', 'JPY', '🇯🇵')">
+                                <span class="currency-flag" style="background: radial-gradient(circle, #bc002d 30%, white 30%);"></span>
+                                <span>¥ JPY</span>
+                            </div>
+                            <div class="currency-option" onclick="changeCurrency('₹', 'INR', '🇮🇳')">
+                                <span class="currency-flag" style="background: linear-gradient(to bottom, #ff9933 33%, #ffffff 33%, #ffffff 66%, #138808 66%);"></span>
+                                <span>₹ INR</span>
+                            </div>
+                            <div class="currency-option" onclick="changeCurrency('₿', 'BTC', '₿')">
+                                <span class="currency-flag" style="background: #f7931a; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold;">₿</span>
+                                <span>₿ BTC</span>
+                            </div>
+                        </div>
+                    </div>
+                    
                     <a href="index.html" class="text-sm text-gray-300 hover:text-white">Home</a>
                     <a href="cryptocurrencies.html" class="text-sm text-gray-300 hover:text-white">Cryptocurrencies</a>
                     <a href="precious-metals.html" class="text-sm text-gray-300 hover:text-white">Precious Metals</a>
@@ -180,7 +257,7 @@
                         <div class="flex items-center justify-between">
                             <div>
                                 <p class="text-sm text-gray-500">Total Amount</p>
-                                <p id="totalAmount" class="text-2xl font-bold text-gray-900">$0.00</p>
+                                <p id="totalAmount" class="text-2xl font-bold text-gray-900"><span id="currencySymbol1">$</span>0.00</p>
                             </div>
                             <div class="text-green-500 bg-green-50 p-2 rounded-lg">
                                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -193,7 +270,7 @@
                         <div class="flex items-center justify-between">
                             <div>
                                 <p class="text-sm text-gray-500">Deposits</p>
-                                <p id="totalDeposits" class="text-2xl font-bold text-green-600">$0.00</p>
+                                <p id="totalDeposits" class="text-2xl font-bold text-green-600"><span id="currencySymbol2">$</span>0.00</p>
                             </div>
                             <div class="text-green-500 bg-green-50 p-2 rounded-lg">
                                 <span class="text-lg">📥</span>
@@ -204,7 +281,7 @@
                         <div class="flex items-center justify-between">
                             <div>
                                 <p class="text-sm text-gray-500">Withdrawals</p>
-                                <p id="totalWithdrawals" class="text-2xl font-bold text-red-600">$0.00</p>
+                                <p id="totalWithdrawals" class="text-2xl font-bold text-red-600"><span id="currencySymbol3">$</span>0.00</p>
                             </div>
                             <div class="text-red-500 bg-red-50 p-2 rounded-lg">
                                 <span class="text-lg">📤</span>
@@ -215,7 +292,7 @@
                         <div class="flex items-center justify-between">
                             <div>
                                 <p class="text-sm text-gray-500">Earnings</p>
-                                <p id="totalEarnings" class="text-2xl font-bold text-purple-600">$0.00</p>
+                                <p id="totalEarnings" class="text-2xl font-bold text-purple-600"><span id="currencySymbol4">$</span>0.00</p>
                             </div>
                             <div class="text-purple-500 bg-purple-50 p-2 rounded-lg">
                                 <span class="text-lg">💰</span>
@@ -325,11 +402,13 @@
         // Local storage keys
         const LAST_TRANSACTION_SYNC_KEY = "v0trade_last_transaction_sync";
         const TRANSACTIONS_DATA_KEY = "v0trade_transactions_data";
+        const CURRENCY_PREFERENCE_KEY = "v0trade_currency_preference";
         
         // State variables
         let allTransactions = [];
         let filteredTransactions = [];
         let currentSort = { field: 'date', direction: 'desc' };
+        let currentCurrency = { symbol: '$', code: 'USD', flag: '🇺🇸' };
         
         // Load user email and transactions
         function loadTransactions() {
@@ -342,6 +421,9 @@
             
             document.getElementById("headerEmailDisplay").textContent = userEmail;
             
+            // Load currency preference
+            loadCurrencyPreference();
+            
             // Show loading state
             document.getElementById("loadingState").classList.remove("hidden");
             document.getElementById("contentState").classList.add("hidden");
@@ -350,6 +432,76 @@
             // Try to load from Baserow
             fetchTransactionsFromBaserow(userEmail);
         }
+        
+        // Load currency preference from localStorage
+        function loadCurrencyPreference() {
+            const savedCurrency = localStorage.getItem(CURRENCY_PREFERENCE_KEY);
+            if (savedCurrency) {
+                currentCurrency = JSON.parse(savedCurrency);
+                updateCurrencyDisplay();
+            }
+        }
+        
+        // Update currency display in UI
+        function updateCurrencyDisplay() {
+            // Update desktop display
+            document.getElementById("currentCurrencySymbol").textContent = currentCurrency.symbol;
+            document.getElementById("currentCurrencyCode").textContent = currentCurrency.code;
+            
+            // Update mobile display
+            document.getElementById("currentCurrencySymbolMobile").textContent = currentCurrency.symbol;
+            document.getElementById("currentCurrencyCodeMobile").textContent = currentCurrency.code;
+            
+            // Update all currency symbols in the stats cards
+            for (let i = 1; i <= 4; i++) {
+                document.getElementById(`currencySymbol${i}`).textContent = currentCurrency.symbol;
+            }
+            
+            // Update transaction table if it's already loaded
+            if (filteredTransactions.length > 0) {
+                displayTransactions();
+                updateStats(allTransactions);
+            }
+        }
+        
+        // Toggle currency dropdown (desktop)
+        function toggleCurrencyDropdown() {
+            const dropdown = document.getElementById("currencyDropdown");
+            dropdown.style.display = dropdown.style.display === "block" ? "none" : "block";
+        }
+        
+        // Toggle currency dropdown (mobile)
+        function toggleCurrencyDropdownMobile() {
+            const dropdown = document.getElementById("currencyDropdownMobile");
+            dropdown.style.display = dropdown.style.display === "block" ? "none" : "block";
+        }
+        
+        // Change currency
+        function changeCurrency(symbol, code, flag) {
+            currentCurrency = { symbol, code, flag };
+            
+            // Save to localStorage
+            localStorage.setItem(CURRENCY_PREFERENCE_KEY, JSON.stringify(currentCurrency));
+            
+            // Update display
+            updateCurrencyDisplay();
+            
+            // Close dropdowns
+            document.getElementById("currencyDropdown").style.display = "none";
+            document.getElementById("currencyDropdownMobile").style.display = "none";
+        }
+        
+        // Close dropdowns when clicking outside
+        document.addEventListener('click', function(event) {
+            const currencyDropdown = document.getElementById("currencyDropdown");
+            const currencyDropdownMobile = document.getElementById("currencyDropdownMobile");
+            const currencyBtn = document.querySelector('.currency-selector button');
+            
+            if (!event.target.closest('.currency-selector')) {
+                if (currencyDropdown) currencyDropdown.style.display = 'none';
+                if (currencyDropdownMobile) currencyDropdownMobile.style.display = 'none';
+            }
+        });
         
         // Fetch transactions from Baserow
         async function fetchTransactionsFromBaserow(email, forceRefresh = false) {
@@ -542,9 +694,9 @@
                     formattedDate = transaction.date || 'Unknown date';
                 }
                 
-                // Format amount
+                // Format amount with current currency symbol
                 const amount = parseFloat(transaction.amount) || 0;
-                const formattedAmount = `$${Math.abs(amount).toFixed(2)}`;
+                const formattedAmount = `${currentCurrency.symbol}${Math.abs(amount).toFixed(2)}`;
                 
                 // Determine amount color based on type
                 const type = transaction.type?.toLowerCase() || '';
@@ -646,10 +798,10 @@
                 }
             });
             
-            document.getElementById("totalAmount").textContent = `$${totalAmount.toFixed(2)}`;
-            document.getElementById("totalDeposits").textContent = `$${totalDeposits.toFixed(2)}`;
-            document.getElementById("totalWithdrawals").textContent = `$${totalWithdrawals.toFixed(2)}`;
-            document.getElementById("totalEarnings").textContent = `$${totalEarnings.toFixed(2)}`;
+            document.getElementById("totalAmount").innerHTML = `<span id="currencySymbol1">${currentCurrency.symbol}</span>${totalAmount.toFixed(2)}`;
+            document.getElementById("totalDeposits").innerHTML = `<span id="currencySymbol2">${currentCurrency.symbol}</span>${totalDeposits.toFixed(2)}`;
+            document.getElementById("totalWithdrawals").innerHTML = `<span id="currencySymbol3">${currentCurrency.symbol}</span>${totalWithdrawals.toFixed(2)}`;
+            document.getElementById("totalEarnings").innerHTML = `<span id="currencySymbol4">${currentCurrency.symbol}</span>${totalEarnings.toFixed(2)}`;
         }
         
         // Filter transactions based on search and filters
@@ -824,7 +976,7 @@
                 const status = transaction.status || '';
                 const id = transaction.id;
                 
-                csv += `"${date}","${type}","${amount}","${method}","${status}","${id}"\n`;
+                csv += `"${date}","${type}","${currentCurrency.symbol}${amount}","${method}","${status}","${id}"\n`;
             });
             
             // Create download link
@@ -832,7 +984,7 @@
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `v0trade-transactions-${new Date().toISOString().split('T')[0]}.csv`;
+            a.download = `v0trade-transactions-${new Date().toISOString().split('T')[0]}-${currentCurrency.code}.csv`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
