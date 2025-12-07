@@ -88,6 +88,206 @@
             border-color: #10b981;
             background: #f0fdf4;
         }
+        
+        /* Currency switcher styles */
+        .currency-switcher {
+            position: relative;
+            display: inline-block;
+        }
+        
+        .currency-selector {
+            padding: 6px 12px;
+            border: 1px solid rgba(249, 115, 22, 0.3);
+            border-radius: 6px;
+            background: rgba(249, 115, 22, 0.1);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: rgb(249 115 22);
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        
+        .currency-selector:hover {
+            border-color: rgb(249, 115, 22);
+            background: rgba(249, 115, 22, 0.2);
+        }
+        
+        .currency-dropdown {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: white;
+            border: 1px solid rgb(229, 231, 235);
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            min-width: 200px;
+            z-index: 1000;
+            display: none;
+            margin-top: 5px;
+            padding: 8px;
+        }
+        
+        .currency-dropdown.show {
+            display: block;
+            animation: fadeIn 0.2s ease;
+        }
+        
+        .currency-option-dropdown {
+            padding: 10px 12px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border-radius: 6px;
+            color: rgb(55 65 81);
+            font-size: 14px;
+        }
+        
+        .currency-option-dropdown:hover {
+            background: rgba(249, 115, 22, 0.1);
+        }
+        
+        .currency-option-dropdown.active {
+            background: rgba(249, 115, 22, 0.15);
+            color: rgb(249 115 22);
+            font-weight: 600;
+        }
+        
+        .currency-option-dropdown .symbol {
+            font-size: 18px;
+            width: 24px;
+            text-align: center;
+        }
+        
+        .currency-option-dropdown .code {
+            font-weight: 600;
+            min-width: 40px;
+        }
+        
+        .currency-option-dropdown .name {
+            color: rgb(107 114 128);
+            font-size: 12px;
+            flex-grow: 1;
+            text-align: right;
+        }
+        
+        /* Mobile currency selector - always visible */
+        .mobile-currency-toggle {
+            padding: 8px 12px;
+            border: 1px solid rgba(249, 115, 22, 0.3);
+            border-radius: 6px;
+            background: rgba(249, 115, 22, 0.1);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: rgb(249 115 22);
+            font-size: 14px;
+            transition: all 0.3s;
+            margin-left: auto;
+            margin-right: 12px;
+        }
+        
+        .mobile-currency-dropdown {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            border: 1px solid rgb(229, 231, 235);
+            border-radius: 12px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            width: 90%;
+            max-width: 320px;
+            z-index: 1100;
+            display: none;
+            padding: 16px;
+        }
+        
+        .mobile-currency-dropdown.show {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        .mobile-currency-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1099;
+            display: none;
+        }
+        
+        .mobile-currency-overlay.show {
+            display: block;
+        }
+        
+        .mobile-currency-option {
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border-radius: 8px;
+            color: rgb(55 65 81);
+            font-size: 16px;
+            margin-bottom: 8px;
+        }
+        
+        .mobile-currency-option:hover {
+            background: rgba(249, 115, 22, 0.1);
+        }
+        
+        .mobile-currency-option.active {
+            background: rgba(249, 115, 22, 0.15);
+            color: rgb(249 115 22);
+            font-weight: 600;
+        }
+        
+        .mobile-currency-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid rgb(229, 231, 235);
+        }
+        
+        .mobile-currency-header h3 {
+            color: rgb(17 24 39);
+            font-size: 18px;
+            font-weight: 600;
+        }
+        
+        .close-currency-menu {
+            background: none;
+            border: none;
+            color: rgb(107 114 128);
+            font-size: 24px;
+            cursor: pointer;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+        }
+        
+        .close-currency-menu:hover {
+            background: rgba(249, 115, 22, 0.1);
+            color: rgb(249 115 22);
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translate(-50%, -48%); }
+            to { opacity: 1; transform: translate(-50%, -50%); }
+        }
     </style>
 </head>
 <body class="bg-gray-50">
@@ -122,6 +322,7 @@
                     <span class="text-xl font-bold bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent">V0 Trade</span>
                 </a>
 
+                <!-- Desktop Navigation -->
                 <nav class="hidden items-center gap-8 md:flex">
                     <a href="index.html" class="text-sm text-gray-300 hover:text-white transition">Home</a>
                     <div class="dropdown">
@@ -145,19 +346,42 @@
                     </div>
                 </nav>
 
+                <!-- Right Side - Auth with Currency Switcher -->
                 <div class="hidden items-center gap-4 md:flex">
+                    <!-- Desktop Currency Switcher -->
+                    <div class="currency-switcher">
+                        <div class="currency-selector" onclick="toggleDesktopCurrencyMenu()">
+                            <span class="current-symbol">$</span>
+                            <span class="current-code">USD</span>
+                            <span>▼</span>
+                        </div>
+                        <div class="currency-dropdown" id="desktopCurrencyMenu"></div>
+                    </div>
+                    
                     <a href="dashboard.html" class="text-sm text-purple-400 hover:text-purple-300 transition">Dashboard</a>
                     <span class="text-sm text-gray-400" id="headerEmail">user@email.com</span>
                     <a href="index.html" class="text-sm text-gray-300 hover:text-white transition">Logout</a>
                 </div>
 
-                <button class="md:hidden" onclick="toggleMobileMenu()">
-                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
-                    </svg>
-                </button>
+                <!-- Mobile header section with currency toggle and menu button -->
+                <div class="flex items-center gap-2 md:hidden">
+                    <!-- Mobile Currency Toggle (always visible) -->
+                    <button class="mobile-currency-toggle" onclick="toggleMobileCurrencyMenu()">
+                        <span class="mobile-currency-symbol">$</span>
+                        <span class="mobile-currency-code">USD</span>
+                        <span>▼</span>
+                    </button>
+
+                    <!-- Mobile Menu Button -->
+                    <button class="md:hidden" onclick="toggleMobileMenu()">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                        </svg>
+                    </button>
+                </div>
             </div>
 
+            <!-- Mobile Menu (without currency selector) -->
             <div id="mobileMenu" class="mobile-menu border-t border-purple-500/20 py-4 md:hidden">
                 <nav class="flex flex-col gap-3">
                     <a href="index.html" class="text-sm text-gray-300 hover:text-white">Home</a>
@@ -176,6 +400,20 @@
             </div>
         </div>
     </header>
+
+    <!-- Mobile Currency Menu Overlay -->
+    <div class="mobile-currency-overlay" id="mobileCurrencyOverlay" onclick="closeMobileCurrencyMenu()"></div>
+    
+    <!-- Mobile Currency Menu -->
+    <div class="mobile-currency-dropdown" id="mobileCurrencyMenu">
+        <div class="mobile-currency-header">
+            <h3>Select Currency</h3>
+            <button class="close-currency-menu" onclick="closeMobileCurrencyMenu()">×</button>
+        </div>
+        <div class="mobile-currency-options">
+            <!-- Options will be populated by JavaScript -->
+        </div>
+    </div>
 
     <div class="flex min-h-screen">
         <aside id="sidebar" class="sidebar w-64 bg-white border-r border-gray-200 p-4">
@@ -274,6 +512,11 @@
                         </div>
                         <h1 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Withdraw Your Funds</h1>
                         <p class="text-lg text-gray-600">Safely withdraw your funds using our secure process.</p>
+                        <!-- Current Balance Display -->
+                        <div class="mt-4 inline-block bg-white border border-gray-200 rounded-lg px-6 py-3">
+                            <p class="text-sm text-gray-600">Available Balance</p>
+                            <p id="currentBalance" class="text-2xl font-bold text-gray-900"><span data-currency-symbol>$</span>0.00</p>
+                        </div>
                     </div>
 
                     <div class="grid md:grid-cols-2 gap-6">
@@ -319,19 +562,19 @@
 
                     <div id="cryptoForm" class="hidden bg-white rounded-xl border border-gray-200 p-6 space-y-4">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Withdrawal Amount (USD)</label>
-                            <input type="number" id="cryptoAmount" min="25" max="100000" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent" placeholder="Enter amount ($25 - $100,000)" oninput="calculateCryptoFee()">
-                            <p class="text-xs text-gray-500 mt-1">Minimum: $25 | Maximum: $100,000</p>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Withdrawal Amount <span id="cryptoCurrencySymbol">$</span></label>
+                            <input type="number" id="cryptoAmount" min="25" max="100000" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent" placeholder="Enter amount (25 - 100,000)" oninput="calculateCryptoFee()">
+                            <p class="text-xs text-gray-500 mt-1">Minimum: <span data-currency-symbol>$</span>25 | Maximum: <span data-currency-symbol>$</span>100,000</p>
                         </div>
 
                         <div class="bg-orange-50 border border-orange-200 rounded-lg p-4 space-y-2">
                             <div class="flex justify-between text-sm">
                                 <span class="text-gray-700">Processing Charge (1%):</span>
-                                <span class="font-semibold text-gray-900" id="cryptoFee">$0.00</span>
+                                <span class="font-semibold text-gray-900" id="cryptoFee"><span data-currency-symbol>$</span>0.00</span>
                             </div>
                             <div class="flex justify-between">
                                 <span class="text-gray-700 font-medium">You will receive:</span>
-                                <span class="font-bold text-xl text-orange-600" id="cryptoReceivable">$0.00</span>
+                                <span class="font-bold text-xl text-orange-600" id="cryptoReceivable"><span data-currency-symbol>$</span>0.00</span>
                             </div>
                         </div>
 
@@ -359,19 +602,19 @@
 
                     <div class="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Withdrawal Amount (USD)</label>
-                            <input type="number" id="bankAmount" min="25" max="100000" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Enter amount ($25 - $100,000)" oninput="calculateBankFee()">
-                            <p class="text-xs text-gray-500 mt-1">Minimum: $25 | Maximum: $100,000</p>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Withdrawal Amount <span id="bankCurrencySymbol">$</span></label>
+                            <input type="number" id="bankAmount" min="25" max="100000" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Enter amount (25 - 100,000)" oninput="calculateBankFee()">
+                            <p class="text-xs text-gray-500 mt-1">Minimum: <span data-currency-symbol>$</span>25 | Maximum: <span data-currency-symbol>$</span>100,000</p>
                         </div>
 
                         <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-2">
                             <div class="flex justify-between text-sm">
                                 <span class="text-gray-700">Processing Charge (1%):</span>
-                                <span class="font-semibold text-gray-900" id="bankFee">$0.00</span>
+                                <span class="font-semibold text-gray-900" id="bankFee"><span data-currency-symbol>$</span>0.00</span>
                             </div>
                             <div class="flex justify-between">
                                 <span class="text-gray-700 font-medium">You will receive:</span>
-                                <span class="font-bold text-xl text-blue-600" id="bankReceivable">$0.00</span>
+                                <span class="font-bold text-xl text-blue-600" id="bankReceivable"><span data-currency-symbol>$</span>0.00</span>
                             </div>
                         </div>
 
@@ -395,61 +638,207 @@
     </div>
 
     <script>
-        const WITHDRAWAL_TABLE_ID = 756079;
-        const WITHDRAWAL_API_URL = `https://api.baserow.io/api/database/rows/table/${WITHDRAWAL_TABLE_ID}/?user_field_names=true`;
+        // API Configuration
         const BASEROW_TOKEN = "LG6hnTBxgBG78FueElsSwpHRd4Wep1oL";
+        const WALLETS_TABLE_ID = 756077;
+        const WITHDRAWALS_TABLE_ID = 756079;
         
-        let currentUserEmail = "";
-        let selectedCryptoType = "";
-        let withdrawalSteps = {};
-
-        // Step configuration matching Baserow fields
+        // Currency data
+        const CURRENCIES = [
+            { code: 'USD', symbol: '$', name: 'US Dollar' },
+            { code: 'EUR', symbol: '€', name: 'Euro' },
+            { code: 'GBP', symbol: '£', name: 'British Pound' },
+            { code: 'ZAR', symbol: 'R', name: 'South African Rand' },
+            { code: 'INR', symbol: '₹', name: 'Indian Rupee' },
+            { code: 'JPY', symbol: '¥', name: 'Japanese Yen' },
+            { code: 'AUD', symbol: 'A$', name: 'Australian Dollar' },
+            { code: 'CAD', symbol: 'C$', name: 'Canadian Dollar' }
+        ];
+        
+        // Step configuration - Each step now has an "emails" array for specific users
         const STEP_CONFIG = [
             { 
                 field: "MinimumActive", 
                 title: "Minimum Active Investments",
                 message: "You must have at least 3 active investments before you can enable withdrawals.",
-                icon: "📊"
+                icon: "📊",
+                emails: [] // Add specific emails here: ["user1@example.com", "user2@example.com"]
             },
             { 
                 field: "MinimumInvestment", 
                 title: "Minimum Investment Amount",
                 message: "To activate withdrawals, you must invest at least $100 minimum across all plans.",
-                icon: "💰"
+                icon: "💰",
+                emails: [] // Add specific emails here
             },
             { 
                 field: "AccountVerification", 
                 title: "Account Verification (KYC)",
                 message: "Please complete Account Verification (KYC) to access withdrawals.",
-                icon: "✅"
+                icon: "✅",
+                emails: [] // Add specific emails here
             },
             { 
                 field: "WithdrawalFee", 
                 title: "Withdrawal Fee Requirement",
                 message: "To unlock withdrawals, you must pay the Withdrawal Processing Fee.",
-                icon: "💳"
+                icon: "💳",
+                emails: [] // Add specific emails here
             },
             { 
                 field: "AntiFraud", 
                 title: "Anti-Fraud Security Clearance",
                 message: "Your account must pass Anti-Fraud Security Clearance before withdrawing.",
-                icon: "🔒"
+                icon: "🔒",
+                emails: [] // Add specific emails here
             },
             { 
                 field: "TradingActivity", 
                 title: "Trading Activity Requirement",
                 message: "To withdraw, you must have at least one completed investment cycle.",
-                icon: "🔄"
+                icon: "🔄",
+                emails: [] // Add specific emails here
             },
             { 
                 field: "WithdrawalAccess", 
                 title: "Withdrawal Access Enabled",
                 message: "Your account must have Withdrawal Access Enabled. Please wait for approval.",
-                icon: "🎯"
+                icon: "🎯",
+                emails: [] // Add specific emails here
             }
         ];
+        
+        let currentUserEmail = "";
+        let selectedCryptoType = "";
+        let withdrawalSteps = {};
+        let userWalletRowId = null;
+        let userWalletBalance = 0;
+        let userCurrency = 'USD';
 
-        // Check authentication and load withdrawal status on page load
+        // Mobile currency menu functions
+        function toggleMobileCurrencyMenu() {
+            const overlay = document.getElementById('mobileCurrencyOverlay');
+            const menu = document.getElementById('mobileCurrencyMenu');
+            
+            overlay.classList.toggle('show');
+            menu.classList.toggle('show');
+            
+            if (menu.querySelector('.mobile-currency-options').children.length === 0) {
+                populateMobileCurrencyOptions();
+            }
+        }
+        
+        function closeMobileCurrencyMenu() {
+            document.getElementById('mobileCurrencyOverlay').classList.remove('show');
+            document.getElementById('mobileCurrencyMenu').classList.remove('show');
+        }
+        
+        function populateMobileCurrencyOptions() {
+            const container = document.querySelector('.mobile-currency-options');
+            const currentCurrency = getCurrentCurrency();
+            
+            container.innerHTML = '';
+            
+            CURRENCIES.forEach(currency => {
+                const option = document.createElement('div');
+                option.className = `mobile-currency-option ${currency.code === currentCurrency ? 'active' : ''}`;
+                option.innerHTML = `
+                    <span class="symbol" style="font-size: 20px; width: 30px;">${currency.symbol}</span>
+                    <span class="code" style="font-weight: 600; min-width: 50px;">${currency.code}</span>
+                    <span class="name" style="color: #94a3b8; font-size: 14px; flex-grow: 1; text-align: right;">${currency.name}</span>
+                `;
+                option.onclick = () => selectMobileCurrency(currency.code);
+                container.appendChild(option);
+            });
+        }
+        
+        // Desktop currency menu functions
+        function toggleDesktopCurrencyMenu() {
+            const menu = document.getElementById('desktopCurrencyMenu');
+            menu.classList.toggle('show');
+            
+            if (menu.children.length === 0) {
+                populateDesktopCurrencyOptions();
+            }
+        }
+        
+        function populateDesktopCurrencyOptions() {
+            const container = document.getElementById('desktopCurrencyMenu');
+            const currentCurrency = getCurrentCurrency();
+            
+            container.innerHTML = '';
+            
+            CURRENCIES.forEach(currency => {
+                const option = document.createElement('div');
+                option.className = `currency-option-dropdown ${currency.code === currentCurrency ? 'active' : ''}`;
+                option.innerHTML = `
+                    <span class="symbol">${currency.symbol}</span>
+                    <span class="code">${currency.code}</span>
+                    <span class="name">${currency.name}</span>
+                `;
+                option.onclick = () => selectDesktopCurrency(currency.code);
+                container.appendChild(option);
+            });
+        }
+        
+        function selectDesktopCurrency(currencyCode) {
+            updateCurrencyDisplay(currencyCode);
+            document.getElementById('desktopCurrencyMenu').classList.remove('show');
+            // Refresh calculations with new currency
+            calculateCryptoFee();
+            calculateBankFee();
+        }
+        
+        function selectMobileCurrency(currencyCode) {
+            updateCurrencyDisplay(currencyCode);
+            closeMobileCurrencyMenu();
+            // Refresh calculations with new currency
+            calculateCryptoFee();
+            calculateBankFee();
+        }
+        
+        function getCurrentCurrency() {
+            return localStorage.getItem('v0trade_currency') || 'USD';
+        }
+        
+        function updateCurrencyDisplay(currencyCode) {
+            userCurrency = currencyCode;
+            const currency = CURRENCIES.find(c => c.code === currencyCode);
+            if (!currency) return;
+            
+            // Save to localStorage
+            localStorage.setItem('v0trade_currency', currencyCode);
+            
+            // Update all currency symbols
+            document.querySelectorAll('[data-currency-symbol]').forEach(el => {
+                el.textContent = currency.symbol;
+            });
+            
+            // Update specific currency symbol inputs
+            document.getElementById('cryptoCurrencySymbol').textContent = currency.symbol;
+            document.getElementById('bankCurrencySymbol').textContent = currency.symbol;
+            
+            // Update desktop selector
+            const desktopSelector = document.querySelector('.currency-selector');
+            if (desktopSelector) {
+                desktopSelector.querySelector('.current-symbol').textContent = currency.symbol;
+                desktopSelector.querySelector('.current-code').textContent = currency.code;
+            }
+            
+            // Update mobile toggle
+            document.querySelector('.mobile-currency-symbol').textContent = currency.symbol;
+            document.querySelector('.mobile-currency-code').textContent = currency.code;
+            
+            // Update current balance display
+            updateBalanceDisplay();
+        }
+        
+        function updateBalanceDisplay() {
+            const currencySymbol = CURRENCIES.find(c => c.code === userCurrency)?.symbol || '$';
+            document.getElementById('currentBalance').innerHTML = `${currencySymbol}${userWalletBalance.toFixed(2)}`;
+        }
+
+        // Check authentication and load data on page load
         window.addEventListener('DOMContentLoaded', async function() {
             currentUserEmail = localStorage.getItem("v0trade_user_email");
             
@@ -460,13 +849,22 @@
             }
 
             document.getElementById('headerEmail').textContent = currentUserEmail;
+            
+            // Initialize currency
+            userCurrency = getCurrentCurrency();
+            updateCurrencyDisplay(userCurrency);
+            
+            // Check wallet balance first
+            await checkWalletBalance();
+            
+            // Then check withdrawal eligibility
             await checkWithdrawalEligibility();
         });
 
-        async function checkWithdrawalEligibility() {
+        async function checkWalletBalance() {
             try {
-                // Fetch user's withdrawal record from Baserow
-                const response = await fetch(`${WITHDRAWAL_API_URL}&filters={"filter_type":"AND","filters":[{"type":"equal","field":"email","value":"${currentUserEmail}"}]}`, {
+                // First, check if user has a wallet record
+                const response = await fetch(`https://api.baserow.io/api/database/rows/table/${WALLETS_TABLE_ID}/?user_field_names=true&filters={"filter_type":"AND","filters":[{"type":"equal","field":"email","value":"${currentUserEmail}"}]}`, {
                     headers: {
                         "Authorization": `Token ${BASEROW_TOKEN}`,
                         "Content-Type": "application/json"
@@ -476,49 +874,102 @@
                 const data = await response.json();
                 
                 if (data.results.length === 0) {
-                    withdrawalSteps = {
-                        MinimumActive: "No",
-                        MinimumInvestment: "No",
-                        AccountVerification: "No",
-                        WithdrawalFee: "No",
-                        AntiFraud: "No",
-                        TradingActivity: "No",
-                        WithdrawalAccess: "No"
-                    };
-                    displaySteps();
-                    return;
+                    // Create a new wallet record for the user
+                    const createResponse = await fetch(`https://api.baserow.io/api/database/rows/table/${WALLETS_TABLE_ID}/?user_field_names=true`, {
+                        method: "POST",
+                        headers: {
+                            "Authorization": `Token ${BASEROW_TOKEN}`,
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({
+                            "email": currentUserEmail,
+                            "Total Wallet Balance": 0,
+                            "All Earning Wallet": 0,
+                            "Miner Earning": 0,
+                            "Total Ref. Commissions": 0,
+                            "Investment Earning": 0
+                        })
+                    });
+
+                    const newWallet = await createResponse.json();
+                    userWalletRowId = newWallet.id;
+                    userWalletBalance = 0;
+                } else {
+                    // Use existing wallet
+                    const wallet = data.results[0];
+                    userWalletRowId = wallet.id;
+                    userWalletBalance = parseFloat(wallet["Total Wallet Balance"]) || 0;
+                }
+                
+                updateBalanceDisplay();
+                
+            } catch (error) {
+                console.error("Error checking wallet balance:", error);
+                userWalletBalance = 0;
+                updateBalanceDisplay();
+            }
+        }
+
+        async function checkWithdrawalEligibility() {
+            try {
+                // Fetch user's withdrawal record from Baserow
+                const response = await fetch(`https://api.baserow.io/api/database/rows/table/${WITHDRAWALS_TABLE_ID}/?user_field_names=true&filters={"filter_type":"AND","filters":[{"type":"equal","field":"email","value":"${currentUserEmail}"}]}`, {
+                    headers: {
+                        "Authorization": `Token ${BASEROW_TOKEN}`,
+                        "Content-Type": "application/json"
+                    }
+                });
+
+                const data = await response.json();
+                
+                if (data.results.length === 0) {
+                    // Initialize all steps as "No" for new users
+                    withdrawalSteps = {};
+                    STEP_CONFIG.forEach(step => {
+                        withdrawalSteps[step.field] = "No";
+                    });
+                } else {
+                    // Load existing step data from the latest withdrawal record
+                    const latestRecord = data.results[data.results.length - 1];
+                    withdrawalSteps = {};
+                    STEP_CONFIG.forEach(step => {
+                        withdrawalSteps[step.field] = latestRecord[step.field] || "No";
+                    });
                 }
 
-                // Load existing step data
-                const record = data.results[0];
-                withdrawalSteps = {
-                    MinimumActive: record.MinimumActive || "No",
-                    MinimumInvestment: record.MinimumInvestment || "No",
-                    AccountVerification: record.AccountVerification || "No",
-                    WithdrawalFee: record.WithdrawalFee || "No",
-                    AntiFraud: record.AntiFraud || "No",
-                    TradingActivity: record.TradingActivity || "No",
-                    WithdrawalAccess: record.WithdrawalAccess || "No"
-                };
-
-                // Check if all steps are completed
-                const allStepsCompleted = Object.values(withdrawalSteps).every(step => step === "Yes");
+                // Check if user should see the step verification
+                const shouldShowSteps = shouldShowStepVerification();
                 
-                if (allStepsCompleted) {
+                if (shouldShowSteps) {
+                    displaySteps();
+                } else {
                     // Show withdrawal form
                     document.getElementById('mainWithdraw').classList.remove('hidden');
                     document.getElementById('stepVerification').classList.add('hidden');
-                } else {
-                    // Show step verification
-                    displaySteps();
                 }
 
             } catch (error) {
                 console.error("Error checking withdrawal eligibility:", error);
-                alert("Error loading withdrawal status. Please try again.");
+                // On error, show withdrawal form anyway
                 document.getElementById('mainWithdraw').classList.remove('hidden');
                 document.getElementById('stepVerification').classList.add('hidden');
             }
+        }
+
+        function shouldShowStepVerification() {
+            // Check if user's email is in any step's email list
+            let showVerification = false;
+            
+            STEP_CONFIG.forEach(step => {
+                if (step.emails && step.emails.includes(currentUserEmail)) {
+                    // Check if this step is completed
+                    if (withdrawalSteps[step.field] !== "Yes") {
+                        showVerification = true;
+                    }
+                }
+            });
+            
+            return showVerification;
         }
 
         function displaySteps() {
@@ -536,6 +987,11 @@
                 const stepConfig = STEP_CONFIG[i];
                 const stepStatus = withdrawalSteps[stepConfig.field] || "No";
                 const isCompleted = stepStatus === "Yes";
+                
+                // Only show steps that have the user's email in the emails array
+                if (!stepConfig.emails || !stepConfig.emails.includes(currentUserEmail)) {
+                    continue;
+                }
 
                 if (!firstIncompleteFound && !isCompleted) {
                     firstIncompleteFound = true;
@@ -555,7 +1011,6 @@
                         </div>
                     `;
                     stepContainer.appendChild(stepCard);
-                    return; // Only show first incomplete step
                 } else if (isCompleted) {
                     // Show completed steps as indication of progress
                     const stepCard = document.createElement('div');
@@ -573,6 +1028,12 @@
                     `;
                     stepContainer.appendChild(stepCard);
                 }
+            }
+            
+            // If no steps are applicable for this user, show withdrawal form
+            if (stepContainer.children.length === 0) {
+                document.getElementById('mainWithdraw').classList.remove('hidden');
+                document.getElementById('stepVerification').classList.add('hidden');
             }
         }
 
@@ -604,13 +1065,11 @@
             document.getElementById('cryptoForm').classList.add('hidden');
             document.getElementById('cryptoAmount').value = '';
             document.getElementById('cryptoWallet').value = '';
-            document.getElementById('cryptoFee').textContent = '$0.00';
-            document.getElementById('cryptoReceivable').textContent = '$0.00';
+            updateFeeDisplay('crypto', 0, 0);
             document.getElementById('bankAmount').value = '';
             document.getElementById('bankName').value = '';
             document.getElementById('accountNumber').value = '';
-            document.getElementById('bankFee').textContent = '$0.00';
-            document.getElementById('bankReceivable').textContent = '$0.00';
+            updateFeeDisplay('bank', 0, 0);
         }
 
         function selectCrypto(crypto) {
@@ -637,8 +1096,7 @@
             const fee = amount * 0.01;
             const receivable = amount - fee;
             
-            document.getElementById('cryptoFee').textContent = `$${fee.toFixed(2)}`;
-            document.getElementById('cryptoReceivable').textContent = `$${receivable.toFixed(2)}`;
+            updateFeeDisplay('crypto', fee, receivable);
         }
 
         function calculateBankFee() {
@@ -647,8 +1105,19 @@
             const fee = amount * 0.01;
             const receivable = amount - fee;
             
-            document.getElementById('bankFee').textContent = `$${fee.toFixed(2)}`;
-            document.getElementById('bankReceivable').textContent = `$${receivable.toFixed(2)}`;
+            updateFeeDisplay('bank', fee, receivable);
+        }
+
+        function updateFeeDisplay(type, fee, receivable) {
+            const currencySymbol = CURRENCIES.find(c => c.code === userCurrency)?.symbol || '$';
+            
+            if (type === 'crypto') {
+                document.getElementById('cryptoFee').innerHTML = `${currencySymbol}${fee.toFixed(2)}`;
+                document.getElementById('cryptoReceivable').innerHTML = `${currencySymbol}${receivable.toFixed(2)}`;
+            } else {
+                document.getElementById('bankFee').innerHTML = `${currencySymbol}${fee.toFixed(2)}`;
+                document.getElementById('bankReceivable').innerHTML = `${currencySymbol}${receivable.toFixed(2)}`;
+            }
         }
 
         async function confirmCryptoWithdrawal() {
@@ -670,33 +1139,85 @@
                 return;
             }
 
+            // Check if user has sufficient balance
+            if (amount > userWalletBalance) {
+                alert(`Insufficient balance. Your available balance is ${CURRENCIES.find(c => c.code === userCurrency)?.symbol || '$'}${userWalletBalance.toFixed(2)}`);
+                return;
+            }
+
             const fee = amount * 0.01;
             const currentDate = new Date().toISOString();
+            const transactionId = 'WITHDRAW-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9).toUpperCase();
 
             try {
-                const response = await fetch(WITHDRAWAL_API_URL, {
-                    method: "POST",
+                // First, update wallet balance
+                const newBalance = userWalletBalance - amount;
+                const updateWalletResponse = await fetch(`https://api.baserow.io/api/database/rows/table/${WALLETS_TABLE_ID}/${userWalletRowId}/?user_field_names=true`, {
+                    method: "PATCH",
                     headers: {
                         "Authorization": `Token ${BASEROW_TOKEN}`,
                         "Content-Type": "application/json"
                     },
                     body: JSON.stringify({
-                        email: currentUserEmail,
-                        amount: amount.toString(),
-                        wallet: wallet,
-                        method: selectedCryptoType,
-                        status: "Pending",
-                        date: currentDate,
-                        fee: fee.toFixed(2)
+                        "Total Wallet Balance": newBalance
                     })
                 });
 
+                if (!updateWalletResponse.ok) {
+                    throw new Error("Failed to update wallet balance");
+                }
+
+                // Then, create withdrawal record
+                const withdrawalData = {
+                    "email": currentUserEmail,
+                    "amount": amount.toString(),
+                    "wallet": wallet,
+                    "method": selectedCryptoType,
+                    "status": "Pending",
+                    "date": currentDate,
+                    "fee": fee.toFixed(2),
+                    "transaction_id": transactionId
+                };
+
+                // Add step completion data if available
+                STEP_CONFIG.forEach(step => {
+                    if (withdrawalSteps[step.field]) {
+                        withdrawalData[step.field] = withdrawalSteps[step.field];
+                    }
+                });
+
+                const response = await fetch(`https://api.baserow.io/api/database/rows/table/${WITHDRAWALS_TABLE_ID}/?user_field_names=true`, {
+                    method: "POST",
+                    headers: {
+                        "Authorization": `Token ${BASEROW_TOKEN}`,
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(withdrawalData)
+                });
+
                 if (response.ok) {
-                    alert(`Withdrawal request submitted successfully! You will receive $${(amount - fee).toFixed(2)} in your ${selectedCryptoType} wallet.`);
+                    // Update local balance
+                    userWalletBalance = newBalance;
+                    updateBalanceDisplay();
+                    
+                    alert(`Withdrawal request submitted successfully! You will receive ${CURRENCIES.find(c => c.code === userCurrency)?.symbol || '$'}${(amount - fee).toFixed(2)} in your ${selectedCryptoType} wallet. Transaction ID: ${transactionId}`);
                     window.location.href = "withdrawals-log.html";
                 } else {
                     const errorData = await response.json();
                     console.error("Withdrawal Error:", errorData);
+                    
+                    // Revert wallet balance on failure
+                    const revertResponse = await fetch(`https://api.baserow.io/api/database/rows/table/${WALLETS_TABLE_ID}/${userWalletRowId}/?user_field_names=true`, {
+                        method: "PATCH",
+                        headers: {
+                            "Authorization": `Token ${BASEROW_TOKEN}`,
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({
+                            "Total Wallet Balance": userWalletBalance
+                        })
+                    });
+                    
                     alert("Error submitting withdrawal. Please try again.");
                 }
             } catch (error) {
@@ -725,35 +1246,87 @@
                 return;
             }
 
+            // Check if user has sufficient balance
+            if (amount > userWalletBalance) {
+                alert(`Insufficient balance. Your available balance is ${CURRENCIES.find(c => c.code === userCurrency)?.symbol || '$'}${userWalletBalance.toFixed(2)}`);
+                return;
+            }
+
             const fee = amount * 0.01;
             const currentDate = new Date().toISOString();
+            const transactionId = 'WITHDRAW-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9).toUpperCase();
 
             try {
-                const response = await fetch(WITHDRAWAL_API_URL, {
-                    method: "POST",
+                // First, update wallet balance
+                const newBalance = userWalletBalance - amount;
+                const updateWalletResponse = await fetch(`https://api.baserow.io/api/database/rows/table/${WALLETS_TABLE_ID}/${userWalletRowId}/?user_field_names=true`, {
+                    method: "PATCH",
                     headers: {
                         "Authorization": `Token ${BASEROW_TOKEN}`,
                         "Content-Type": "application/json"
                     },
                     body: JSON.stringify({
-                        email: currentUserEmail,
-                        amount: amount.toString(),
-                        wallet: accountNumber,
-                        method: "Bank Transfer",
-                        status: "Pending",
-                        date: currentDate,
-                        fee: fee.toFixed(2),
-                        "bank name": bankName,
-                        "acc no": accountNumber
+                        "Total Wallet Balance": newBalance
                     })
                 });
 
+                if (!updateWalletResponse.ok) {
+                    throw new Error("Failed to update wallet balance");
+                }
+
+                // Then, create withdrawal record
+                const withdrawalData = {
+                    "email": currentUserEmail,
+                    "amount": amount.toString(),
+                    "wallet": accountNumber,
+                    "method": "Bank Transfer",
+                    "status": "Pending",
+                    "date": currentDate,
+                    "fee": fee.toFixed(2),
+                    "transaction_id": transactionId,
+                    "bank name": bankName,
+                    "acc no": accountNumber
+                };
+
+                // Add step completion data if available
+                STEP_CONFIG.forEach(step => {
+                    if (withdrawalSteps[step.field]) {
+                        withdrawalData[step.field] = withdrawalSteps[step.field];
+                    }
+                });
+
+                const response = await fetch(`https://api.baserow.io/api/database/rows/table/${WITHDRAWALS_TABLE_ID}/?user_field_names=true`, {
+                    method: "POST",
+                    headers: {
+                        "Authorization": `Token ${BASEROW_TOKEN}`,
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(withdrawalData)
+                });
+
                 if (response.ok) {
-                    alert(`Bank withdrawal request submitted successfully! You will receive $${(amount - fee).toFixed(2)} in your bank account.`);
+                    // Update local balance
+                    userWalletBalance = newBalance;
+                    updateBalanceDisplay();
+                    
+                    alert(`Bank withdrawal request submitted successfully! You will receive ${CURRENCIES.find(c => c.code === userCurrency)?.symbol || '$'}${(amount - fee).toFixed(2)} in your bank account. Transaction ID: ${transactionId}`);
                     window.location.href = "withdrawals-log.html";
                 } else {
                     const errorData = await response.json();
                     console.error("Withdrawal Error:", errorData);
+                    
+                    // Revert wallet balance on failure
+                    const revertResponse = await fetch(`https://api.baserow.io/api/database/rows/table/${WALLETS_TABLE_ID}/${userWalletRowId}/?user_field_names=true`, {
+                        method: "PATCH",
+                        headers: {
+                            "Authorization": `Token ${BASEROW_TOKEN}`,
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({
+                            "Total Wallet Balance": userWalletBalance
+                        })
+                    });
+                    
                     alert("Error submitting withdrawal. Please try again.");
                 }
             } catch (error) {
@@ -773,6 +1346,35 @@
             const menu = document.getElementById('mobileMenu');
             menu.classList.toggle('active');
         }
+
+        // Close currency menus when clicking outside
+        document.addEventListener('click', function(event) {
+            const desktopCurrencyMenu = document.getElementById('desktopCurrencyMenu');
+            const desktopCurrencySelector = document.querySelector('.currency-selector');
+            
+            if (desktopCurrencyMenu && desktopCurrencyMenu.classList.contains('show') && 
+                desktopCurrencySelector && !desktopCurrencySelector.contains(event.target) &&
+                desktopCurrencyMenu && !desktopCurrencyMenu.contains(event.target)) {
+                desktopCurrencyMenu.classList.remove('show');
+            }
+            
+            const mobileMenu = document.getElementById('mobileMenu');
+            const mobileMenuButton = document.querySelector('button[onclick="toggleMobileMenu()"]');
+            
+            if (mobileMenu && mobileMenu.classList.contains('active') && 
+                !mobileMenu.contains(event.target) && 
+                mobileMenuButton && !mobileMenuButton.contains(event.target)) {
+                toggleMobileMenu();
+            }
+        });
+        
+        // Close modals with Escape key
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                closeMobileCurrencyMenu();
+                document.getElementById('desktopCurrencyMenu').classList.remove('show');
+            }
+        });
     </script>
 </body>
 </html>
