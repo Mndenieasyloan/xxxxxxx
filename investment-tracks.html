@@ -760,7 +760,7 @@
     </div>
 
    <script>
-    // Currency data
+    // Currency data - SAME AS DASHBOARD
     const CURRENCIES = [
         { code: 'USD', symbol: '$', name: 'US Dollar' },
         { code: 'EUR', symbol: '€', name: 'Euro' },
@@ -772,41 +772,46 @@
         { code: 'CAD', symbol: 'C$', name: 'Canadian Dollar' }
     ];
     
-    // IMPORTANT: Use the SAME transaction data key as dashboard.js
+    // USE THE SAME API KEYS AS DASHBOARD
+    const API_TOKEN = "LG6hnTBxgBG78FueElsSwpHRd4Wep1oL";
+    const TRANSACTIONS_TABLE = 756081;
+    
+    // USE THE SAME LOCAL STORAGE KEYS AS DASHBOARD
+    const LAST_TRANSACTION_SYNC_KEY = "v0trade_last_transaction_sync";
     const TRANSACTIONS_DATA_KEY = "v0trade_transactions_data";
     const INVESTMENT_CACHE_KEY = "v0trade_investment_cache";
     const INVESTMENT_CACHE_EXPIRY = 5 * 60 * 1000; // 5 minutes cache
     
-    // Investment plan configurations for ALL assets you mentioned
+    // Investment plan configurations
     const INVESTMENT_PLANS = {
         // Cryptocurrencies
-        'btc investment': { type: 'crypto', roi: 20, duration: 30, asset: 'Bitcoin (BTC)', badge: 'badge-crypto', color: '#f59e0b' },
-        'eth investment': { type: 'crypto', roi: 18, duration: 30, asset: 'Ethereum (ETH)', badge: 'badge-crypto', color: '#8b5cf6' },
-        'usdt investment': { type: 'crypto', roi: 15, duration: 30, asset: 'Tether (USDT)', badge: 'badge-crypto', color: '#26a17b' },
-        'bitcoin investment': { type: 'crypto', roi: 20, duration: 30, asset: 'Bitcoin (BTC)', badge: 'badge-crypto', color: '#f59e0b' },
-        'ethereum investment': { type: 'crypto', roi: 18, duration: 30, asset: 'Ethereum (ETH)', badge: 'badge-crypto', color: '#8b5cf6' },
-        'tether investment': { type: 'crypto', roi: 15, duration: 30, asset: 'Tether (USDT)', badge: 'badge-crypto', color: '#26a17b' },
+        'btc': { type: 'crypto', roi: 20, duration: 30, asset: 'Bitcoin (BTC)', badge: 'badge-crypto', color: '#f59e0b' },
+        'bitcoin': { type: 'crypto', roi: 20, duration: 30, asset: 'Bitcoin (BTC)', badge: 'badge-crypto', color: '#f59e0b' },
+        'eth': { type: 'crypto', roi: 18, duration: 30, asset: 'Ethereum (ETH)', badge: 'badge-crypto', color: '#8b5cf6' },
+        'ethereum': { type: 'crypto', roi: 18, duration: 30, asset: 'Ethereum (ETH)', badge: 'badge-crypto', color: '#8b5cf6' },
+        'usdt': { type: 'crypto', roi: 15, duration: 30, asset: 'Tether (USDT)', badge: 'badge-crypto', color: '#26a17b' },
+        'tether': { type: 'crypto', roi: 15, duration: 30, asset: 'Tether (USDT)', badge: 'badge-crypto', color: '#26a17b' },
         
         // Precious Metals
-        'gold investment': { type: 'metal', roi: 12, duration: 60, asset: 'Gold', badge: 'badge-metal', color: '#fbbf24' },
-        'silver investment': { type: 'metal', roi: 15, duration: 60, asset: 'Silver', badge: 'badge-metal', color: '#9ca3af' },
-        'platinum investment': { type: 'metal', roi: 10, duration: 60, asset: 'Platinum', badge: 'badge-metal', color: '#e5e7eb' },
-        'rhodium investment': { type: 'metal', roi: 8, duration: 60, asset: 'Rhodium', badge: 'badge-metal', color: '#a78bfa' },
-        'palladium investment': { type: 'metal', roi: 9, duration: 60, asset: 'Palladium', badge: 'badge-metal', color: '#f472b6' },
+        'gold': { type: 'metal', roi: 12, duration: 60, asset: 'Gold', badge: 'badge-metal', color: '#fbbf24' },
+        'silver': { type: 'metal', roi: 15, duration: 60, asset: 'Silver', badge: 'badge-metal', color: '#9ca3af' },
+        'platinum': { type: 'metal', roi: 10, duration: 60, asset: 'Platinum', badge: 'badge-metal', color: '#e5e7eb' },
+        'rhodium': { type: 'metal', roi: 8, duration: 60, asset: 'Rhodium', badge: 'badge-metal', color: '#a78bfa' },
+        'palladium': { type: 'metal', roi: 9, duration: 60, asset: 'Palladium', badge: 'badge-metal', color: '#f472b6' },
         
         // Stocks
-        'nvidia investment': { type: 'stock', roi: 25, duration: 30, asset: 'NVIDIA (NVDA)', badge: 'badge-stock', color: '#3b82f6' },
-        'apple investment': { type: 'stock', roi: 18, duration: 30, asset: 'Apple (AAPL)', badge: 'badge-stock', color: '#1d4ed8' },
-        'microsoft investment': { type: 'stock', roi: 20, duration: 30, asset: 'Microsoft (MSFT)', badge: 'badge-stock', color: '#1e40af' },
-        'google investment': { type: 'stock', roi: 22, duration: 30, asset: 'Google (GOOGL)', badge: 'badge-stock', color: '#0ea5e9' },
-        'amazon investment': { type: 'stock', roi: 19, duration: 30, asset: 'Amazon (AMZN)', badge: 'badge-stock', color: '#f97316' },
+        'nvidia': { type: 'stock', roi: 25, duration: 30, asset: 'NVIDIA (NVDA)', badge: 'badge-stock', color: '#3b82f6' },
+        'apple': { type: 'stock', roi: 18, duration: 30, asset: 'Apple (AAPL)', badge: 'badge-stock', color: '#1d4ed8' },
+        'microsoft': { type: 'stock', roi: 20, duration: 30, asset: 'Microsoft (MSFT)', badge: 'badge-stock', color: '#1e40af' },
+        'google': { type: 'stock', roi: 22, duration: 30, asset: 'Google (GOOGL)', badge: 'badge-stock', color: '#0ea5e9' },
+        'amazon': { type: 'stock', roi: 19, duration: 30, asset: 'Amazon (AMZN)', badge: 'badge-stock', color: '#f97316' },
         
         // ETFs
-        'spy investment': { type: 'etf', roi: 15, duration: 30, asset: 'SPDR S&P 500 (SPY)', badge: 'badge-etf', color: '#10b981' },
-        'voo investment': { type: 'etf', roi: 15, duration: 30, asset: 'Vanguard S&P 500 (VOO)', badge: 'badge-etf', color: '#047857' },
-        'ivv investment': { type: 'etf', roi: 15, duration: 30, asset: 'iShares S&P 500 (IVV)', badge: 'badge-etf', color: '#065f46' },
-        'vti investment': { type: 'etf', roi: 14, duration: 30, asset: 'Vanguard Total Market (VTI)', badge: 'badge-etf', color: '#064e3b' },
-        'qqq investment': { type: 'etf', roi: 18, duration: 30, asset: 'Invesco QQQ (QQQ)', badge: 'badge-etf', color: '#059669' }
+        'spy': { type: 'etf', roi: 15, duration: 30, asset: 'SPDR S&P 500 (SPY)', badge: 'badge-etf', color: '#10b981' },
+        'voo': { type: 'etf', roi: 15, duration: 30, asset: 'Vanguard S&P 500 (VOO)', badge: 'badge-etf', color: '#047857' },
+        'ivv': { type: 'etf', roi: 15, duration: 30, asset: 'iShares S&P 500 (IVV)', badge: 'badge-etf', color: '#065f46' },
+        'vti': { type: 'etf', roi: 14, duration: 30, asset: 'Vanguard Total Market (VTI)', badge: 'badge-etf', color: '#064e3b' },
+        'qqq': { type: 'etf', roi: 18, duration: 30, asset: 'Invesco QQQ (QQQ)', badge: 'badge-etf', color: '#059669' }
     };
     
     // Chart instances
@@ -985,69 +990,90 @@
     
     function loadFreshInvestmentData(email) {
         try {
-            // Get cached transactions from localStorage - IMPORTANT: Use the SAME key as dashboard
+            console.log("Loading fresh investment data for:", email);
+            
+            // Get cached transactions from localStorage - SAME METHOD AS DASHBOARD
             const cachedData = localStorage.getItem(`${TRANSACTIONS_DATA_KEY}_${email}`);
             
             if (!cachedData) {
-                console.log("No cached transactions data found. Checking if we need to fetch from API...");
-                
-                // If no cached data, we need to fetch from the dashboard API
+                console.log("No cached transactions found. Fetching from API...");
                 fetchDashboardTransactions(email);
                 return;
             }
             
             const allTransactions = JSON.parse(cachedData);
             console.log("Total transactions found in cache:", allTransactions.length);
-            console.log("Sample transaction:", allTransactions[0]);
             
-            // Filter to get ONLY investment transactions (not mining)
+            if (allTransactions.length === 0) {
+                displayNoInvestments();
+                return;
+            }
+            
+            // Log first few transactions for debugging
+            console.log("Sample transactions from cache:", allTransactions.slice(0, 3));
+            
+            // Filter to get ONLY investment transactions
             const investmentTransactions = allTransactions.filter(transaction => {
                 const type = (transaction.type || '').toLowerCase();
                 const method = (transaction.method || '').toLowerCase();
-                const transactionText = type + ' ' + method;
+                const combinedText = type + ' ' + method;
                 
-                // Check if it's an investment transaction
-                const isInvestment = transactionText.includes('investment') ||
-                                     transactionText.includes('stock') ||
-                                     transactionText.includes('etf') ||
-                                     transactionText.includes('crypto') ||
-                                     transactionText.includes('metal') ||
-                                     transactionText.includes('gold') ||
-                                     transactionText.includes('silver') ||
-                                     transactionText.includes('platinum') ||
-                                     transactionText.includes('rhodium') ||
-                                     transactionText.includes('palladium') ||
-                                     transactionText.includes('btc') ||
-                                     transactionText.includes('bitcoin') ||
-                                     transactionText.includes('eth') ||
-                                     transactionText.includes('ethereum') ||
-                                     transactionText.includes('usdt') ||
-                                     transactionText.includes('tether') ||
-                                     transactionText.includes('nvidia') ||
-                                     transactionText.includes('apple') ||
-                                     transactionText.includes('microsoft') ||
-                                     transactionText.includes('google') ||
-                                     transactionText.includes('amazon') ||
-                                     transactionText.includes('spy') ||
-                                     transactionText.includes('voo') ||
-                                     transactionText.includes('ivv') ||
-                                     transactionText.includes('vti') ||
-                                     transactionText.includes('qqq');
+                // Check if it's an investment (not deposit/withdrawal)
+                const isDepositWithdrawal = type.includes('deposit') || 
+                                           type.includes('withdraw') ||
+                                           method.includes('deposit') ||
+                                           method.includes('withdraw');
                 
-                // Make sure it's NOT a mining transaction
-                const isMining = transactionText.includes('miner') || 
-                                 transactionText.includes('mining') ||
-                                 transactionText.includes('micro plan') ||
-                                 transactionText.includes('gold plan') ||
-                                 transactionText.includes('silver plan') ||
-                                 transactionText.includes('diamond plan');
+                // Check if it's a mining transaction
+                const isMining = combinedText.includes('miner') || 
+                                combinedText.includes('mining');
                 
-                return isInvestment && !isMining;
+                // If it's NOT deposit/withdrawal/mining, it's likely an investment
+                return !isDepositWithdrawal && !isMining;
             });
             
-            console.log("Filtered investment transactions:", investmentTransactions.length, investmentTransactions);
+            console.log("Filtered investment transactions:", investmentTransactions.length);
             
             if (investmentTransactions.length === 0) {
+                // Check if there are any transactions that might be investments
+                const possibleInvestments = allTransactions.filter(t => {
+                    const type = (t.type || '').toLowerCase();
+                    const method = (t.method || '').toLowerCase();
+                    
+                    // Look for investment keywords
+                    return method.includes('btc') || 
+                           method.includes('bitcoin') ||
+                           method.includes('eth') ||
+                           method.includes('ethereum') ||
+                           method.includes('usdt') ||
+                           method.includes('tether') ||
+                           method.includes('gold') ||
+                           method.includes('silver') ||
+                           method.includes('platinum') ||
+                           method.includes('rhodium') ||
+                           method.includes('palladium') ||
+                           method.includes('nvidia') ||
+                           method.includes('apple') ||
+                           method.includes('microsoft') ||
+                           method.includes('google') ||
+                           method.includes('amazon') ||
+                           method.includes('spy') ||
+                           method.includes('voo') ||
+                           method.includes('ivv') ||
+                           method.includes('vti') ||
+                           method.includes('qqq');
+                });
+                
+                if (possibleInvestments.length > 0) {
+                    const investmentStats = processInvestmentTransactions(possibleInvestments);
+                    cacheInvestmentData(email, investmentStats, possibleInvestments);
+                    displayInvestments(investmentStats);
+                    displayInvestmentTransactions(possibleInvestments);
+                    updateInvestmentStats(investmentStats);
+                    initializeCharts(investmentStats, possibleInvestments);
+                    return;
+                }
+                
                 displayNoInvestments();
                 return;
             }
@@ -1078,13 +1104,9 @@
     
     async function fetchDashboardTransactions(email) {
         try {
-            console.log("Fetching transactions from dashboard API for:", email);
+            console.log("Fetching transactions from API for:", email);
             
-            // Simulate fetching from the dashboard's API endpoint
-            // In a real implementation, you would call the same API as the dashboard
-            const API_TOKEN = "LG6hnTBxgBG78FueElsSwpHRd4Wep1oL";
-            const TRANSACTIONS_TABLE = 756081;
-            
+            // Use the same API call as dashboard
             const url = `https://api.baserow.io/api/database/rows/table/${TRANSACTIONS_TABLE}/?user_field_names=true&size=200`;
             
             const res = await fetch(url, {
@@ -1099,6 +1121,8 @@
                 return;
             }
             
+            console.log("Total API transactions:", data.results.length);
+            
             // Filter transactions by user email
             const userTransactions = data.results.filter(row => {
                 const rowEmail = row["email"] || row["field_6394448"] || "";
@@ -1112,7 +1136,7 @@
                 return;
             }
             
-            // Process the API transactions
+            // Process the API transactions - SAME FORMAT AS DASHBOARD
             const transactions = userTransactions.map(row => {
                 const transaction = {
                     id: row.id,
@@ -1138,9 +1162,13 @@
                 return transaction;
             });
             
+            console.log("Processed transactions:", transactions);
+            
             // Save to localStorage (same as dashboard does)
             localStorage.setItem(`${TRANSACTIONS_DATA_KEY}_${email}`, JSON.stringify(transactions));
-            localStorage.setItem(`v0trade_last_transaction_sync_${email}`, Date.now().toString());
+            localStorage.setItem(`${LAST_TRANSACTION_SYNC_KEY}_${email}`, Date.now().toString());
+            
+            console.log("Saved transactions to localStorage");
             
             // Now load the investment data with these transactions
             loadFreshInvestmentData(email);
@@ -1160,21 +1188,13 @@
             const method = (transaction.method || '').toLowerCase();
             const amount = parseFloat(transaction.amount) || 0;
             
-            // Parse transaction date correctly
+            if (amount <= 0) return;
+            
+            // Parse transaction date
             let transactionDate;
             try {
                 if (transaction.date) {
-                    const dateStr = transaction.date.toString();
-                    
-                    // Check if it's already a timestamp
-                    if (!isNaN(dateStr)) {
-                        transactionDate = new Date(parseInt(dateStr));
-                    } else {
-                        // Try parsing as ISO string or other formats
-                        transactionDate = new Date(dateStr);
-                    }
-                    
-                    // If still invalid, use timestamp
+                    transactionDate = new Date(transaction.date);
                     if (isNaN(transactionDate.getTime()) && transaction.timestamp) {
                         transactionDate = new Date(transaction.timestamp);
                     }
@@ -1182,7 +1202,6 @@
                     transactionDate = new Date(transaction.timestamp);
                 }
                 
-                // If all else fails, use current date
                 if (!transactionDate || isNaN(transactionDate.getTime())) {
                     transactionDate = now;
                 }
@@ -1190,98 +1209,57 @@
                 transactionDate = now;
             }
             
-            console.log("Processing investment transaction:", { 
-                type, 
-                method, 
-                amount, 
-                date: transaction.date,
-                timestamp: transaction.timestamp,
-                parsedDate: transactionDate 
-            });
+            console.log("Processing transaction:", { type, method, amount });
             
             // Find matching investment plan
             let planKey = null;
-            const transactionText = (type + ' ' + method).toLowerCase();
+            let planType = null;
             
-            // Check for exact plan matches first
-            for (const key in INVESTMENT_PLANS) {
-                if (transactionText.includes(key)) {
-                    planKey = key;
+            // Check method for asset names
+            for (const asset in INVESTMENT_PLANS) {
+                if (method.includes(asset)) {
+                    planKey = asset;
+                    planType = INVESTMENT_PLANS[asset].type;
                     break;
                 }
             }
             
-            // If no exact match, try to determine from transaction data
+            // If not found in method, check type
             if (!planKey) {
-                // Check for specific crypto assets
-                if (transactionText.includes('btc') || transactionText.includes('bitcoin')) {
-                    planKey = 'btc investment';
-                } else if (transactionText.includes('eth') || transactionText.includes('ethereum')) {
-                    planKey = 'eth investment';
-                } else if (transactionText.includes('usdt') || transactionText.includes('tether')) {
-                    planKey = 'usdt investment';
+                for (const asset in INVESTMENT_PLANS) {
+                    if (type.includes(asset)) {
+                        planKey = asset;
+                        planType = INVESTMENT_PLANS[asset].type;
+                        break;
+                    }
                 }
-                // Check for specific metals
-                else if (transactionText.includes('gold')) {
-                    planKey = 'gold investment';
-                } else if (transactionText.includes('silver')) {
-                    planKey = 'silver investment';
-                } else if (transactionText.includes('platinum')) {
-                    planKey = 'platinum investment';
-                } else if (transactionText.includes('rhodium')) {
-                    planKey = 'rhodium investment';
-                } else if (transactionText.includes('palladium')) {
-                    planKey = 'palladium investment';
-                }
-                // Check for specific stocks
-                else if (transactionText.includes('nvidia') || transactionText.includes('nvda')) {
-                    planKey = 'nvidia investment';
-                } else if (transactionText.includes('apple') || transactionText.includes('aapl')) {
-                    planKey = 'apple investment';
-                } else if (transactionText.includes('microsoft') || transactionText.includes('msft')) {
-                    planKey = 'microsoft investment';
-                } else if (transactionText.includes('google') || transactionText.includes('googl')) {
-                    planKey = 'google investment';
-                } else if (transactionText.includes('amazon') || transactionText.includes('amzn')) {
-                    planKey = 'amazon investment';
-                }
-                // Check for specific ETFs
-                else if (transactionText.includes('spy')) {
-                    planKey = 'spy investment';
-                } else if (transactionText.includes('voo')) {
-                    planKey = 'voo investment';
-                } else if (transactionText.includes('ivv')) {
-                    planKey = 'ivv investment';
-                } else if (transactionText.includes('vti')) {
-                    planKey = 'vti investment';
-                } else if (transactionText.includes('qqq')) {
-                    planKey = 'qqq investment';
-                }
-                // General categories as fallback
-                else if (transactionText.includes('crypto')) {
-                    planKey = 'btc investment';
-                } else if (transactionText.includes('metal')) {
-                    planKey = 'gold investment';
-                } else if (transactionText.includes('stock')) {
-                    planKey = 'nvidia investment';
-                } else if (transactionText.includes('etf')) {
-                    planKey = 'spy investment';
+            }
+            
+            // If still not found, check combined text
+            if (!planKey) {
+                const combinedText = type + ' ' + method;
+                for (const asset in INVESTMENT_PLANS) {
+                    if (combinedText.includes(asset)) {
+                        planKey = asset;
+                        planType = INVESTMENT_PLANS[asset].type;
+                        break;
+                    }
                 }
             }
             
             if (!planKey) {
-                console.log("No plan match found for investment transaction:", transactionText);
+                console.log("No investment plan found for transaction:", { type, method });
                 return;
             }
             
-            console.log("Matched plan:", planKey);
+            const plan = INVESTMENT_PLANS[planKey];
             
             if (!investmentStats[planKey]) {
                 investmentStats[planKey] = {
                     count: 0,
                     totalInvestment: 0,
                     transactions: [],
-                    planInfo: INVESTMENT_PLANS[planKey]
+                    planInfo: plan
                 };
             }
             
@@ -1290,11 +1268,11 @@
             investmentStats[planKey].transactions.push({
                 ...transaction,
                 parsedDate: transactionDate,
-                originalDate: transaction.date,
-                timestamp: transaction.timestamp
+                assetType: planType
             });
         });
         
+        console.log("Processed investment stats:", investmentStats);
         return investmentStats;
     }
     
@@ -1316,7 +1294,7 @@
             // For each transaction, create a separate card
             stats.transactions.forEach((transaction, index) => {
                 const now = new Date();
-                const transactionDate = transaction.parsedDate || new Date(transaction.timestamp) || now;
+                const transactionDate = transaction.parsedDate || now;
                 
                 // Duration in days
                 const durationInDays = plan.duration;
@@ -1339,8 +1317,11 @@
                 const statusText = isCompleted ? 'Completed' : 'Active';
                 const statusColor = isCompleted ? 'blue' : 'green';
                 
+                // Get transaction status
+                const transactionStatus = transaction.status || 'Active';
+                
                 const investmentCard = document.createElement('div');
-                investmentCard.className = 'investment-card p-6';
+                investmentCard.className = 'investment-card p-6 mb-4';
                 investmentCard.dataset.type = plan.type;
                 
                 investmentCard.innerHTML = `
@@ -1351,25 +1332,27 @@
                                 <div>
                                     <div class="flex items-center gap-2">
                                         <span class="${plan.badge} investment-badge">${plan.type.toUpperCase()}</span>
-                                        <span class="text-sm text-gray-400">Transaction #${index + 1}</span>
-                                        ${transaction.status ? `<span class="text-xs ${transaction.status.toLowerCase() === 'completed' ? 'text-blue-400' : 'text-green-400'}">${transaction.status}</span>` : ''}
+                                        <span class="text-sm text-gray-400">#${index + 1}</span>
+                                        <span class="text-xs px-2 py-1 rounded-full ${transactionStatus.toLowerCase() === 'completed' ? 'bg-blue-500/20 text-blue-400' : 'bg-green-500/20 text-green-400'}">
+                                            ${transactionStatus}
+                                        </span>
                                     </div>
                                     <h3 class="text-lg font-semibold text-white mt-1">${plan.asset}</h3>
-                                    <p class="text-sm text-gray-400">Investment Plan • ROI: ${plan.roi}% • Duration: ${durationInDays} days</p>
+                                    <p class="text-sm text-gray-400">ROI: ${plan.roi}% • ${durationInDays} days</p>
                                 </div>
                             </div>
                             <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
                                 <div>
-                                    <p class="text-xs text-gray-500">Investment</p>
-                                    <p class="text-sm font-semibold text-white">${currencySymbol}${investmentAmount.toLocaleString(undefined, {minimumFractionDigits: 2})}</p>
+                                    <p class="text-xs text-gray-500">Amount</p>
+                                    <p class="text-sm font-semibold text-white">${currencySymbol}${investmentAmount.toFixed(2)}</p>
                                 </div>
                                 <div>
-                                    <p class="text-xs text-gray-500">Daily Return</p>
+                                    <p class="text-xs text-gray-500">Daily</p>
                                     <p class="text-sm font-semibold text-green-400">+${currencySymbol}${dailyReturn.toFixed(2)}</p>
                                 </div>
                                 <div>
                                     <p class="text-xs text-gray-500">Total Returns</p>
-                                    <p class="text-sm font-semibold text-cyan-400">${currencySymbol}${returns.toLocaleString(undefined, {minimumFractionDigits: 2})}</p>
+                                    <p class="text-sm font-semibold text-cyan-400">${currencySymbol}${returns.toFixed(2)}</p>
                                 </div>
                                 <div>
                                     <p class="text-xs text-gray-500">Status</p>
@@ -1392,11 +1375,11 @@
                         
                         <div class="md:text-right">
                             <div class="mb-2">
-                                <span class="text-gray-400">Time Remaining</span>
+                                <span class="text-gray-400">Remaining</span>
                                 <p class="text-2xl font-bold bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text text-transparent">${remainingText}</p>
                             </div>
                             <div class="text-sm text-gray-400">
-                                Started: ${transactionDate.toLocaleDateString('en-US', {
+                                ${transactionDate.toLocaleDateString('en-US', {
                                     month: 'short',
                                     day: 'numeric',
                                     year: 'numeric'
@@ -1443,27 +1426,24 @@
             const formattedDate = transactionDate.toLocaleDateString('en-US', {
                 year: 'numeric',
                 month: 'short',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
+                day: 'numeric'
             });
             
             const amount = parseFloat(transaction.amount) || 0;
             
-            // Determine investment type and plan
+            // Determine investment type
             let planInfo = null;
-            let planName = 'Investment Plan';
-            let asset = 'Unknown Asset';
+            let asset = 'Investment';
             let duration = '30d';
             let type = 'investment';
             let badge = 'badge-crypto';
             
-            const transactionText = (transaction.type?.toLowerCase() || '') + ' ' + (transaction.method?.toLowerCase() || '');
+            const method = (transaction.method || '').toLowerCase();
             
-            for (const [planKey, plan] of Object.entries(INVESTMENT_PLANS)) {
-                if (transactionText.includes(planKey)) {
+            // Try to match with investment plans
+            for (const [assetKey, plan] of Object.entries(INVESTMENT_PLANS)) {
+                if (method.includes(assetKey)) {
                     planInfo = plan;
-                    planName = 'Investment Plan';
                     asset = plan.asset;
                     duration = `${plan.duration}d`;
                     type = plan.type;
@@ -1472,108 +1452,92 @@
                 }
             }
             
-            // If no plan found, try to infer from transaction
+            // If no plan found, try to infer
             if (!planInfo) {
-                if (transactionText.includes('btc') || transactionText.includes('bitcoin')) {
+                if (method.includes('btc') || method.includes('bitcoin')) {
                     asset = 'Bitcoin (BTC)';
                     type = 'crypto';
                     badge = 'badge-crypto';
-                } else if (transactionText.includes('eth') || transactionText.includes('ethereum')) {
+                } else if (method.includes('eth') || method.includes('ethereum')) {
                     asset = 'Ethereum (ETH)';
                     type = 'crypto';
                     badge = 'badge-crypto';
-                } else if (transactionText.includes('usdt') || transactionText.includes('tether')) {
+                } else if (method.includes('usdt') || method.includes('tether')) {
                     asset = 'Tether (USDT)';
                     type = 'crypto';
                     badge = 'badge-crypto';
-                } else if (transactionText.includes('gold')) {
+                } else if (method.includes('gold')) {
                     asset = 'Gold';
                     type = 'metal';
                     badge = 'badge-metal';
-                } else if (transactionText.includes('silver')) {
+                } else if (method.includes('silver')) {
                     asset = 'Silver';
                     type = 'metal';
                     badge = 'badge-metal';
-                } else if (transactionText.includes('platinum')) {
+                } else if (method.includes('platinum')) {
                     asset = 'Platinum';
                     type = 'metal';
                     badge = 'badge-metal';
-                } else if (transactionText.includes('rhodium')) {
+                } else if (method.includes('rhodium')) {
                     asset = 'Rhodium';
                     type = 'metal';
                     badge = 'badge-metal';
-                } else if (transactionText.includes('palladium')) {
+                } else if (method.includes('palladium')) {
                     asset = 'Palladium';
                     type = 'metal';
                     badge = 'badge-metal';
-                } else if (transactionText.includes('nvidia') || transactionText.includes('nvda')) {
+                } else if (method.includes('nvidia')) {
                     asset = 'NVIDIA (NVDA)';
                     type = 'stock';
                     badge = 'badge-stock';
-                } else if (transactionText.includes('apple') || transactionText.includes('aapl')) {
+                } else if (method.includes('apple')) {
                     asset = 'Apple (AAPL)';
                     type = 'stock';
                     badge = 'badge-stock';
-                } else if (transactionText.includes('microsoft') || transactionText.includes('msft')) {
+                } else if (method.includes('microsoft')) {
                     asset = 'Microsoft (MSFT)';
                     type = 'stock';
                     badge = 'badge-stock';
-                } else if (transactionText.includes('google') || transactionText.includes('googl')) {
+                } else if (method.includes('google')) {
                     asset = 'Google (GOOGL)';
                     type = 'stock';
                     badge = 'badge-stock';
-                } else if (transactionText.includes('amazon') || transactionText.includes('amzn')) {
+                } else if (method.includes('amazon')) {
                     asset = 'Amazon (AMZN)';
                     type = 'stock';
                     badge = 'badge-stock';
-                } else if (transactionText.includes('spy')) {
+                } else if (method.includes('spy')) {
                     asset = 'SPDR S&P 500 (SPY)';
                     type = 'etf';
                     badge = 'badge-etf';
-                } else if (transactionText.includes('voo')) {
+                } else if (method.includes('voo')) {
                     asset = 'Vanguard S&P 500 (VOO)';
                     type = 'etf';
                     badge = 'badge-etf';
-                } else if (transactionText.includes('ivv')) {
+                } else if (method.includes('ivv')) {
                     asset = 'iShares S&P 500 (IVV)';
                     type = 'etf';
                     badge = 'badge-etf';
-                } else if (transactionText.includes('vti')) {
+                } else if (method.includes('vti')) {
                     asset = 'Vanguard Total Market (VTI)';
                     type = 'etf';
                     badge = 'badge-etf';
-                } else if (transactionText.includes('qqq')) {
+                } else if (method.includes('qqq')) {
                     asset = 'Invesco QQQ (QQQ)';
                     type = 'etf';
                     badge = 'badge-etf';
-                } else if (transactionText.includes('crypto')) {
-                    asset = 'Cryptocurrency';
-                    type = 'crypto';
-                    badge = 'badge-crypto';
-                } else if (transactionText.includes('stock')) {
-                    asset = 'Stock';
-                    type = 'stock';
-                    badge = 'badge-stock';
-                } else if (transactionText.includes('etf')) {
-                    asset = 'ETF';
-                    type = 'etf';
-                    badge = 'badge-etf';
-                } else if (transactionText.includes('metal')) {
-                    asset = 'Precious Metal';
-                    type = 'metal';
-                    badge = 'badge-metal';
                 }
             }
             
             // Calculate returns
-            const roi = planInfo ? planInfo.roi : 15; // Default 15% ROI
+            const roi = planInfo ? planInfo.roi : 15;
             const returns = (amount * roi) / 100;
             
             // Determine status
             const now = new Date();
             const elapsedDays = (now - transactionDate) / (1000 * 60 * 60 * 24);
             const totalDays = planInfo ? planInfo.duration : 30;
-            const isCompleted = elapsedDays >= totalDays;
+            const isCompleted = elapsedDays >= totalDays || transaction.status === 'Completed';
             
             row.innerHTML = `
                 <td class="py-3 px-4 text-sm text-gray-300">${formattedDate}</td>
@@ -1581,7 +1545,7 @@
                     <span class="${badge} investment-badge text-xs">${type.toUpperCase()}</span>
                 </td>
                 <td class="py-3 px-4 text-sm text-white font-medium">${asset}</td>
-                <td class="py-3 px-4 text-sm text-gray-300">${planName}</td>
+                <td class="py-3 px-4 text-sm text-gray-300">Investment Plan</td>
                 <td class="py-3 px-4 text-sm text-green-400 font-semibold">${currencySymbol}${amount.toFixed(2)}</td>
                 <td class="py-3 px-4 text-sm text-gray-300">${duration}</td>
                 <td class="py-3 px-4 text-sm">
@@ -1607,17 +1571,15 @@
         
         for (const [planKey, stats] of Object.entries(investmentStats)) {
             const plan = stats.planInfo;
-            activePlans += stats.transactions.length; // Count each transaction
+            activePlans += stats.transactions.length;
             totalInvestment += stats.totalInvestment;
             
-            // Calculate returns for all transactions in this plan
             stats.transactions.forEach(transaction => {
                 const amount = parseFloat(transaction.amount) || 0;
                 const returns = (amount * plan.roi) / 100;
                 totalReturns += returns;
                 portfolioValue += amount + returns;
                 
-                // Track best performer
                 if (returns > bestPerformer.returns) {
                     bestPerformer = {
                         name: plan.asset,
@@ -1627,379 +1589,255 @@
             });
         }
         
-        // Calculate growth and averages
         const growthPercentage = totalInvestment > 0 ? (totalReturns / totalInvestment) * 100 : 0;
-        const dailyAverage = totalReturns > 0 ? totalReturns / 30 : 0; // Average over 30 days
+        const dailyAverage = totalReturns > 0 ? totalReturns / 30 : 0;
         
-        // Update DOM
-        document.getElementById('totalInvestment').innerHTML = `<span class="currency-symbol">${currencySymbol}</span>${totalInvestment.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
-        document.getElementById('totalReturns').innerHTML = `<span class="currency-symbol">${currencySymbol}</span>${totalReturns.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
-        document.getElementById('portfolioValue').innerHTML = `<span class="currency-symbol">${currencySymbol}</span>${portfolioValue.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+        document.getElementById('totalInvestment').innerHTML = `<span class="currency-symbol">${currencySymbol}</span>${totalInvestment.toFixed(2)}`;
+        document.getElementById('totalReturns').innerHTML = `<span class="currency-symbol">${currencySymbol}</span>${totalReturns.toFixed(2)}`;
+        document.getElementById('portfolioValue').innerHTML = `<span class="currency-symbol">${currencySymbol}</span>${portfolioValue.toFixed(2)}`;
         document.getElementById('growthPercentage').textContent = `${growthPercentage.toFixed(1)}%`;
         document.getElementById('activePlansCount').textContent = activePlans;
         document.getElementById('dailyAverage').innerHTML = `<span class="currency-symbol">${currencySymbol}</span>${dailyAverage.toFixed(2)}`;
         document.getElementById('bestPerformer').textContent = bestPerformer.name;
-        document.getElementById('bestPerformerReturns').innerHTML = `<span class="currency-symbol">${currencySymbol}</span>${bestPerformer.returns.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+        document.getElementById('bestPerformerReturns').innerHTML = `<span class="currency-symbol">${currencySymbol}</span>${bestPerformer.returns.toFixed(2)}`;
     }
     
-    function initializeCharts(investmentStats, transactions) {
-        // Destroy existing charts if they exist
+    function displayNoInvestments() {
+        const container = document.getElementById('investmentContainer');
+        container.innerHTML = `
+            <div class="investment-card p-6 text-center">
+                <div class="text-5xl mb-4">📈</div>
+                <h3 class="text-xl font-semibold text-white mb-3">No Active Investments</h3>
+                <p class="text-gray-400 mb-6">Start investing to track your portfolio performance here</p>
+                <div class="flex gap-4 justify-center flex-wrap">
+                    <a href="cryptocurrencies.html" class="text-sm text-orange-400 hover:text-orange-300">Invest in Crypto</a>
+                    <a href="stocks.html" class="text-sm text-blue-400 hover:text-blue-300">Invest in Stocks</a>
+                    <a href="etfs.html" class="text-sm text-green-400 hover:text-green-300">Invest in ETFs</a>
+                    <a href="precious-metals.html" class="text-sm text-yellow-400 hover:text-yellow-300">Invest in Metals</a>
+                </div>
+            </div>
+        `;
+        
+        const currencySymbol = getCurrentCurrencySymbol();
+        
+        document.getElementById('totalInvestment').innerHTML = `<span class="currency-symbol">${currencySymbol}</span>0.00`;
+        document.getElementById('totalReturns').innerHTML = `<span class="currency-symbol">${currencySymbol}</span>0.00`;
+        document.getElementById('portfolioValue').innerHTML = `<span class="currency-symbol">${currencySymbol}</span>0.00`;
+        document.getElementById('growthPercentage').textContent = '0%';
+        document.getElementById('activePlansCount').textContent = '0';
+        document.getElementById('dailyAverage').innerHTML = `<span class="currency-symbol">${currencySymbol}</span>0.00`;
+        document.getElementById('bestPerformer').textContent = '-';
+        document.getElementById('bestPerformerReturns').innerHTML = `<span class="currency-symbol">${currencySymbol}</span>0.00`;
+        
+        const containerTable = document.getElementById('investmentTransactionsList');
+        containerTable.innerHTML = `
+            <tr>
+                <td colspan="8" class="text-center py-12">
+                    <p class="text-gray-500">No investment transactions found</p>
+                </td>
+            </tr>
+        `;
+        
+        initializeEmptyCharts();
+    }
+    
+    function initializeEmptyCharts() {
         if (performanceChart) performanceChart.destroy();
         if (distributionChart) distributionChart.destroy();
         if (candlestickChart) candlestickChart.destroy();
         
         const currencySymbol = getCurrentCurrencySymbol();
         
-        // 1. Performance Line Chart
+        // Empty performance chart
         const performanceCtx = document.getElementById('performanceChart').getContext('2d');
+        performanceChart = new Chart(performanceCtx, {
+            type: 'line',
+            data: {
+                labels: ['Day 1', 'Day 2', 'Day 3', 'Day 4', 'Day 5', 'Day 6', 'Day 7'],
+                datasets: [{
+                    label: 'Portfolio Value',
+                    data: [0, 0, 0, 0, 0, 0, 0],
+                    borderColor: '#8b5cf6',
+                    backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { labels: { color: '#9ca3af' } },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return `${currencySymbol}${context.raw}`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: { grid: { color: 'rgba(255, 255, 255, 0.1)' }, ticks: { color: '#9ca3af' } },
+                    y: { 
+                        grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                        ticks: { 
+                            color: '#9ca3af',
+                            callback: function(value) {
+                                return `${currencySymbol}${value}`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
         
-        // Generate performance data for last 30 days based on actual investment data
-        const dates = [];
-        const performanceData = [];
-            
-            // Calculate starting portfolio value from investments
-            let startingValue = 0;
-            for (const [planKey, stats] of Object.entries(investmentStats)) {
-                startingValue += stats.totalInvestment;
-            }
-            
-            let cumulativeValue = startingValue || 10000; // Starting portfolio value
-            
-            for (let i = 29; i >= 0; i--) {
-                const date = new Date();
-                date.setDate(date.getDate() - i);
-                dates.push(date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
-                
-                // Simulate daily performance with some randomness
-                const dailyChange = (Math.random() - 0.45) * 0.05; // -2.5% to +2.5%
-                cumulativeValue *= (1 + dailyChange);
-                performanceData.push(cumulativeValue);
-            }
-            
-            performanceChart = new Chart(performanceCtx, {
-                type: 'line',
-                data: {
-                    labels: dates,
-                    datasets: [{
-                        label: 'Portfolio Value',
-                        data: performanceData,
-                        borderColor: '#8b5cf6',
-                        backgroundColor: 'rgba(139, 92, 246, 0.1)',
-                        borderWidth: 2,
-                        fill: true,
-                        tension: 0.4,
-                        animation: {
-                            duration: 2000,
-                            easing: 'easeInOutQuart'
-                        }
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            labels: { color: '#9ca3af' }
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    return `${currencySymbol}${context.raw.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
-                                }
-                            }
-                        }
-                    },
-                    scales: {
-                        x: {
-                            grid: { color: 'rgba(255, 255, 255, 0.1)' },
-                            ticks: { color: '#9ca3af' }
-                        },
-                        y: {
-                            grid: { color: 'rgba(255, 255, 255, 0.1)' },
-                            ticks: { 
-                                color: '#9ca3af',
-                                callback: function(value) {
-                                    return `${currencySymbol}${value.toLocaleString(undefined, {minimumFractionDigits: 0})}`;
-                                }
+        // Empty distribution chart
+        const distributionCtx = document.getElementById('distributionChart').getContext('2d');
+        distributionChart = new Chart(distributionCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Crypto', 'Stocks', 'ETFs', 'Metals'],
+                datasets: [{
+                    data: [0, 0, 0, 0],
+                    backgroundColor: ['#f59e0b', '#3b82f6', '#10b981', '#fbbf24'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'right', labels: { color: '#9ca3af', padding: 20 } },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return `${context.label}: ${currencySymbol}0.00 (0%)`;
                             }
                         }
                     }
                 }
-            });
-            
-            // 2. Distribution Pie Chart
-            const distributionCtx = document.getElementById('distributionChart').getContext('2d');
-            
-            const typeLabels = ['Crypto', 'Stocks', 'ETFs', 'Metals'];
-            const typeColors = ['#f59e0b', '#3b82f6', '#10b981', '#fbbf24'];
-            
-            // Calculate distribution by type from actual investment stats
-            const typeDistribution = [0, 0, 0, 0];
-            let totalValue = 0;
-            
-            for (const [planKey, stats] of Object.entries(investmentStats)) {
-                const plan = stats.planInfo;
-                const index = typeLabels.findIndex(t => t.toLowerCase() === plan.type);
-                if (index !== -1) {
-                    typeDistribution[index] += stats.totalInvestment;
-                    totalValue += stats.totalInvestment;
-                }
             }
-            
-            distributionChart = new Chart(distributionCtx, {
-                type: 'doughnut',
-                data: {
-                    labels: typeLabels,
-                    datasets: [{
-                        data: typeDistribution,
-                        backgroundColor: typeColors,
-                        borderWidth: 0,
-                        hoverOffset: 15
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'right',
-                            labels: { color: '#9ca3af', padding: 20 }
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    const value = context.raw;
-                                    const percentage = totalValue > 0 ? Math.round((value / totalValue) * 100) : 0;
-                                    return `${context.label}: ${currencySymbol}${value.toLocaleString(undefined, {minimumFractionDigits: 2})} (${percentage}%)`;
-                                }
-                            }
-                        }
-                    },
-                    animation: {
-                        animateScale: true,
-                        animateRotate: true,
-                        duration: 1500
-                    }
-                }
-            });
-            
-            // 3. Candlestick Chart for Market Performance
-            const candlestickCtx = document.getElementById('candlestickChart').getContext('2d');
-            
-            // Generate candlestick data for last 7 days
-            const candlestickLabels = [];
-            const candlestickData = [];
-            
-            let currentPrice = 100; // Starting price
-            
-            for (let i = 6; i >= 0; i--) {
-                const date = new Date();
-                date.setDate(date.getDate() - i);
-                candlestickLabels.push(date.toLocaleDateString('en-US', { weekday: 'short' }));
-                
-                // Simulate OHLC data
-                const volatility = 0.04; // 4% daily volatility
-                const open = currentPrice;
-                const change = (Math.random() - 0.5) * 2 * volatility * open;
-                const close = open + change;
-                const high = Math.max(open, close) * (1 + Math.random() * volatility / 2);
-                const low = Math.min(open, close) * (1 - Math.random() * volatility / 2);
-                
-                candlestickData.push({
-                    x: i,
-                    o: open,
-                    h: high,
-                    l: low,
-                    c: close
-                });
-                
-                currentPrice = close;
-            }
-            
-            candlestickChart = new Chart(candlestickCtx, {
-                type: 'candlestick',
-                data: {
-                    labels: candlestickLabels,
-                    datasets: [{
-                        label: 'Market Index',
-                        data: candlestickData,
-                        color: {
-                            up: '#10b981',
-                            down: '#ef4444',
-                            unchanged: '#6b7280'
-                        }
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    animation: {
-                        duration: 2000,
-                        easing: 'easeInOutQuart'
-                    },
-                    scales: {
-                        x: {
-                            grid: { color: 'rgba(255, 255, 255, 0.1)' },
-                            ticks: { color: '#9ca3af' }
-                        },
-                        y: {
-                            grid: { color: 'rgba(255, 255, 255, 0.1)' },
-                            ticks: { 
-                                color: '#9ca3af',
-                                callback: function(value) {
-                                    return `${currencySymbol}${value.toFixed(0)}`;
-                                }
-                            }
-                        }
-                    },
-                    plugins: {
-                        legend: {
-                            labels: { color: '#9ca3af' }
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    const data = context.raw;
-                                    return [
-                                        `Open: ${currencySymbol}${data.o.toFixed(2)}`,
-                                        `High: ${currencySymbol}${data.h.toFixed(2)}`,
-                                        `Low: ${currencySymbol}${data.l.toFixed(2)}`,
-                                        `Close: ${currencySymbol}${data.c.toFixed(2)}`
-                                    ];
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-        }
+        });
         
-        function displayNoInvestments() {
-            const container = document.getElementById('investmentContainer');
-            container.innerHTML = `
-                <div class="investment-card p-6 text-center">
-                    <div class="text-5xl mb-4">📈</div>
-                    <h3 class="text-xl font-semibold text-white mb-3">No Active Investments</h3>
-                    <p class="text-gray-400 mb-6">Start investing to track your portfolio performance here</p>
-                    <div class="flex gap-4 justify-center flex-wrap">
-                        <a href="cryptocurrencies.html" class="text-sm text-orange-400 hover:text-orange-300">Invest in Crypto</a>
-                        <a href="stocks.html" class="text-sm text-blue-400 hover:text-blue-300">Invest in Stocks</a>
-                        <a href="etfs.html" class="text-sm text-green-400 hover:text-green-300">Invest in ETFs</a>
-                        <a href="precious-metals.html" class="text-sm text-yellow-400 hover:text-yellow-300">Invest in Metals</a>
-                    </div>
+        // Empty candlestick chart
+        const candlestickCtx = document.getElementById('candlestickChart').getContext('2d');
+        candlestickChart = new Chart(candlestickCtx, {
+            type: 'candlestick',
+            data: {
+                labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                datasets: [{
+                    label: 'Market Index',
+                    data: [
+                        { o: 100, h: 105, l: 95, c: 100 },
+                        { o: 100, h: 105, l: 95, c: 100 },
+                        { o: 100, h: 105, l: 95, c: 100 },
+                        { o: 100, h: 105, l: 95, c: 100 },
+                        { o: 100, h: 105, l: 95, c: 100 },
+                        { o: 100, h: 105, l: 95, c: 100 },
+                        { o: 100, h: 105, l: 95, c: 100 }
+                    ],
+                    color: { up: '#10b981', down: '#ef4444', unchanged: '#6b7280' }
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: { grid: { color: 'rgba(255, 255, 255, 0.1)' }, ticks: { color: '#9ca3af' } },
+                    y: { 
+                        grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                        ticks: { 
+                            color: '#9ca3af',
+                            callback: function(value) {
+                                return `${currencySymbol}${value}`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+    
+    function refreshInvestments() {
+        const userEmail = localStorage.getItem("v0trade_user_email");
+        if (!userEmail) return;
+        
+        const container = document.getElementById('investmentContainer');
+        container.innerHTML = `
+            <div class="investment-card p-6 text-center">
+                <div class="flex flex-col items-center justify-center">
+                    <svg class="animate-spin h-12 w-12 text-purple-500 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <p class="text-gray-400">Refreshing investment data...</p>
                 </div>
-            `;
-            
-            const currencySymbol = getCurrentCurrencySymbol();
-            
-            // Reset stats
-            document.getElementById('totalInvestment').innerHTML = `<span class="currency-symbol">${currencySymbol}</span>0.00`;
-            document.getElementById('totalReturns').innerHTML = `<span class="currency-symbol">${currencySymbol}</span>0.00`;
-            document.getElementById('portfolioValue').innerHTML = `<span class="currency-symbol">${currencySymbol}</span>0.00`;
-            document.getElementById('growthPercentage').textContent = '0%';
-            document.getElementById('activePlansCount').textContent = '0';
-            document.getElementById('dailyAverage').innerHTML = `<span class="currency-symbol">${currencySymbol}</span>0.00`;
-            document.getElementById('bestPerformer').textContent = '-';
-            document.getElementById('bestPerformerReturns').innerHTML = `<span class="currency-symbol">${currencySymbol}</span>0.00`;
-            
-            // Clear transactions table
-            const containerTable = document.getElementById('investmentTransactionsList');
-            containerTable.innerHTML = `
-                <tr>
-                    <td colspan="8" class="text-center py-12">
-                        <p class="text-gray-500">No investment transactions found</p>
-                    </td>
-                </tr>
-            `;
-            
-            // Initialize empty charts
-            initializeCharts({}, []);
-        }
+            </div>
+        `;
         
-        function refreshInvestments() {
-            const userEmail = localStorage.getItem("v0trade_user_email");
-            if (!userEmail) return;
+        // Clear cache and reload
+        localStorage.removeItem(`${INVESTMENT_CACHE_KEY}_${userEmail}`);
+        
+        setTimeout(() => {
+            fetchDashboardTransactions(userEmail);
             
-            // Show loading state
-            const container = document.getElementById('investmentContainer');
-            container.innerHTML = `
-                <div class="investment-card p-6 text-center">
-                    <div class="flex flex-col items-center justify-center">
-                        <svg class="animate-spin h-12 w-12 text-purple-500 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        <p class="text-gray-400">Refreshing investment data...</p>
-                    </div>
-                </div>
-            `;
+            const refreshBtn = document.querySelector('button[onclick="refreshInvestments()"]');
+            const originalText = refreshBtn.innerHTML;
+            refreshBtn.innerHTML = '✓ Refreshed';
+            refreshBtn.style.background = 'linear-gradient(135deg, #10b981, #059669)';
             
-            // Clear cache and reload
-            localStorage.removeItem(`${INVESTMENT_CACHE_KEY}_${userEmail}`);
-            
-            // Force refresh from API
             setTimeout(() => {
-                fetchDashboardTransactions(userEmail);
-                
-                // Show success indicator
-                const refreshBtn = document.querySelector('button[onclick="refreshInvestments()"]');
-                const originalText = refreshBtn.innerHTML;
-                refreshBtn.innerHTML = '✓ Refreshed';
-                refreshBtn.style.background = 'linear-gradient(135deg, #10b981, #059669)';
-                
-                setTimeout(() => {
-                    refreshBtn.innerHTML = originalText;
-                    refreshBtn.style.background = '';
-                }, 2000);
-            }, 1000);
-        }
+                refreshBtn.innerHTML = originalText;
+                refreshBtn.style.background = '';
+            }, 2000);
+        }, 1000);
+    }
+    
+    function filterInvestments(type) {
+        const cards = document.querySelectorAll('.investment-card');
+        const buttons = document.querySelectorAll('.filter-btn');
         
-        function filterInvestments(type) {
-            const cards = document.querySelectorAll('.investment-card');
-            const buttons = document.querySelectorAll('.filter-btn');
-            
-            buttons.forEach(btn => {
-                btn.classList.remove('bg-purple-500/20', 'text-purple-400', 'border-purple-500/30');
-                btn.classList.add('bg-slate-800', 'text-gray-400', 'border-slate-700');
+        buttons.forEach(btn => {
+            btn.classList.remove('bg-purple-500/20', 'text-purple-400', 'border-purple-500/30');
+            btn.classList.add('bg-slate-800', 'text-gray-400', 'border-slate-700');
+        });
+        
+        event.target.classList.remove('bg-slate-800', 'text-gray-400', 'border-slate-700');
+        event.target.classList.add('bg-purple-500/20', 'text-purple-400', 'border-purple-500/30');
+        
+        if (type === 'all') {
+            cards.forEach(card => card.style.display = 'block');
+        } else {
+            cards.forEach(card => {
+                card.style.display = card.dataset.type === type ? 'block' : 'none';
             });
-            
-            event.target.classList.remove('bg-slate-800', 'text-gray-400', 'border-slate-700');
-            event.target.classList.add('bg-purple-500/20', 'text-purple-400', 'border-purple-500/30');
-            
-            if (type === 'all') {
-                cards.forEach(card => card.style.display = 'block');
-            } else {
-                cards.forEach(card => {
-                    card.style.display = card.dataset.type === type ? 'block' : 'none';
-                });
-            }
         }
-        
-        // Helper functions
-        function getIconForType(type) {
-            switch(type) {
-                case 'crypto': return '₿';
-                case 'stock': return '📊';
-                case 'etf': return '📈';
-                case 'metal': return '💎';
-                default: return '💰';
-            }
+    }
+    
+    function getIconForType(type) {
+        switch(type) {
+            case 'crypto': return '₿';
+            case 'stock': return '📊';
+            case 'etf': return '📈';
+            case 'metal': return '💎';
+            default: return '💰';
         }
-        
-        // Listen for currency changes
-        document.addEventListener('currencyChanged', function(event) {
-            // Update all displayed amounts with new currency symbol
-            updateCurrencySymbols(event.detail.code);
-        });
-        
-        // Auto-refresh when returning to the page
-        window.addEventListener('focus', () => {
-            const userEmail = localStorage.getItem("v0trade_user_email");
-            if (userEmail) {
-                console.log("Page focused, refreshing investment data...");
-                loadInvestmentData(userEmail);
-            }
-        });
-    </script>
+    }
+    
+    // Auto-refresh when returning to the page
+    window.addEventListener('focus', () => {
+        const userEmail = localStorage.getItem("v0trade_user_email");
+        if (userEmail) {
+            console.log("Page focused, refreshing investment data...");
+            loadInvestmentData(userEmail);
+        }
+    });
+    
+    // Initialize empty charts on load
+    window.addEventListener('DOMContentLoaded', function() {
+        initializeEmptyCharts();
+    });
+</script>
 </body>
 </html>
