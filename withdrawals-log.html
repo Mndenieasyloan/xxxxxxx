@@ -5,8 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Withdrawals Log - V0 Trade</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Add currency config script -->
-    <script src="/js/currency-config.js"></script>
     <style>
         .sidebar-link { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1rem; color: rgb(107 114 128); border-radius: 0.5rem; transition: all 0.2s; }
         .sidebar-link:hover { background-color: rgb(249 115 22 / 0.1); color: rgb(249 115 22); }
@@ -42,7 +40,7 @@
             position: relative;
             display: inline-block;
         }
-        
+
         .currency-selector {
             padding: 8px 12px;
             border: 1px solid rgba(249, 115, 22, 0.3);
@@ -56,12 +54,12 @@
             font-size: 14px;
             transition: all 0.3s;
         }
-        
+
         .currency-selector:hover {
             border-color: #f97316;
             background: rgba(249, 115, 22, 0.1);
         }
-        
+
         .currency-dropdown {
             position: absolute;
             top: 100%;
@@ -77,12 +75,12 @@
             padding: 8px;
             backdrop-filter: blur(10px);
         }
-        
+
         .currency-dropdown.show {
             display: block;
             animation: fadeIn 0.2s ease;
         }
-        
+
         .currency-option-dropdown {
             padding: 10px 12px;
             display: flex;
@@ -94,35 +92,35 @@
             color: #e2e8f0;
             font-size: 14px;
         }
-        
+
         .currency-option-dropdown:hover {
             background: rgba(249, 115, 22, 0.1);
         }
-        
+
         .currency-option-dropdown.active {
             background: rgba(249, 115, 22, 0.15);
             color: white;
             font-weight: 600;
         }
-        
+
         .currency-option-dropdown .symbol {
             font-size: 18px;
             width: 24px;
             text-align: center;
         }
-        
+
         .currency-option-dropdown .code {
             font-weight: 600;
             min-width: 40px;
         }
-        
+
         .currency-option-dropdown .name {
             color: #94a3b8;
             font-size: 12px;
             flex-grow: 1;
             text-align: right;
         }
-        
+
         /* Mobile currency selector - always visible */
         .mobile-currency-toggle {
             padding: 8px 12px;
@@ -139,7 +137,7 @@
             margin-left: auto;
             margin-right: 12px;
         }
-        
+
         .mobile-currency-dropdown {
             position: fixed;
             top: 50%;
@@ -156,12 +154,12 @@
             padding: 16px;
             backdrop-filter: blur(20px);
         }
-        
+
         .mobile-currency-dropdown.show {
             display: block;
             animation: fadeIn 0.3s ease;
         }
-        
+
         .mobile-currency-overlay {
             position: fixed;
             top: 0;
@@ -173,11 +171,11 @@
             z-index: 1099;
             display: none;
         }
-        
+
         .mobile-currency-overlay.show {
             display: block;
         }
-        
+
         .mobile-currency-option {
             padding: 12px 16px;
             display: flex;
@@ -190,17 +188,17 @@
             font-size: 16px;
             margin-bottom: 8px;
         }
-        
+
         .mobile-currency-option:hover {
             background: rgba(249, 115, 22, 0.1);
         }
-        
+
         .mobile-currency-option.active {
             background: rgba(249, 115, 22, 0.2);
             color: white;
             font-weight: 600;
         }
-        
+
         .mobile-currency-header {
             display: flex;
             justify-content: space-between;
@@ -209,13 +207,13 @@
             padding-bottom: 12px;
             border-bottom: 1px solid rgba(249, 115, 22, 0.2);
         }
-        
+
         .mobile-currency-header h3 {
             color: white;
             font-size: 18px;
             font-weight: 600;
         }
-        
+
         .close-currency-menu {
             background: none;
             border: none;
@@ -229,19 +227,19 @@
             justify-content: center;
             border-radius: 6px;
         }
-        
+
         .close-currency-menu:hover {
             background: rgba(249, 115, 22, 0.1);
             color: white;
         }
-        
+
         @keyframes fadeIn {
             from { opacity: 0; transform: translate(-50%, -48%); }
             to { opacity: 1; transform: translate(-50%, -50%); }
         }
     </style>
 </head>
-<body class="bg-gray-50" onload="loadWithdrawals()">
+<body class="bg-gray-50" onload="loadWithdrawals(); initCurrencySystem(); checkAuth();">
     
     <!-- Added mobile sidebar toggle button -->
     <button onclick="toggleSidebar()" class="sidebar-toggle fixed left-4 top-20 z-50 bg-orange-500 hover:bg-orange-600 text-white p-2 rounded-lg shadow-lg transition">
@@ -311,7 +309,7 @@
                     
                     <a href="dashboard.html" class="text-sm text-purple-400 hover:text-purple-300 transition">Dashboard</a>
                     <span class="text-sm text-gray-400" id="userEmail">user@email.com</span>
-                    <a href="index.html" class="text-sm text-gray-300 hover:text-white transition">Logout</a>
+                    <a href="javascript:void(0)" onclick="logout()" class="text-sm text-gray-300 hover:text-white transition">Logout</a>
                 </div>
 
                 <div class="flex items-center gap-2 md:hidden">
@@ -344,7 +342,7 @@
                     <a href="contact.html" class="text-sm text-gray-300 hover:text-white">Contact</a>
                     <a href="faq.html" class="text-sm text-gray-300 hover:text-white">FAQ</a>
                     <a href="dashboard.html" class="text-sm text-purple-400 hover:text-purple-300">Dashboard</a>
-                    <a href="index.html" class="text-sm text-gray-300 hover:text-white">Logout</a>
+                    <a href="javascript:void(0)" onclick="logout()" class="text-sm text-gray-300 hover:text-white">Logout</a>
                 </nav>
             </div>
         </div>
@@ -478,22 +476,45 @@
             { code: 'CAD', symbol: 'C$', name: 'Canadian Dollar' }
         ];
 
+        // ========== BASEROW API CONFIGURATION ==========
+        const BASEROW_API_TOKEN = 'YOUR_DATABASE_TOKEN'; // Replace with your actual token
+        const BASEROW_TABLE_ID = '756079';
+        const BASEROW_API_URL = `https://api.baserow.io/api/database/rows/table/${BASEROW_TABLE_ID}/`;
+        
+        // Store withdrawals data globally for currency updates
+        window.withdrawalsData = [];
+        
+        // ========== AUTHENTICATION FUNCTIONS ==========
+        function checkAuth() {
+            const userEmail = localStorage.getItem('v0trade_user_email');
+            if (!userEmail) {
+                // Redirect to login if not authenticated
+                window.location.href = 'login.html';
+                return false;
+            }
+            
+            // Update email display in header
+            document.getElementById('userEmail').textContent = userEmail;
+            return true;
+        }
+        
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                localStorage.removeItem('v0trade_user_email');
+                window.location.href = 'login.html';
+            }
+        }
+        
+        // ========== CURRENCY FUNCTIONS ==========
         // Get current currency from localStorage
         function getCurrentCurrency() {
             return localStorage.getItem('v0trade_currency') || 'USD';
         }
 
-        // Get current currency symbol
-        function getCurrentCurrencySymbol() {
-            const currencyCode = getCurrentCurrency();
-            const currency = CURRENCIES.find(c => c.code === currencyCode) || CURRENCIES[0];
-            return currency.symbol;
-        }
-
         // Update currency symbols on the page
-        function updateCurrencySymbols() {
-            const currencyCode = getCurrentCurrency();
-            const currency = CURRENCIES.find(c => c.code === currencyCode) || CURRENCIES[0];
+        function updateCurrencySymbols(currencyCode) {
+            const currency = CURRENCIES.find(c => c.code === currencyCode);
+            if (!currency) return;
             
             // Update header currency display
             document.querySelectorAll('.current-symbol, .mobile-currency-symbol').forEach(el => {
@@ -504,32 +525,15 @@
             });
             
             // Update stats with currency symbol
-            updateStatsCurrencySymbols(currency.symbol);
-            
-            // Update table amounts if data is loaded
-            if (window.withdrawalsData && window.withdrawalsData.length > 0) {
-                updateTableCurrencySymbols(currency.symbol);
-            }
-        }
-
-        // Update stats amounts with new currency symbol
-        function updateStatsCurrencySymbols(symbol) {
-            const totalEl = document.getElementById('totalWithdrawals');
-            const monthEl = document.getElementById('monthWithdrawals');
-            
-            if (totalEl) {
-                const totalValue = totalEl.textContent.replace(/[^0-9.-]+/g, '');
-                if (totalValue && !isNaN(parseFloat(totalValue))) {
-                    totalEl.textContent = symbol + parseFloat(totalValue).toFixed(2);
+            document.querySelectorAll('#totalWithdrawals, #monthWithdrawals').forEach(el => {
+                const value = el.textContent.replace(/[^0-9.-]+/g, '');
+                if (value && !isNaN(parseFloat(value))) {
+                    el.textContent = currency.symbol + parseFloat(value).toFixed(2);
                 }
-            }
+            });
             
-            if (monthEl) {
-                const monthValue = monthEl.textContent.replace(/[^0-9.-]+/g, '');
-                if (monthValue && !isNaN(parseFloat(monthValue))) {
-                    monthEl.textContent = symbol + parseFloat(monthValue).toFixed(2);
-                }
-            }
+            // Update table amounts
+            updateTableCurrencySymbols(currency.symbol);
         }
 
         // Update table amounts with new currency symbol
@@ -611,16 +615,27 @@
             localStorage.setItem('v0trade_currency', currencyCode);
             
             // Update UI
-            updateCurrencySymbols();
+            updateCurrencySymbols(currencyCode);
             
             // Close dropdowns
             closeCurrencyDropdown();
             closeMobileCurrencyMenu();
             
-            // Refresh withdrawals to update amounts
-            if (window.withdrawalsData && window.withdrawalsData.length > 0) {
-                updateStats(window.withdrawalsData);
-                displayWithdrawals(window.withdrawalsData);
+            // Refresh stats display
+            refreshStatsDisplay();
+        }
+
+        // Refresh stats display with current currency
+        function refreshStatsDisplay() {
+            // If stats are already loaded, update them
+            const totalEl = document.getElementById('totalWithdrawals');
+            const monthEl = document.getElementById('monthWithdrawals');
+            
+            if (totalEl && monthEl && window.withdrawalsData.length > 0) {
+                const currency = CURRENCIES.find(c => c.code === getCurrentCurrency());
+                if (currency) {
+                    updateStats(window.withdrawalsData);
+                }
             }
         }
 
@@ -664,24 +679,22 @@
             document.getElementById('mobileCurrencyMenu').classList.remove('show');
         }
 
-        // Initialize currency system
+        // Initialize currency system when page loads
         function initCurrencySystem() {
-            updateCurrencySymbols();
+            const currentCurrency = getCurrentCurrency();
+            updateCurrencySymbols(currentCurrency);
             populateCurrencyDropdown();
         }
 
-        // Baserow API Configuration
-        const BASEROW_API_TOKEN = 'YOUR_DATABASE_TOKEN'; // Replace with your actual token
-        const BASEROW_TABLE_ID = '756079';
-        const BASEROW_API_URL = `https://api.baserow.io/api/database/rows/table/${BASEROW_TABLE_ID}/`;
-        
+        // ========== WITHDRAWAL FUNCTIONS ==========
         // Load user data and display email
         function loadUserData() {
-            const userData = JSON.parse(localStorage.getItem('userData') || '{}');
-            const userEmail = document.getElementById('userEmail');
-            if (userData.email) {
-                userEmail.textContent = userData.email;
-                return userData.email;
+            const userEmail = localStorage.getItem('v0trade_user_email');
+            const userEmailElement = document.getElementById('userEmail');
+            
+            if (userEmail) {
+                userEmailElement.textContent = userEmail;
+                return userEmail;
             }
             return null;
         }
@@ -772,6 +785,11 @@
         
         // Load and display withdrawals
         async function loadWithdrawals() {
+            // Check authentication first
+            if (!checkAuth()) {
+                return;
+            }
+            
             const withdrawals = await fetchWithdrawals();
             window.withdrawalsData = withdrawals; // Store for currency updates
             
@@ -788,11 +806,11 @@
                 document.getElementById('withdrawalsTableBody').innerHTML = '';
                 
                 // Reset stats
-                const currencySymbol = getCurrentCurrencySymbol();
-                document.getElementById('totalWithdrawals').textContent = `${currencySymbol}0.00`;
+                const currency = CURRENCIES.find(c => c.code === getCurrentCurrency()) || CURRENCIES[0];
+                document.getElementById('totalWithdrawals').textContent = `${currency.symbol}0.00`;
                 document.getElementById('completedWithdrawals').textContent = '0';
                 document.getElementById('pendingWithdrawals').textContent = '0';
-                document.getElementById('monthWithdrawals').textContent = `${currencySymbol}0.00`;
+                document.getElementById('monthWithdrawals').textContent = `${currency.symbol}0.00`;
             }
         }
         
@@ -810,7 +828,8 @@
             noWithdrawalsMessage.classList.add('hidden');
             
             // Get current currency symbol
-            const currencySymbol = getCurrentCurrencySymbol();
+            const currentCurrency = getCurrentCurrency();
+            const currency = CURRENCIES.find(c => c.code === currentCurrency) || CURRENCIES[0];
             
             // Sort by date (newest first)
             withdrawals.sort((a, b) => {
@@ -883,10 +902,10 @@
                 html += `
                     <tr class="border-b border-gray-100 hover:bg-gray-50">
                         <td class="px-6 py-4 text-sm font-mono text-gray-900">${id}</td>
-                        <td class="px-6 py-4 text-sm font-medium text-gray-900">${currencySymbol}${amount.toFixed(2)}</td>
+                        <td class="px-6 py-4 text-sm font-medium text-gray-900">${currency.symbol}${amount.toFixed(2)}</td>
                         <td class="px-6 py-4 text-sm text-gray-600">${method}</td>
-                        <td class="px-6 py-4 text-sm text-red-600">${currencySymbol}${fee.toFixed(2)}</td>
-                        <td class="px-6 py-4 text-sm font-medium text-green-600">${currencySymbol}${netAmount.toFixed(2)}</td>
+                        <td class="px-6 py-4 text-sm text-red-600">${currency.symbol}${fee.toFixed(2)}</td>
+                        <td class="px-6 py-4 text-sm font-medium text-green-600">${currency.symbol}${netAmount.toFixed(2)}</td>
                         <td class="px-6 py-4">
                             <span class="px-3 py-1 text-xs font-semibold rounded-full ${statusClass}">${statusText}</span>
                         </td>
@@ -927,11 +946,14 @@
                 return sum;
             }, 0);
             
-            const currencySymbol = getCurrentCurrencySymbol();
-            document.getElementById('totalWithdrawals').textContent = `${currencySymbol}${totalWithdrawals.toFixed(2)}`;
+            // Get current currency symbol
+            const currentCurrency = getCurrentCurrency();
+            const currency = CURRENCIES.find(c => c.code === currentCurrency) || CURRENCIES[0];
+            
+            document.getElementById('totalWithdrawals').textContent = `${currency.symbol}${totalWithdrawals.toFixed(2)}`;
             document.getElementById('completedWithdrawals').textContent = completed;
             document.getElementById('pendingWithdrawals').textContent = pending;
-            document.getElementById('monthWithdrawals').textContent = `${currencySymbol}${monthWithdrawals.toFixed(2)}`;
+            document.getElementById('monthWithdrawals').textContent = `${currency.symbol}${monthWithdrawals.toFixed(2)}`;
         }
         
         // Show error message
@@ -961,7 +983,7 @@
             }, 1000);
         }
         
-        // Mobile menu and sidebar functions
+        // ========== MOBILE MENU AND SIDEBAR FUNCTIONS ==========
         function toggleMobileMenu() {
             const menu = document.getElementById('mobileMenu');
             menu.classList.toggle('active');
@@ -974,14 +996,9 @@
             overlay.classList.toggle('active');
         }
         
-        // Initialize currency system when DOM is loaded
-        document.addEventListener('DOMContentLoaded', function() {
-            initCurrencySystem();
-        });
-        
+        // ========== EVENT LISTENERS ==========
         // Close dropdowns when clicking outside
         document.addEventListener('click', function(event) {
-            // Close desktop currency dropdown
             const currencySwitcher = document.querySelector('.currency-switcher');
             const currencySelector = document.querySelector('.currency-selector');
             const currencyDropdown = document.getElementById('currencyDropdown');
@@ -999,16 +1016,21 @@
             if (mobileMenu && mobileMenu.classList.contains('active') && 
                 !mobileMenu.contains(event.target) && 
                 mobileMenuButton && !mobileMenuButton.contains(event.target)) {
-                toggleMobileMenu();
+                mobileMenu.classList.remove('active');
             }
         });
         
         // Close modals with Escape key
         document.addEventListener('keydown', function(event) {
             if (event.key === 'Escape') {
-                closeCurrencyDropdown();
                 closeMobileCurrencyMenu();
             }
+        });
+        
+        // Initialize when DOM is loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            initCurrencySystem();
+            checkAuth();
         });
     </script>
 
