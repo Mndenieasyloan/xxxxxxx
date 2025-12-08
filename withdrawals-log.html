@@ -477,9 +477,9 @@
         ];
 
         // ========== BASEROW API CONFIGURATION ==========
-        const BASEROW_API_TOKEN = 'YOUR_DATABASE_TOKEN'; // Replace with your actual token
-        const BASEROW_TABLE_ID = '756079';
-        const BASEROW_API_URL = `https://api.baserow.io/api/database/rows/table/${BASEROW_TABLE_ID}/`;
+        const API_TOKEN = "LG6hnTBxgBG78FueElsSwpHRd4Wep1oL";
+        const TRANSACTIONS_TABLE = 756081;
+        const TRANSACTIONS_SYNC_INTERVAL = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
         
         // Store withdrawals data globally for currency updates
         window.withdrawalsData = [];
@@ -692,8 +692,8 @@
             return localStorage.getItem('v0trade_user_email');
         }
         
-        // Fetch withdrawals from multiple sources
-        async function fetchWithdrawals() {
+        // Fetch withdrawals from localStorage cache
+        async function fetchWithdrawals(forceRefresh = false) {
             try {
                 const userEmail = getCurrentUserEmail();
                 
@@ -709,202 +709,207 @@
                 document.getElementById('contentState').classList.add('hidden');
                 document.getElementById('errorState').classList.add('hidden');
                 
-                // Get withdrawals from multiple sources
-                const withdrawals = [];
+                // Get withdrawals from localStorage cache
+                const cachedTransactions = getCachedTransactions(userEmail);
                 
-                // 1. Get from Baserow API
-                const baserowWithdrawals = await fetchBaserowWithdrawals(userEmail);
-                withdrawals.push(...baserowWithdrawals);
+                // Check if we need to fetch from Baserow
+                const shouldFetchFromBaserow = forceRefresh || shouldSyncWithBaserow(userEmail);
                 
-                // 2. Get from localStorage (latest_transactions)
-                const localWithdrawals = getLocalWithdrawals(userEmail);
-                withdrawals.push(...localWithdrawals);
-                
-                // 3. Get from localStorage (individual withdrawal data)
-                const individualWithdrawals = getIndividualWithdrawals(userEmail);
-                withdrawals.push(...individualWithdrawals);
-                
-                console.log('Total withdrawals found:', withdrawals.length);
-                
-                // Remove duplicates based on transaction_id
-                const uniqueWithdrawals = removeDuplicateWithdrawals(withdrawals);
-                
-                return uniqueWithdrawals;
+                if (shouldFetchFromBaserow) {
+                    console.log('Fetching from Baserow API...');
+                    const baserowTransactions = await fetchBaserowTransactions(userEmail);
+                    
+                    // Merge and update cache
+                    const allTransactions = mergeTransactions(cachedTransactions, baserowTransactions);
+                    updateTransactionCache(userEmail, allTransactions);
+                    
+                    // Filter to show only withdrawals
+                    const withdrawals = filterWithdrawals(allTransactions);
+                    return withdrawals;
+                } else {
+                    console.log('Using cached transactions...');
+                    // Filter to show only withdrawals
+                    const withdrawals = filterWithdrawals(cachedTransactions);
+                    return withdrawals;
+                }
                 
             } catch (error) {
                 console.error('Error fetching withdrawals:', error);
+                
+                // Fallback to cached data if available
+                const userEmail = getCurrentUserEmail();
+                if (userEmail) {
+                    const cachedTransactions = getCachedTransactions(userEmail);
+                    const withdrawals = filterWithdrawals(cachedTransactions);
+                    return withdrawals;
+                }
+                
                 showError('Failed to load withdrawal history. Please check your connection and try again.');
                 return [];
             }
         }
         
-        // Fetch withdrawals from Baserow
-        async function fetchBaserowWithdrawals(userEmail) {
+        // Get cached transactions from localStorage
+        function getCachedTransactions(userEmail) {
             try {
-                console.log('Fetching from Baserow API...');
+                const cacheKey = `v0trade_transactions_data_${userEmail}`;
+                const cachedData = localStorage.getItem(cacheKey);
                 
-                // Create filter object to filter by email
-                const filterParams = new URLSearchParams({
-                    'user_field_names': 'true',
-                    'size': '200',
-                    'filters': JSON.stringify({
-                        'filter_type': 'AND',
-                        'filters': [{
-                            'field': 'email',
-                            'type': 'equal',
-                            'value': userEmail
-                        }]
-                    })
-                });
-                
-                // Fetch filtered rows
-                const response = await fetch(`${BASEROW_API_URL}?${filterParams.toString()}`, {
-                    method: 'GET',
-                    headers: {
-                        'Authorization': `Token ${BASEROW_API_TOKEN}`,
-                        'Content-Type': 'application/json'
-                    }
-                });
-                
-                if (!response.ok) {
-                    throw new Error(`Baserow API Error: ${response.status}`);
+                if (cachedData) {
+                    return JSON.parse(cachedData);
                 }
-                
-                const data = await response.json();
-                console.log('Baserow withdrawals:', data.results?.length || 0);
-                
-                // Transform Baserow data to standard format
-                return (data.results || []).map(row => ({
-                    source: 'baserow',
-                    id: row.id,
-                    transaction_id: row.transaction_id || `W${String(row.id).padStart(4, '0')}`,
-                    amount: parseFloat(row.amount || 0),
-                    fee: parseFloat(row.fee || 0),
-                    method: row.method || 'Bank Transfer',
-                    status: row.status || 'pending',
-                    date: row.date || row.created_at,
-                    email: row.email,
-                    net_amount: parseFloat(row.amount || 0) - parseFloat(row.fee || 0)
-                }));
-                
             } catch (error) {
-                console.warn('Failed to fetch from Baserow, using local data only:', error.message);
-                return [];
+                console.error('Error reading cached transactions:', error);
+            }
+            return [];
+        }
+        
+        // Check if we should sync with Baserow
+        function shouldSyncWithBaserow(userEmail) {
+            try {
+                const lastSyncKey = `v0trade_last_transaction_sync_${userEmail}`;
+                const lastSync = localStorage.getItem(lastSyncKey);
+                
+                if (!lastSync) return true;
+                
+                const now = Date.now();
+                const timeSinceLastSync = now - parseInt(lastSync);
+                
+                return timeSinceLastSync > TRANSACTIONS_SYNC_INTERVAL;
+            } catch (error) {
+                console.error('Error checking sync status:', error);
+                return true;
             }
         }
         
-        // Get withdrawals from localStorage (latest_transactions)
-        function getLocalWithdrawals(userEmail) {
+        // Fetch transactions from Baserow
+        async function fetchBaserowTransactions(userEmail) {
             try {
-                console.log('Fetching from localStorage (latest_transactions)...');
-                const transactions = JSON.parse(localStorage.getItem('latest_transactions') || '[]');
+                // Fetch ALL transactions from Baserow and filter client-side
+                const url = `https://api.baserow.io/api/database/rows/table/${TRANSACTIONS_TABLE}/?user_field_names=true&size=200`;
                 
-                // Filter for withdrawals only and for current user
-                const withdrawals = transactions.filter(tx => {
-                    const isWithdrawal = tx.type === 'withdrawal' || 
-                                       (tx.method && tx.method.toLowerCase().includes('withdraw')) ||
-                                       (tx.method && tx.method.toLowerCase().includes('payout'));
-                    const isCurrentUser = tx.email === userEmail;
-                    return isWithdrawal && isCurrentUser;
+                console.log("Fetching ALL transactions from Baserow:", url);
+
+                const res = await fetch(url, {
+                    headers: { Authorization: `Token ${API_TOKEN}` }
                 });
+
+                const data = await res.json();
+                console.log("Baserow API response:", data);
                 
-                console.log('Local storage withdrawals:', withdrawals.length);
-                
-                // Transform to standard format
-                return withdrawals.map(tx => ({
-                    source: 'local_storage',
-                    id: tx.id || tx.transaction_id,
-                    transaction_id: tx.transaction_id || tx.id,
-                    amount: parseFloat(tx.amount || 0),
-                    fee: parseFloat(tx.fee || 0),
-                    method: tx.method || 'Bank Transfer',
-                    status: tx.status || 'pending',
-                    date: tx.timestamp || tx.date,
-                    email: tx.email,
-                    net_amount: parseFloat(tx.amount || 0) - parseFloat(tx.fee || 0)
-                }));
-                
-            } catch (error) {
-                console.warn('Error reading localStorage transactions:', error);
-                return [];
-            }
-        }
-        
-        // Get withdrawals from individual localStorage items
-        function getIndividualWithdrawals(userEmail) {
-            try {
-                console.log('Fetching from individual localStorage items...');
-                const withdrawals = [];
-                
-                // Check for withdrawal-specific localStorage items
-                const withdrawalKeys = [
-                    'withdrawal_amount',
-                    'withdrawal_method',
-                    'withdrawal_status',
-                    'withdrawal_transaction_id',
-                    'withdrawal_timestamp'
-                ];
-                
-                // If we have withdrawal data in localStorage
-                const hasWithdrawalData = withdrawalKeys.some(key => localStorage.getItem(key));
-                
-                if (hasWithdrawalData) {
-                    const withdrawalAmount = localStorage.getItem('withdrawal_amount');
-                    const withdrawalMethod = localStorage.getItem('withdrawal_method') || 'Bank Transfer';
-                    const withdrawalStatus = localStorage.getItem('withdrawal_status') || 'pending';
-                    const withdrawalTransactionId = localStorage.getItem('withdrawal_transaction_id') || `W${Date.now()}`;
-                    const withdrawalTimestamp = localStorage.getItem('withdrawal_timestamp') || new Date().toISOString();
+                if (!data.results || data.results.length === 0) {
+                    console.log("No transactions found in Baserow");
+                    return [];
+                }
+
+                // Filter transactions by user email on client side
+                const userTransactions = data.results.filter(row => {
+                    const rowEmail = row["email"] || row["field_6394448"] || "";
+                    return rowEmail.toLowerCase() === userEmail.toLowerCase();
+                });
+
+                console.log("Filtered Baserow transactions for user:", userTransactions.length);
+
+                // Process Baserow transactions data
+                const transactions = userTransactions.map(row => {
+                    // Try to get values from field names first, then fall back to field IDs
+                    const transaction = {
+                        source: 'baserow',
+                        id: row.id,
+                        email: row["email"] || row["field_6394448"] || "",
+                        amount: parseFloat(row["amount"] || row["field_6394449"] || "0.00"),
+                        type: row["type"] || row["field_6394450"] || "",
+                        method: row["method"] || row["field_6394451"] || "",
+                        status: row["status"] || row["field_6394452"] || "",
+                        date: row["date"] || row["field_6394453"] || new Date().toISOString(),
+                        timestamp: 0
+                    };
                     
-                    if (withdrawalAmount) {
-                        withdrawals.push({
-                            source: 'individual_local_storage',
-                            id: withdrawalTransactionId,
-                            transaction_id: withdrawalTransactionId,
-                            amount: parseFloat(withdrawalAmount),
-                            fee: 0, // Assume no fee for local withdrawals
-                            method: withdrawalMethod,
-                            status: withdrawalStatus,
-                            date: withdrawalTimestamp,
-                            email: userEmail,
-                            net_amount: parseFloat(withdrawalAmount)
-                        });
+                    // Parse date to timestamp
+                    try {
+                        transaction.timestamp = new Date(transaction.date).getTime();
+                        if (isNaN(transaction.timestamp)) {
+                            transaction.timestamp = Date.now();
+                        }
+                    } catch (e) {
+                        transaction.timestamp = Date.now();
                     }
-                }
-                
-                console.log('Individual withdrawals:', withdrawals.length);
-                return withdrawals;
+                    
+                    return transaction;
+                });
+
+                return transactions;
                 
             } catch (error) {
-                console.warn('Error reading individual localStorage items:', error);
-                return [];
+                console.error("Error fetching from Baserow:", error);
+                throw error;
             }
         }
         
-        // Remove duplicate withdrawals based on transaction_id
-        function removeDuplicateWithdrawals(withdrawals) {
-            const seen = new Set();
-            const uniqueWithdrawals = [];
+        // Merge transactions from cache and Baserow
+        function mergeTransactions(cachedTransactions, baserowTransactions) {
+            const merged = [...cachedTransactions];
             
-            for (const withdrawal of withdrawals) {
-                const key = withdrawal.transaction_id || withdrawal.id;
-                if (!seen.has(key) && key) {
-                    seen.add(key);
-                    uniqueWithdrawals.push(withdrawal);
+            baserowTransactions.forEach(newTransaction => {
+                // Check if transaction already exists in cache (by ID or by date+amount)
+                const exists = merged.some(t => 
+                    t.id === newTransaction.id || 
+                    (t.date === newTransaction.date && t.amount === newTransaction.amount && t.type === newTransaction.type)
+                );
+                
+                if (!exists) {
+                    merged.push(newTransaction);
                 }
-            }
+            });
             
-            console.log('Unique withdrawals after deduplication:', uniqueWithdrawals.length);
-            return uniqueWithdrawals;
+            // Sort by date (newest first)
+            merged.sort((a, b) => {
+                const dateA = new Date(a.date || a.timestamp || 0);
+                const dateB = new Date(b.date || b.timestamp || 0);
+                return dateB - dateA;
+            });
+            
+            // Keep only last 100 transactions
+            return merged.slice(0, 100);
+        }
+        
+        // Update transaction cache in localStorage
+        function updateTransactionCache(userEmail, transactions) {
+            try {
+                const cacheKey = `v0trade_transactions_data_${userEmail}`;
+                const lastSyncKey = `v0trade_last_transaction_sync_${userEmail}`;
+                
+                localStorage.setItem(cacheKey, JSON.stringify(transactions));
+                localStorage.setItem(lastSyncKey, Date.now().toString());
+                
+                console.log('Transaction cache updated for:', userEmail);
+            } catch (error) {
+                console.error('Error updating transaction cache:', error);
+            }
+        }
+        
+        // Filter transactions to show only withdrawals
+        function filterWithdrawals(transactions) {
+            return transactions.filter(transaction => {
+                const type = transaction.type?.toLowerCase() || '';
+                const method = transaction.method?.toLowerCase() || '';
+                
+                return type.includes('withdrawal') || 
+                       type.includes('withdraw') ||
+                       method.includes('withdrawal') ||
+                       method.includes('withdraw') ||
+                       type.includes('payout');
+            });
         }
         
         // Load and display withdrawals
-        async function loadWithdrawals() {
+        async function loadWithdrawals(forceRefresh = false) {
             // Check authentication first
             if (!checkAuth()) {
                 return;
             }
             
-            const withdrawals = await fetchWithdrawals();
+            const withdrawals = await fetchWithdrawals(forceRefresh);
             window.withdrawalsData = withdrawals; // Store for currency updates
             
             // Hide loading state
@@ -945,37 +950,35 @@
             const currentCurrency = getCurrentCurrency();
             const currency = CURRENCIES.find(c => c.code === currentCurrency) || CURRENCIES[0];
             
-            // Sort by date (newest first)
-            withdrawals.sort((a, b) => {
-                const dateA = new Date(a.date || Date.now());
-                const dateB = new Date(b.date || Date.now());
-                return dateB - dateA;
-            });
-            
             let html = '';
             withdrawals.forEach((withdrawal, index) => {
                 const amount = parseFloat(withdrawal.amount || 0);
-                const fee = parseFloat(withdrawal.fee || 0);
-                const netAmount = withdrawal.net_amount || (amount - fee);
+                const fee = calculateWithdrawalFee(amount);
+                const netAmount = amount - fee;
                 const method = withdrawal.method || 'Bank Transfer';
                 const status = withdrawal.status || 'pending';
                 const date = withdrawal.date;
-                const transactionId = withdrawal.transaction_id || `W${String(withdrawal.id || index).padStart(4, '0')}`;
+                const transactionId = `W${String(withdrawal.id || index + 1).padStart(4, '0')}`;
                 const id = withdrawal.id || transactionId;
                 
                 // Format date
                 let formattedDate = 'N/A';
                 if (date) {
                     try {
-                        formattedDate = new Date(date).toLocaleDateString('en-US', {
-                            year: 'numeric',
-                            month: 'short',
-                            day: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                        });
+                        const dateObj = new Date(date);
+                        if (!isNaN(dateObj.getTime())) {
+                            formattedDate = dateObj.toLocaleDateString('en-US', {
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                            });
+                        } else {
+                            formattedDate = date;
+                        }
                     } catch (e) {
-                        formattedDate = date;
+                        formattedDate = date || 'Unknown date';
                     }
                 }
                 
@@ -986,6 +989,7 @@
                     case 'completed':
                     case 'success':
                     case 'approved':
+                    case 'complete':
                         statusClass = 'status-completed';
                         statusText = 'Completed';
                         break;
@@ -994,12 +998,14 @@
                         statusText = 'Pending';
                         break;
                     case 'processing':
+                    case 'in progress':
                         statusClass = 'status-processing';
                         statusText = 'Processing';
                         break;
                     case 'failed':
                     case 'rejected':
                     case 'declined':
+                    case 'fail':
                         statusClass = 'status-failed';
                         statusText = 'Failed';
                         break;
@@ -1031,21 +1037,29 @@
             tableBody.innerHTML = html;
         }
         
+        // Calculate withdrawal fee (2% of amount)
+        function calculateWithdrawalFee(amount) {
+            return parseFloat((amount * 0.02).toFixed(2));
+        }
+        
         // Update statistics
         function updateStats(withdrawals) {
             const totalWithdrawals = withdrawals.reduce((sum, w) => sum + parseFloat(w.amount || 0), 0);
             
-            const completed = withdrawals.filter(w => 
-                w.status && ['completed', 'success', 'approved'].includes(w.status.toLowerCase())
-            ).length;
+            const completed = withdrawals.filter(w => {
+                const status = w.status?.toLowerCase() || '';
+                return ['completed', 'success', 'approved', 'complete'].includes(status);
+            }).length;
             
-            const pending = withdrawals.filter(w => 
-                w.status && ['pending', 'processing'].includes(w.status.toLowerCase())
-            ).length;
+            const pending = withdrawals.filter(w => {
+                const status = w.status?.toLowerCase() || '';
+                return ['pending', 'processing', 'in progress'].includes(status);
+            }).length;
             
             // Calculate this month's withdrawals
-            const currentMonth = new Date().getMonth();
-            const currentYear = new Date().getFullYear();
+            const now = new Date();
+            const currentMonth = now.getMonth();
+            const currentYear = now.getFullYear();
             
             const monthWithdrawals = withdrawals.reduce((sum, w) => {
                 if (!w.date) return sum;
@@ -1080,8 +1094,6 @@
         
         // Refresh withdrawals
         function refreshWithdrawals() {
-            loadWithdrawals();
-            
             // Show refresh animation
             const refreshBtn = document.querySelector('button[onclick="refreshWithdrawals()"]');
             const originalText = refreshBtn.innerHTML;
@@ -1091,6 +1103,9 @@
                 </svg>
                 Refreshing...
             `;
+            
+            // Force refresh from Baserow
+            loadWithdrawals(true);
             
             setTimeout(() => {
                 refreshBtn.innerHTML = originalText;
@@ -1146,6 +1161,15 @@
             initCurrencySystem();
             checkAuth();
         });
+        
+        // Auto-refresh withdrawals every 30 minutes
+        setInterval(() => {
+            const userEmail = localStorage.getItem('v0trade_user_email');
+            if (userEmail && shouldSyncWithBaserow(userEmail)) {
+                console.log('Auto-refreshing withdrawals...');
+                loadWithdrawals(false); // Don't force, just check if sync is needed
+            }
+        }, 30 * 60 * 1000); // 30 minutes
     </script>
 
 </body>
