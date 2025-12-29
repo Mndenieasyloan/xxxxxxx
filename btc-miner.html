@@ -920,16 +920,16 @@
     </footer>
 
    <script>
-    // Currency data
+    // Currency data - REMOVED exchangeRate
     const CURRENCIES = [
-        { code: 'USD', symbol: '$', name: 'US Dollar', exchangeRate: 1 },
-        { code: 'EUR', symbol: '€', name: 'Euro', exchangeRate: 0.92 },
-        { code: 'GBP', symbol: '£', name: 'British Pound', exchangeRate: 0.79 },
-        { code: 'ZAR', symbol: 'R', name: 'South African Rand', exchangeRate: 18.5 },
-        { code: 'INR', symbol: '₹', name: 'Indian Rupee', exchangeRate: 83.0 },
-        { code: 'JPY', symbol: '¥', name: 'Japanese Yen', exchangeRate: 148.0 },
-        { code: 'AUD', symbol: 'A$', name: 'Australian Dollar', exchangeRate: 1.52 },
-        { code: 'CAD', symbol: 'C$', name: 'Canadian Dollar', exchangeRate: 1.35 }
+        { code: 'USD', symbol: '$', name: 'US Dollar' },
+        { code: 'EUR', symbol: '€', name: 'Euro' },
+        { code: 'GBP', symbol: '£', name: 'British Pound' },
+        { code: 'ZAR', symbol: 'R', name: 'South African Rand' },
+        { code: 'INR', symbol: '₹', name: 'Indian Rupee' },
+        { code: 'JPY', symbol: '¥', name: 'Japanese Yen' },
+        { code: 'AUD', symbol: 'A$', name: 'Australian Dollar' },
+        { code: 'CAD', symbol: 'C$', name: 'Canadian Dollar' }
     ];
     
     // Plan data with USD base prices
@@ -955,15 +955,7 @@
         return CURRENCIES.find(c => c.code === currencyCode) || CURRENCIES[0];
     }
     
-    function convertAmount(usdAmount, currencyCode) {
-        const currency = getCurrencyData(currencyCode);
-        return (usdAmount * currency.exchangeRate).toFixed(2);
-    }
-    
-    function formatCurrency(amount, currencyCode) {
-        const currency = getCurrencyData(currencyCode);
-        return `${currency.symbol}${parseFloat(amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-    }
+    // REMOVED: convertAmount function since we don't convert amounts anymore
     
     function showCurrencyModal() {
         const modal = document.getElementById('currencyModal');
@@ -1044,11 +1036,11 @@
     }
     
     function updateCurrencyDisplays(currencyCode) {
-        // Update all plan prices
+        const currency = getCurrencyData(currencyCode);
+        
+        // Update all plan prices - ONLY change the symbol, keep the same amounts
         Object.keys(PLAN_DATA).forEach(planKey => {
             const plan = PLAN_DATA[planKey];
-            const convertedPrice = convertAmount(plan.basePrice, currencyCode);
-            const currency = getCurrencyData(currencyCode);
             
             // Find and update all elements with this plan
             document.querySelectorAll(`[data-plan="${planKey}"]`).forEach(button => {
@@ -1056,7 +1048,8 @@
                 if (planCard) {
                     const investmentElement = planCard.querySelector('[data-currency="usd"]');
                     if (investmentElement) {
-                        investmentElement.textContent = `${currency.symbol}${convertedPrice}`;
+                        // Keep the same base amount, just change the symbol
+                        investmentElement.textContent = `${currency.symbol}${plan.basePrice.toFixed(0)}`;
                     }
                 }
             });
@@ -1338,7 +1331,7 @@
                 </div>
                 <div class="modal-row">
                     <span class="modal-label">Investment:</span>
-                    <span class="modal-value">${currency.symbol}${amount.toFixed(2)} ${currentCurrency}</span>
+                    <span class="modal-value">${currency.symbol}${amount.toFixed(2)}</span>
                 </div>
                 <div class="modal-row">
                     <span class="modal-label">Duration:</span>
@@ -1354,7 +1347,7 @@
                 </div>
                 <div class="modal-row">
                     <span class="modal-label">Total Expected:</span>
-                    <span class="modal-value highlight">${currency.symbol}${totalReturn.toFixed(2)} ${currentCurrency}</span>
+                    <span class="modal-value highlight">${currency.symbol}${totalReturn.toFixed(2)}</span>
                 </div>
             </div>
         `, async () => await processMinerPurchase(amount, planName, days.toString(), hashrate, dailyReturnAmount, totalReturn));
@@ -1423,7 +1416,7 @@
                     </div>
                     <p class="text-green-400 font-semibold text-lg">Miner activated successfully!</p>
                     <p class="text-gray-300">Your ${planName} is now mining BTC.</p>
-                    <p class="text-gray-400 text-sm">Investment: ${currency.symbol}${amount.toFixed(2)} ${currentCurrency}</p>
+                    <p class="text-gray-400 text-sm">Investment: ${currency.symbol}${amount.toFixed(2)}</p>
                     <p class="text-gray-400 text-sm">Check your dashboard to track your mining progress.</p>
                 </div>`, 
                 () => window.location.href = 'dashboard.html');
@@ -1463,18 +1456,17 @@
         // Update header with user info
         updateHeader();
 
-        // Set up plan buttons with currency conversion
+        // Set up plan buttons - NO CONVERSION, just use base prices with current symbol
         document.querySelectorAll('.plan-button').forEach(button => {
             const planKey = button.getAttribute('data-plan');
             if (PLAN_DATA[planKey]) {
                 const plan = PLAN_DATA[planKey];
                 const currentCurrency = getCurrentCurrency();
-                const convertedPrice = convertAmount(plan.basePrice, currentCurrency);
-                const currencySymbol = getCurrencyData(currentCurrency).symbol;
+                const currency = getCurrencyData(currentCurrency);
                 
                 button.onclick = () => handleBuyMiner(
                     plan.name,
-                    `${currencySymbol}${convertedPrice}`,
+                    `${currency.symbol}${plan.basePrice.toFixed(0)}`,
                     plan.duration,
                     plan.hashrate,
                     plan.dailyReturn
